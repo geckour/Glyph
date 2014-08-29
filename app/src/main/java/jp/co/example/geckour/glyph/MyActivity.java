@@ -1,9 +1,18 @@
 package jp.co.example.geckour.glyph;
 
+import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 
 public class MyActivity extends Activity {
@@ -11,7 +20,11 @@ public class MyActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_my);
+        MyView view = new MyView(this);
+        setContentView(view);
+
+        ActionBar actionBar = getActionBar();
+        actionBar.hide();
     }
 
 
@@ -32,5 +45,69 @@ public class MyActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    class MyView extends View {
+        Display display = getWindowManager().getDefaultDisplay();
+        Point point = new Point();
+        float offsetX, offsetY;
+        Paint p = new Paint();
+        double cr = Math.PI/3;
+        double radius;
+        PointF[] dots = new PointF[11];
+
+        public MyView(Context context) {
+            super(context);
+
+            display.getSize(point);
+            offsetX = point.x / 2;
+            offsetY = point.y / 2 + (point.y - point.x) / 5;
+            radius = offsetX * 0.9;
+            p.setAntiAlias(true);
+
+            for (int i = 0; i < 11; i++) {
+                dots[i] = new PointF();
+            }
+
+            dots[0].set(offsetX, offsetY);
+            for (int i = 1; i < 5; i++) {
+                int j = i;
+                if(i > 1) {
+                    j++;
+                    if (i > 3) {
+                        j++;
+                    }
+                }
+                dots[i].set((float)(Math.cos(cr*(j-0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j-0.5)) * (radius / 2) + offsetY));
+            }
+            for (int i = 5; i < 11; i++) {
+                dots[i].set((float) (Math.cos(cr*(i-0.5)) * radius + offsetX), (float) (Math.sin(cr*(i-0.5)) * radius + offsetY));
+            }
+        }
+
+        @Override
+        public void onDraw(Canvas c) {
+            c.drawColor(getResources().getColor(R.color.background));
+
+            float dotRadius = (float)radius/18;
+            for (int i = 0; i < 11; i++) {
+                int alpha = 5;
+                for (int j = 0; j < 30; j++) {
+                    if (j < 16) {
+                        p.setColor(Color.argb(alpha, 150, 120, 150));
+                    } else {
+                        p.setColor(Color.argb(++alpha, 150, 120, 150));
+                    }
+                    p.setStyle(Paint.Style.FILL);
+                    c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 30 - j, p);
+                }
+                p.setColor(getResources().getColor(R.color.dots));
+                p.setStyle(Paint.Style.FILL);
+                c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4, p);
+                p.setColor(getResources().getColor(R.color.background));
+                p.setStyle(Paint.Style.FILL);
+                c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
+            }
+        }
     }
 }
