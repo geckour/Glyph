@@ -10,10 +10,17 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class MyActivity extends Activity {
@@ -41,14 +48,16 @@ public class MyActivity extends Activity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        //int id = item.getItemId();
-        //if (id == R.id.action_settings) {
-        //    return true;
-        //}
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
     class MyView extends View {
+        private final Handler handler = new Handler();
+        boolean state = true;
         Display display = getWindowManager().getDefaultDisplay();
         Point point = new Point();
         float offsetX, offsetY;
@@ -56,6 +65,8 @@ public class MyActivity extends Activity {
         double cr = Math.PI/3;
         double radius;
         PointF[] dots = new PointF[11];
+        ArrayList<Point> Locus = new ArrayList<Point>();
+        int framec = 0;
 
         public MyView(Context context) {
             super(context);
@@ -63,7 +74,7 @@ public class MyActivity extends Activity {
             display.getSize(point);
             offsetX = point.x / 2;
             offsetY = point.y / 2 + (point.y - point.x) / 5;
-            radius = offsetX * 0.9;
+            radius = offsetX * 0.8;
             p.setAntiAlias(true);
 
             for (int i = 0; i < 11; i++) {
@@ -84,6 +95,20 @@ public class MyActivity extends Activity {
             for (int i = 5; i < 11; i++) {
                 dots[i].set((float) (Math.cos(cr*(i-0.5)) * radius + offsetX), (float) (Math.sin(cr*(i-0.5)) * radius + offsetY));
             }
+
+            Timer timer = new Timer(false);
+            timer.schedule(new TimerTask() {
+                public void run() {
+                    handler.post(new Runnable() {
+                        public void run() {
+                            if (state) {
+                                //再描画
+                                invalidate();
+                            }
+                        }
+                    });
+                }
+            }, 100, 25);
         }
 
         @Override
@@ -123,6 +148,76 @@ public class MyActivity extends Activity {
                 p.setStyle(Paint.Style.FILL);
                 c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
             }
+
+            for (int i = 0; i < Locus.size(); i++) {
+                p.setColor(Color.YELLOW);
+                p.setStyle(Paint.Style.FILL);
+                c.drawCircle(Locus.get(i).x, Locus.get(i).y, dotRadius / 2, p);
+            }
+
+            p.setTextSize(50);
+            p.setColor(Color.WHITE);
+            c.drawText(framec / 40 + "." + (framec / 4) % 10, offsetX, offsetY / 6, p);
+
+            framec++;
+        }
+
+        public void setLocus(float x, float y) {
+            for (int i = 0; i < 3; i++){
+                int blurR = (int)(Math.random() * offsetX * 0.8 / 12);
+                double blurA = Math.random() * Math.PI * 2;
+
+                Point locus = new Point((int)x + (int)(blurR * Math.cos(blurA)), (int)y + (int)(blurR * Math.sin(blurA)));
+                Locus.add(locus);
+            }
+
+            if (Locus.size() > 1000) {
+                Locus.remove(0);
+            }
+        }
+
+        public void resetLocus() {
+            Locus.clear();
+        }
+
+        float downX = 0, downY = 0;
+        float memX = 0, memY = 0;
+        boolean isReleased = false;
+        public boolean onTouchEvent(MotionEvent event) {
+            float upX = 0, upY = 0;
+            float lim = 40;
+            switch (event.getAction()) {
+                //タッチ
+                case MotionEvent.ACTION_DOWN:
+                    if (isReleased) {
+                        resetLocus();
+                    }
+                    isReleased = false;
+                    downX = event.getX();
+                    downY = event.getY();
+                    memX = downX;
+                    memY = downY;
+                    setLocus(downX, downY);
+                    break;
+                //スワイプ
+                case MotionEvent.ACTION_MOVE:
+                    float currentX = event.getX();
+                    float currentY = event.getY();
+                    if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
+                        setLocus(currentX, currentY);
+                        memX = currentX;
+                        memY = currentY;
+                    }
+                    break;
+                //リリース
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    isReleased = true;
+                    upX = event.getX();
+                    upY = event.getY();
+                    break;
+            }
+            return true;
         }
     }
 }
