@@ -67,6 +67,7 @@ public class MyActivity extends Activity {
         PointF[] dots = new PointF[11];
         ArrayList<Point> Locus = new ArrayList<Point>();
         int framec = 0;
+        boolean[] isThrough = new boolean[11];
 
         public MyView(Context context) {
             super(context);
@@ -94,6 +95,10 @@ public class MyActivity extends Activity {
             }
             for (int i = 5; i < 11; i++) {
                 dots[i].set((float) (Math.cos(cr*(i-0.5)) * radius + offsetX), (float) (Math.sin(cr*(i-0.5)) * radius + offsetY));
+            }
+
+            for (int i = 0; i < 11; i++) {
+                isThrough[i] = false;
             }
 
             Timer timer = new Timer(false);
@@ -144,9 +149,11 @@ public class MyActivity extends Activity {
                 p.setColor(getResources().getColor(R.color.dots));
                 p.setStyle(Paint.Style.FILL);
                 c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4, p);
-                p.setColor(getResources().getColor(R.color.background));
-                p.setStyle(Paint.Style.FILL);
-                c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
+                if (!isThrough[i]) {
+                    p.setColor(getResources().getColor(R.color.background));
+                    p.setStyle(Paint.Style.FILL);
+                    c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
+                }
             }
 
             for (int i = 0; i < Locus.size(); i++) {
@@ -164,11 +171,18 @@ public class MyActivity extends Activity {
 
         public void setLocus(float x, float y) {
             for (int i = 0; i < 3; i++){
-                int blurR = (int)(Math.random() * offsetX * 0.8 / 12);
+                int blurR = (int)(Math.random() * offsetX * 0.8 / 15);
                 double blurA = Math.random() * Math.PI * 2;
 
                 Point locus = new Point((int)x + (int)(blurR * Math.cos(blurA)), (int)y + (int)(blurR * Math.sin(blurA)));
                 Locus.add(locus);
+            }
+
+            for (int i = 0; i < 11; i++) {
+                //円の方程式にて当たり判定
+                if ((x - dots[i].x) * (x - dots[i].x) + (y - dots[i].y) * (y - dots[i].y) < (offsetX * 0.8 / 18 + 30) * (offsetX * 0.8 / 18 + 30)) {
+                    isThrough[i] = true;
+                }
             }
 
             if (Locus.size() > 1000) {
@@ -178,6 +192,12 @@ public class MyActivity extends Activity {
 
         public void resetLocus() {
             Locus.clear();
+        }
+
+        public void resetThrough() {
+            for (int i = 0; i < 11; i++) {
+                isThrough[i] = false;
+            }
         }
 
         float downX = 0, downY = 0;
@@ -191,6 +211,7 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_DOWN:
                     if (isReleased) {
                         resetLocus();
+                        resetThrough();
                     }
                     isReleased = false;
                     downX = event.getX();
