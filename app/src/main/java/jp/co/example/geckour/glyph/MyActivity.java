@@ -6,6 +6,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Bundle;
@@ -31,7 +32,7 @@ public class MyActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.my, menu);
+        //getMenuInflater().inflate(R.menu.my, menu);
         return true;
     }
 
@@ -40,10 +41,10 @@ public class MyActivity extends Activity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
+        //int id = item.getItemId();
+        //if (id == R.id.action_settings) {
+        //    return true;
+        //}
         return super.onOptionsItemSelected(item);
     }
 
@@ -88,6 +89,18 @@ public class MyActivity extends Activity {
         @Override
         public void onDraw(Canvas c) {
             c.drawColor(getResources().getColor(R.color.background));
+            /*
+            c.drawColor(Color.WHITE);
+
+            p.setColor(Color.BLACK);
+            p.setStyle(Paint.Style.FILL);
+            Path path = new Path();
+            path.moveTo((float) (Math.cos(cr*(-0.5)) * (offsetX / Math.cos(cr/2)) + offsetX), (float) (Math.sin(cr*(-0.5)) * (offsetX / Math.cos(cr/2)) + offsetY));
+            for (int i = 1; i < 7; i++) {
+                path.lineTo((float) (Math.cos(cr*(i-0.5)) * (offsetX / Math.cos(cr/2)) + offsetX), (float) (Math.sin(cr*(i-0.5)) * (offsetX / Math.cos(cr/2)) + offsetY));
+            }
+            c.drawPath(path, p);
+            */
 
             float dotRadius = (float)radius/18;
             for (int i = 0; i < 11; i++) {
