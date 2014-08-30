@@ -104,15 +104,17 @@ public class MyActivity extends Activity {
 
             float dotRadius = (float)radius/18;
             for (int i = 0; i < 11; i++) {
-                int alpha = 5;
-                for (int j = 0; j < 30; j++) {
-                    if (j < 16) {
-                        p.setColor(Color.argb(alpha, 150, 120, 150));
-                    } else {
-                        p.setColor(Color.argb(++alpha, 150, 120, 150));
+                int alpha = 0;
+                for (int j = 0; j < 36; j++) {
+                    if (j % 3 == 0) {
+                        alpha++;
                     }
+                    if(j >= 16 && j % 2 == 0) {
+                        alpha++;
+                    }
+                    p.setColor(Color.argb(alpha, 150, 120, 150));
                     p.setStyle(Paint.Style.FILL);
-                    c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 30 - j, p);
+                    c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 36 - j, p);
                 }
                 p.setColor(getResources().getColor(R.color.dots));
                 p.setStyle(Paint.Style.FILL);
