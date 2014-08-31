@@ -223,13 +223,24 @@ public class MyActivity extends Activity {
                     }
                 }
                 */
+                //線分と円の当たり判定
                 float a = y0 - y1, b = x1 - x0, c = x0 * y1 - x1 * y0;
                 double d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt(a * a + b * b);
                 double lim = offsetX * 0.8 / 18 + 20;
-                if(-lim < d && d < lim) {
-                    isThrough[i] = true;
-                    if(throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != i) {
-                        throughList[qNum].dots.add(i);
+                if (-lim <= d && d <= lim) {
+                    double inner0 = x0 * dots[i].y - dots[i].x * y0, inner1 = x1 * dots[i].y - dots[i].x * y1;
+                    double d0 = Math.sqrt((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y));
+                    double d1 = Math.sqrt((x1 - dots[i].x) * (x1 - dots[i].x) + (y1 - dots[i].y) * (y1 - dots[i].y));
+                    if (inner0 * inner1 <= 0) {
+                        isThrough[i] = true;
+                        if (throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != i) {
+                            throughList[qNum].dots.add(i);
+                        }
+                    } else if (d0 < lim || d1 < lim) {
+                        isThrough[i] = true;
+                        if (throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != i) {
+                            throughList[qNum].dots.add(i);
+                        }
                     }
                 }
             }
