@@ -68,6 +68,16 @@ public class MyActivity extends Activity {
         ArrayList<Point> Locus = new ArrayList<Point>();
         int framec = 0;
         boolean[] isThrough = new boolean[11];
+        ThroughList[] throughList;
+        int qTotal = 0;
+        int qNum = 0;
+
+        public class ThroughList {
+            ArrayList<Integer> dots;
+            public ThroughList(){
+                dots = new ArrayList<Integer>();
+            }
+        }
 
         public MyView(Context context) {
             super(context);
@@ -95,6 +105,13 @@ public class MyActivity extends Activity {
             }
             for (int i = 5; i < 11; i++) {
                 dots[i].set((float) (Math.cos(cr*(i-0.5)) * radius + offsetX), (float) (Math.sin(cr*(i-0.5)) * radius + offsetY));
+            }
+
+            qTotal = (int)(Math.random() * 4 + 1);
+            Log.v("echo", "qTotal:" + qTotal);
+            throughList = new ThroughList[qTotal];
+            for (int i = 0; i < qTotal; i++) {
+                throughList[i] = new ThroughList();
             }
 
             for (int i = 0; i < 11; i++) {
@@ -180,8 +197,11 @@ public class MyActivity extends Activity {
 
             for (int i = 0; i < 11; i++) {
                 //円の方程式にて当たり判定
-                if ((x - dots[i].x) * (x - dots[i].x) + (y - dots[i].y) * (y - dots[i].y) < (offsetX * 0.8 / 18 + 30) * (offsetX * 0.8 / 18 + 30)) {
+                if ((x - dots[i].x) * (x - dots[i].x) + (y - dots[i].y) * (y - dots[i].y) < (offsetX * 0.8 / 18 + 20) * (offsetX * 0.8 / 18 + 20) && state) {
                     isThrough[i] = true;
+                    if(throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != i) {
+                        throughList[qNum].dots.add(i);
+                    }
                 }
             }
 
@@ -234,6 +254,16 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     isReleased = true;
+                    String lists = "";
+                    for (int throughDot: throughList[qNum].dots) {
+                        lists += "," + throughDot;
+                    }
+                    Log.v("echo", "lists:" + lists);
+                    if (qTotal - 1 > qNum) {
+                        qNum++;
+                    } else {
+                        state = false;
+                    }
                     upX = event.getX();
                     upY = event.getY();
                     break;
