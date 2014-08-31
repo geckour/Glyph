@@ -66,6 +66,7 @@ public class MyActivity extends Activity {
         double radius;
         PointF[] dots = new PointF[11];
         ArrayList<Point> Locus = new ArrayList<Point>();
+        Path locusPath = new Path();
         int framec = 0;
         boolean[] isThrough = new boolean[11];
         ThroughList[] throughList;
@@ -172,12 +173,14 @@ public class MyActivity extends Activity {
                     c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
                 }
             }
-
-            for (int i = 0; i < Locus.size(); i++) {
+            for (Point point: Locus) {
                 p.setColor(Color.YELLOW);
                 p.setStyle(Paint.Style.FILL);
-                c.drawCircle(Locus.get(i).x, Locus.get(i).y, dotRadius / 2, p);
+                c.drawCircle(point.x, point.y, dotRadius / 2, p);
             }
+            p.setColor(Color.RED);
+            p.setStyle(Paint.Style.STROKE);
+            c.drawPath(locusPath, p);
 
             p.setTextSize(50);
             p.setColor(Color.WHITE);
@@ -186,7 +189,14 @@ public class MyActivity extends Activity {
             framec++;
         }
 
+        public void setLocusStart(float x, float y) {
+            isCollision(x, y, x, y);
+            locusPath.moveTo(x, y);
+            Locus.add(new Point((int)x, (int)y));
+        }
+
         public void setLocus(float x, float y) {
+            /*
             for (int i = 0; i < 3; i++){
                 int blurR = (int)(Math.random() * offsetX * 0.8 / 15);
                 double blurA = Math.random() * Math.PI * 2;
@@ -194,23 +204,39 @@ public class MyActivity extends Activity {
                 Point locus = new Point((int)x + (int)(blurR * Math.cos(blurA)), (int)y + (int)(blurR * Math.sin(blurA)));
                 Locus.add(locus);
             }
+            */
+            Locus.add(new Point((int)x, (int)y));
 
+            isCollision(x, y, Locus.get(Locus.size() - 2).x, Locus.get(Locus.size() - 2).y);
+
+            locusPath.lineTo(x, y);
+        }
+
+        public void isCollision(float x0, float y0, float x1, float y1) {
             for (int i = 0; i < 11; i++) {
                 //円の方程式にて当たり判定
-                if ((x - dots[i].x) * (x - dots[i].x) + (y - dots[i].y) * (y - dots[i].y) < (offsetX * 0.8 / 18 + 20) * (offsetX * 0.8 / 18 + 20) && state) {
+                /*
+                if ((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y) < (offsetX * 0.8 / 18 + 20) * (offsetX * 0.8 / 18 + 20) && state) {
+                    isThrough[i] = true;
+                    if(throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != i) {
+                        throughList[qNum].dots.add(i);
+                    }
+                }
+                */
+                float a = y0 - y1, b = x1 - x0, c = x0 * y1 - x1 * y0;
+                double d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt(a * a + b * b);
+                double lim = offsetX * 0.8 / 18 + 20;
+                if(-lim < d && d < lim) {
                     isThrough[i] = true;
                     if(throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != i) {
                         throughList[qNum].dots.add(i);
                     }
                 }
             }
-
-            if (Locus.size() > 1000) {
-                Locus.remove(0);
-            }
         }
 
         public void resetLocus() {
+            locusPath.reset();
             Locus.clear();
         }
 
@@ -238,7 +264,7 @@ public class MyActivity extends Activity {
                     downY = event.getY();
                     memX = downX;
                     memY = downY;
-                    setLocus(downX, downY);
+                    setLocusStart(downX, downY);
                     break;
                 //スワイプ
                 case MotionEvent.ACTION_MOVE:
