@@ -95,9 +95,6 @@ public class MyActivity extends Activity {
 
             ArrayList<Integer> giveDot;
             int counter = 0;
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 1, 8, 2, 0, 4, 5, 3, 0));
-            shapes.put("Harmony", new ThroughList(giveDot));
-            shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 2, 9, 8));
             shapes.put("Abandon", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
@@ -254,7 +251,7 @@ public class MyActivity extends Activity {
             giveDot = new ArrayList<Integer>(Arrays.asList(7, 1, 0, 3, 5, 4, 0));
             shapes.put("Harm", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 3, 0, 1, 8, 2, 0, 4, 5));
+            giveDot = new ArrayList<Integer>(Arrays.asList(0, 1, 8, 2, 0, 4, 5, 3, 0));
             shapes.put("Harmony", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(1, 0, 2, 8));
@@ -473,20 +470,20 @@ public class MyActivity extends Activity {
             shapesSets.add(giveStrings);
 
             //qTotal = (int)(Math.random() * 4 + 1);
-            qTotal = 4;
+            qTotal = 3;
             throughList = new ThroughList[qTotal];
             answerThroughList = new ThroughList[qTotal];
             for (int i = 0; i < qTotal; i++) {
                 throughList[i] = new ThroughList();
-                /*
                 int randomVal = (int)(Math.random()*shapesSets.size());
                 while (shapesSets.get(randomVal).size() != qTotal) {
                     randomVal = (int)(Math.random()*shapesSets.size());
                 }
                 answerThroughList[i] = shapes.get(shapesSets.get(randomVal).get(i));
-                */
+                /*
                 int randomVal = (int)(Math.random()*counter);
                 answerThroughList[i] = shapes.get("" + randomVal);
+                */
             }
 
             display.getSize(point);
@@ -586,11 +583,42 @@ public class MyActivity extends Activity {
             int leftTime = defTime - framec / 4;
             if (leftTime <= 0) {
                 doCount = false;
+                for (int i = 0; i < qTotal; i++) {
+                    Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                }
             }
             c.drawText(leftTime / 10 + "." + leftTime % 10, offsetX, offsetY / 6, p);
 
             if (doCount) {
                 framec++;
+            }
+        }
+
+        public boolean judgeLocus (ThroughList answer, ThroughList throughed) {
+            ArrayList<int[]> answerPaths = new ArrayList<int[]>();
+            ArrayList<int[]> throughdPaths = new ArrayList<int[]>();
+
+            if (answer.dots.size() != throughed.dots.size()) {
+                return false;
+            } else {
+                int clearC = 0;
+                for (int i = 0; i < answer.dots.size() - 1; i++) {
+                    int[] path0 = {answer.dots.get(i), answer.dots.get(i + 1)};
+                    answerPaths.add(path0);
+                    int[] path1 = {throughed.dots.get(i), throughed.dots.get(i + 1)};
+                    throughdPaths.add(path1);
+                }
+
+                for (int i = 0; i < answerPaths.size(); i++) {
+                    for ( int j = 0; j < throughdPaths.size(); j++) {
+                        int[] tempPaths = {throughdPaths.get(j)[1], throughdPaths.get(j)[0]};
+                        if (Arrays.equals(answerPaths.get(i), throughdPaths.get(j)) || Arrays.equals(answerPaths.get(i), tempPaths)) {
+                            clearC++;
+                        }
+                    }
+                }
+                Log.v("echo", "clearC:"+clearC+", answerPaths.size():"+answerPaths.size());
+                return (clearC == answerPaths.size());
             }
         }
 
@@ -720,20 +748,13 @@ public class MyActivity extends Activity {
                                 setLocus(dots[integer].x, dots[integer].y, false);
                             }
                         }
-                        /*
-                        for (Integer integer: answerThroughList[qNum].dots) {
-                            if (isFirst) {
-                                setLocusStart(dots[integer].x, dots[integer].y, false);
-                                isFirst = false;
-                            } else {
-                                setLocus(dots[integer].x, dots[integer].y, false);
-                            }
-                        }
-                        */
                         if (qTotal - 1 > qNum) {
                             qNum++;
                         } else {
                             doCount = false;
+                            for (int i = 0; i < qTotal; i++) {
+                                Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                            }
                         }
                     }
                     break;
