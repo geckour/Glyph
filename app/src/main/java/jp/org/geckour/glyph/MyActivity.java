@@ -648,7 +648,7 @@ public class MyActivity extends Activity {
             c.drawPath(locusPath, p);
 
             if (!isStartGame) {
-                showAnswer(c, 0, framec);
+                showAnswer(0, framec);
             }
 
             if (isStartGame) {
@@ -683,18 +683,14 @@ public class MyActivity extends Activity {
             }
         }
 
-        public void showAnswer(Canvas c, int initTime, int currentTime) {
-            int interval = 20;
+        public void showAnswer(int initTime, int currentTime) {
+            int interval = 30;
             int que = 0;
-            if ((currentTime - initTime) / interval < (qTotal - 1) * 2 + 1) {
-                for (int i = 0; i < (currentTime - initTime) / interval; i++) {
-                    que++;
-                }
-            } else {
-                que = (qTotal - 1) * 2 + 1;
-                Log.v("echo", "que:" + que +", qTotal:" + qTotal);
+            for (int i = 0; i < (currentTime - initTime) / interval; i++) {
+                que++;
             }
-            if (!(que / 2 == qTotal - 1 && que % 2 == 1)) {
+            if (!(que > (qTotal - 1) * 2 + 1)) {
+                Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
                 if (que % 2 == 0) {
                     for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
                         if (i == 0) {
@@ -707,11 +703,9 @@ public class MyActivity extends Activity {
                 } else {
                     resetLocus();
                 }
-                Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
             }
 
-            if (que / 2 == qTotal - 1 && que % 2 == 1) {
-                resetLocus();
+            if (que > (qTotal - 1) * 2 + 1) {
                 framec = 0;
                 isStartGame = true;
             }
