@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -65,12 +66,13 @@ public class MyActivity extends Activity {
         Point point = new Point();
         float offsetX, offsetY;
         Paint p = new Paint();
-        double cr = Math.PI/3;
+        double cr = Math.PI / 3;
         double radius;
         PointF[] dots = new PointF[11];
         ArrayList<Point> Locus = new ArrayList<Point>();
         Path locusPath = new Path();
         int framec = 0;
+        int minLv = 0, maxLv = 8;
         boolean[] isThrough = new boolean[11];
         ThroughList[] throughList;
         ThroughList[] answerThroughList;
@@ -82,13 +84,16 @@ public class MyActivity extends Activity {
         boolean isFirstOnTimeup = true;
         ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
         boolean isStartGame = false;
+        Typeface typeface;
 
         public class ThroughList {
             ArrayList<Integer> dots;
-            public ThroughList(){
+
+            public ThroughList() {
                 dots = new ArrayList<Integer>();
             }
-            public ThroughList(ArrayList<Integer> argDots){
+
+            public ThroughList(ArrayList<Integer> argDots) {
                 dots = new ArrayList<Integer>(argDots);
             }
         }
@@ -96,9 +101,11 @@ public class MyActivity extends Activity {
         public class ShapesSet {
             ArrayList<String> strings;
             ArrayList<String> correctString;
+
             public ShapesSet(ArrayList<String> argStrings) {
                 strings = argStrings;
             }
+
             public ShapesSet(ArrayList<String> argStrings, ArrayList<String> argCorrectString) {
                 strings = argStrings;
                 correctString = argCorrectString;
@@ -108,6 +115,7 @@ public class MyActivity extends Activity {
         public class Difficulty {
             int qs = 0;
             int time = 0;
+
             public Difficulty(int argQs, int argTime) {
                 qs = argQs;
                 time = argTime;
@@ -526,7 +534,7 @@ public class MyActivity extends Activity {
                 difficulty.add(i, new Difficulty(giveQs, giveTime));
             }
 
-            int level = (int)(Math.random() * 9);
+            int level = (int) (Math.random() * (maxLv - minLv + 1) + minLv);
             defTime = difficulty.get(level).time;
             if (difficulty.get(level).qs > 1) {
                 int randomVal = (int) (Math.random() * shapesSets.size());
@@ -547,7 +555,8 @@ public class MyActivity extends Activity {
                 }
             } else {
                 qTotal = 1;
-                int randomVal = (int)(Math.random() * shapes.size());
+                Log.v("echo", "qTotal:" + qTotal);
+                int randomVal = (int) (Math.random() * (shapes.size() / 2));
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
@@ -567,21 +576,23 @@ public class MyActivity extends Activity {
             dots[0].set(offsetX, offsetY);
             for (int i = 1; i < 5; i++) {
                 int j = i;
-                if(i > 1) {
+                if (i > 1) {
                     j++;
                     if (i > 3) {
                         j++;
                     }
                 }
-                dots[i].set((float)(Math.cos(cr*(j-0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j-0.5)) * (radius / 2) + offsetY));
+                dots[i].set((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY));
             }
             for (int i = 5; i < 11; i++) {
-                dots[i].set((float) (Math.cos(cr*(i-0.5)) * radius + offsetX), (float) (Math.sin(cr*(i-0.5)) * radius + offsetY));
+                dots[i].set((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY));
             }
 
             for (int i = 0; i < 11; i++) {
                 isThrough[i] = false;
             }
+
+            typeface = Typeface.createFromAsset(getContext().getAssets(), "Ricty-Regular.ttf");
 
             Timer timer = new Timer(false);
             timer.schedule(new TimerTask() {
@@ -614,14 +625,14 @@ public class MyActivity extends Activity {
             c.drawPath(path, p);
             */
 
-            float dotRadius = (float)radius/18;
+            float dotRadius = (float) radius / 18;
             for (int i = 0; i < 11; i++) {
                 int alpha = 0;
                 for (int j = 0; j < 36; j++) {
                     if (j % 3 == 0) {
                         alpha++;
                     }
-                    if(j >= 16 && j % 2 == 0) {
+                    if (j >= 16 && j % 2 == 0) {
                         alpha++;
                     }
                     p.setColor(Color.argb(alpha, 150, 120, 150));
@@ -638,7 +649,7 @@ public class MyActivity extends Activity {
                 }
             }
 
-            for (Point point: Locus) {
+            for (Point point : Locus) {
                 p.setColor(Color.YELLOW);
                 p.setStyle(Paint.Style.FILL);
                 c.drawCircle(point.x, point.y, dotRadius / 4, p);
@@ -653,6 +664,7 @@ public class MyActivity extends Activity {
 
             if (isStartGame) {
                 p.setTextSize(50);
+                p.setTypeface(typeface);
                 p.setColor(Color.WHITE);
                 int leftTime = defTime - framec / 4;
                 if (leftTime <= 0) {
@@ -685,13 +697,13 @@ public class MyActivity extends Activity {
 
         public void showAnswer(int initTime, int currentTime) {
             int interval = 30;
-            int que = 0;
+            int que = -1;
             for (int i = 0; i < (currentTime - initTime) / interval; i++) {
                 que++;
             }
             if (!(que > (qTotal - 1) * 2 + 1)) {
-                Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
-                if (que % 2 == 0) {
+                //Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
+                if (que % 2 == 0 && que >= 0) {
                     for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
                         if (i == 0) {
                             resetLocus();
@@ -703,15 +715,13 @@ public class MyActivity extends Activity {
                 } else {
                     resetLocus();
                 }
-            }
-
-            if (que > (qTotal - 1) * 2 + 1) {
+            } else {
                 framec = 0;
                 isStartGame = true;
             }
         }
 
-        public boolean judgeLocus (ThroughList answer, ThroughList through) {
+        public boolean judgeLocus(ThroughList answer, ThroughList through) {
             ArrayList<int[]> answerPaths = new ArrayList<int[]>();
             ArrayList<int[]> passedPaths = new ArrayList<int[]>();
 
@@ -727,16 +737,15 @@ public class MyActivity extends Activity {
 
                 boolean[] clearFrags = new boolean[answerPaths.size()];
                 for (int i = 0; i < answerPaths.size(); i++) {
-                    for ( int j = 0; j < passedPaths.size(); j++) {
+                    for (int j = 0; j < passedPaths.size(); j++) {
                         int[] tempPaths = {passedPaths.get(j)[1], passedPaths.get(j)[0]};
                         if (Arrays.equals(answerPaths.get(i), passedPaths.get(j)) || Arrays.equals(answerPaths.get(i), tempPaths)) {
                             clearFrags[i] = true;
                         }
                     }
                 }
-                //Log.v("echo", "clearC:"+clearC+", answerPaths.size():"+answerPaths.size());
                 int clearC = 0;
-                for (boolean flag: clearFrags) {
+                for (boolean flag : clearFrags) {
                     if (flag) {
                         clearC++;
                     }
@@ -746,7 +755,7 @@ public class MyActivity extends Activity {
         }
 
         public void setLocusStart(float x, float y, boolean doCD) {
-            Locus.add(new Point((int)x, (int)y));
+            Locus.add(new Point((int) x, (int) y));
             if (doCD) {
                 isCollision(x, y, x, y);
             }
@@ -763,7 +772,7 @@ public class MyActivity extends Activity {
                 Locus.add(locus);
             }
             */
-            Locus.add(new Point((int)x, (int)y));
+            Locus.add(new Point((int) x, (int) y));
             if (doCD) {
                 isCollision(x, y, Locus.get(Locus.size() - 2).x, Locus.get(Locus.size() - 2).y);
             }
@@ -773,7 +782,7 @@ public class MyActivity extends Activity {
         public void isCollision(float x0, float y0, float x1, float y1) {
             int collisionDot = -1;
             for (int i = 0; i < 11; i++) {
-                if(x0 == x1 && y0 == y1) {
+                if (x0 == x1 && y0 == y1) {
                     //円の方程式にて当たり判定
                     if ((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y) < (offsetX * 0.8 / 18 + 20) * (offsetX * 0.8 / 18 + 20) && state) {
                         isThrough[i] = true;
@@ -816,6 +825,7 @@ public class MyActivity extends Activity {
         float downX = 0, downY = 0;
         float memX = 0, memY = 0;
         boolean isReleased = false;
+
         public boolean onTouchEvent(MotionEvent event) {
             float upX = 0, upY = 0;
             float lim = 40;
@@ -824,7 +834,7 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_DOWN:
                     downX = event.getX();
                     downY = event.getY();
-                    if (doCount) {
+                    if (doCount && isStartGame) {
                         if (isReleased) {
                             resetLocus();
                             resetThrough();
@@ -839,11 +849,11 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_MOVE:
                     float currentX = event.getX();
                     float currentY = event.getY();
-                    if (doCount) {
+                    if (doCount && isStartGame) {
                         //if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
-                            setLocus(currentX, currentY, true);
-                            memX = currentX;
-                            memY = currentY;
+                        setLocus(currentX, currentY, true);
+                        memX = currentX;
+                        memY = currentY;
                         //}
                     }
                     break;
@@ -852,7 +862,7 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_CANCEL:
                     upX = event.getX();
                     upY = event.getY();
-                    if (doCount) {
+                    if (doCount && isStartGame) {
                         isReleased = true;
                         String list = "";
                         for (int throughDot : throughList[qNum].dots) {
