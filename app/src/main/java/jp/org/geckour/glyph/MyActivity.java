@@ -78,16 +78,39 @@ public class MyActivity extends Activity {
         int qNum = 0;
         int defTime = 200;
         HashMap<String, ThroughList> shapes = new HashMap<String, ThroughList>();
-        ArrayList<ArrayList<String>> shapesSets = new ArrayList<ArrayList<String>>();
+        ArrayList<ShapesSet> shapesSets = new ArrayList<ShapesSet>();
         boolean isFirstOnTimeup = true;
+        ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
+        boolean isStartGame = false;
 
         public class ThroughList {
             ArrayList<Integer> dots;
             public ThroughList(){
                 dots = new ArrayList<Integer>();
             }
-            public ThroughList(ArrayList<Integer> argDot){
-                dots = new ArrayList<Integer>(argDot);
+            public ThroughList(ArrayList<Integer> argDots){
+                dots = new ArrayList<Integer>(argDots);
+            }
+        }
+
+        public class ShapesSet {
+            ArrayList<String> strings;
+            ArrayList<String> correctString;
+            public ShapesSet(ArrayList<String> argStrings) {
+                strings = argStrings;
+            }
+            public ShapesSet(ArrayList<String> argStrings, ArrayList<String> argCorrectString) {
+                strings = argStrings;
+                correctString = argCorrectString;
+            }
+        }
+
+        public class Difficulty {
+            int qs = 0;
+            int time = 0;
+            public Difficulty(int argQs, int argTime) {
+                qs = argQs;
+                time = argTime;
             }
         }
 
@@ -97,394 +120,438 @@ public class MyActivity extends Activity {
             ArrayList<Integer> giveDot;
             int counter = 0;
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 2, 9, 8));
-            shapes.put("Abandon", new ThroughList(giveDot));
+            shapes.put("ABANDON", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 0, 1));
-            shapes.put("Adapt", new ThroughList(giveDot));
+            shapes.put("ADAPT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 3, 9));
-            shapes.put("Advance", new ThroughList(giveDot));
+            shapes.put("ADVANCE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 0, 4, 1));
-            shapes.put("Again", new ThroughList(giveDot));
+            shapes.put("AGAIN", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 6, 7, 8, 9, 10, 5));
-            shapes.put("All", new ThroughList(giveDot));
+            shapes.put("ALL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 1, 0));
-            shapes.put("Answer", new ThroughList(giveDot));
+            shapes.put("ANSWER", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 5, 4, 7));
-            shapes.put("Attack", new ThroughList(giveDot));
+            shapes.put("ATTACK", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 5, 4, 6, 1));
-            shapes.put("Avoid", new ThroughList(giveDot));
+            shapes.put("AVOID", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 1, 7));
-            shapes.put("Barrier", new ThroughList(giveDot));
+            shapes.put("BARRIER", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 2, 8, 1));
-            shapes.put("Begin", new ThroughList(giveDot));
+            shapes.put("BEGIN", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 3, 4, 1, 8));
-            shapes.put("Being", new ThroughList(giveDot));
+            shapes.put("BEING", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(0, 3, 4));
-            shapes.put("Body", new ThroughList(giveDot));
+            shapes.put("BODY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 4, 6));
-            shapes.put("Breathe", new ThroughList(giveDot));
+            shapes.put("BREATHE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 1, 0, 2, 9, 8));
-            shapes.put("Capture", new ThroughList(giveDot));
+            shapes.put("CAPTURE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 8, 1));
-            shapes.put("Change", new ThroughList(giveDot));
+            shapes.put("CHANGE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 10, 5, 6, 4, 0, 2, 8));
-            shapes.put("Chaos", new ThroughList(giveDot));
+            shapes.put("CHAOS", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 8));
-            shapes.put("Clear", new ThroughList(giveDot));
+            shapes.put("CLEAR", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 8, 9, 10, 5, 6, 7, 8));
-            shapes.put("Clear All", new ThroughList(giveDot));
+            shapes.put("CLEAR ALL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 0, 2));
-            shapes.put("Complex", new ThroughList(giveDot));
+            shapes.put("COMPLEX", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 1, 4, 7));
-            shapes.put("Conflict", new ThroughList(giveDot));
+            shapes.put("CONFLICT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 1, 7));
-            shapes.put("Consequence", new ThroughList(giveDot));
+            shapes.put("CONSEQUENCE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 6, 7, 8, 2, 3, 0, 4));
-            shapes.put("Contemplate", new ThroughList(giveDot));
+            shapes.put("CONTEMPLATE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(1, 4, 7));
-            shapes.put("Contract", new ThroughList(giveDot));
+            shapes.put("CONTRACT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 1));
-            shapes.put("Courage", new ThroughList(giveDot));
+            shapes.put("COURAGE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 4, 6));
-            shapes.put("Create", new ThroughList(giveDot));
+            shapes.put("CREATE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(0, 8, 2, 10, 3, 0));
-            shapes.put("Creativity", new ThroughList(giveDot));
+            shapes.put("CREATIVITY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 9, 10, 3, 0, 1, 7, 6, 4));
-            shapes.put("Mind", new ThroughList(giveDot));
+            shapes.put("MIND", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 3, 0, 8));
-            shapes.put("Danger", new ThroughList(giveDot));
+            shapes.put("DANGER", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 8, 1, 6));
-            shapes.put("Defend", new ThroughList(giveDot));
+            shapes.put("DEFEND", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 7, 8));
-            shapes.put("Destination", new ThroughList(giveDot));
+            shapes.put("DESTINATION", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 4, 1, 2, 8));
-            shapes.put("Destiny", new ThroughList(giveDot));
+            shapes.put("DESTINY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 1, 7));
-            shapes.put("Destroy", new ThroughList(giveDot));
+            shapes.put("DESTROY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 1, 7));
-            shapes.put("Die", new ThroughList(giveDot));
+            shapes.put("DIE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 1, 4, 6));
-            shapes.put("Difficult", new ThroughList(giveDot));
+            shapes.put("DIFFICULT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 7, 8, 9));
-            shapes.put("Discover", new ThroughList(giveDot));
+            shapes.put("DISCOVER", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 10, 9));
-            shapes.put("Distance", new ThroughList(giveDot));
+            shapes.put("DISTANCE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 0, 2, 8));
-            shapes.put("Easy", new ThroughList(giveDot));
+            shapes.put("EASY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 5, 6, 1, 8));
-            shapes.put("End", new ThroughList(giveDot));
+            shapes.put("END", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 7, 6, 5, 3, 0, 4, 3));
-            shapes.put("Enlightened_A", new ThroughList(giveDot));
+            shapes.put("ENLIGHTENED_A", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 8, 7, 6, 5, 3, 0, 4, 3));
-            shapes.put("Enlightened_B", new ThroughList(giveDot));
+            shapes.put("ENLIGHTENED_B", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 4, 1));
-            shapes.put("Equal", new ThroughList(giveDot));
+            shapes.put("EQUAL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 6, 4, 3, 2));
-            shapes.put("Escape", new ThroughList(giveDot));
+            shapes.put("ESCAPE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 3, 2));
-            shapes.put("Evolution", new ThroughList(giveDot));
+            shapes.put("EVOLUTION", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 4, 1));
-            shapes.put("Failure", new ThroughList(giveDot));
+            shapes.put("FAILURE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 1, 6));
-            shapes.put("Fear", new ThroughList(giveDot));
+            shapes.put("FEAR", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 6, 7));
-            shapes.put("Follow", new ThroughList(giveDot));
+            shapes.put("FOLLOW", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 9));
-            shapes.put("Forget", new ThroughList(giveDot));
+            shapes.put("FORGET", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 1, 7));
-            shapes.put("Future", new ThroughList(giveDot));
+            shapes.put("FUTURE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 2));
-            shapes.put("Gain", new ThroughList(giveDot));
+            shapes.put("GAIN", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 1, 4, 6));
-            shapes.put("Government", new ThroughList(giveDot));
+            shapes.put("GOVERNMENT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2));
-            shapes.put("Grow", new ThroughList(giveDot));
+            shapes.put("GROW", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(7, 1, 0, 3, 5, 4, 0));
-            shapes.put("Harm", new ThroughList(giveDot));
+            shapes.put("HARM", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(0, 1, 8, 2, 0, 4, 5, 3, 0));
-            shapes.put("Harmony", new ThroughList(giveDot));
+            shapes.put("HARMONY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(1, 0, 2, 8));
-            shapes.put("Have", new ThroughList(giveDot));
+            shapes.put("HAVE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 2, 1));
-            shapes.put("Help", new ThroughList(giveDot));
+            shapes.put("HELP", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 5, 6, 1, 8));
-            shapes.put("End", new ThroughList(giveDot));
+            shapes.put("END", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 6, 1, 2));
-            shapes.put("Hide", new ThroughList(giveDot));
+            shapes.put("HIDE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 3, 4, 8));
             shapes.put("I", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(1, 7));
-            shapes.put("Ignore", new ThroughList(giveDot));
+            shapes.put("IGNORE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 0, 2, 3, 0));
-            shapes.put("Imperfect", new ThroughList(giveDot));
+            shapes.put("IMPERFECT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 1));
-            shapes.put("Improve", new ThroughList(giveDot));
+            shapes.put("IMPROVE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 3, 2, 0));
-            shapes.put("Impure", new ThroughList(giveDot));
+            shapes.put("IMPURE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 3, 10, 9, 2, 0, 8));
-            shapes.put("Interrupt", new ThroughList(giveDot));
+            shapes.put("INTERRUPT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 3, 10, 9, 8));
-            shapes.put("Journey", new ThroughList(giveDot));
+            shapes.put("JOURNEY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 3, 0, 4, 8));
-            shapes.put("Knowledge", new ThroughList(giveDot));
+            shapes.put("KNOWLEDGE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 10, 9, 2, 8));
-            shapes.put("Lead", new ThroughList(giveDot));
+            shapes.put("LEAD", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 10, 5, 6, 4, 1, 7));
-            shapes.put("Legacy", new ThroughList(giveDot));
+            shapes.put("LEGACY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 4));
-            shapes.put("Less", new ThroughList(giveDot));
+            shapes.put("LESS", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 0, 4, 6, 5));
-            shapes.put("Liberate", new ThroughList(giveDot));
+            shapes.put("LIBERATE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 0, 1, 4, 0));
-            shapes.put("Lie", new ThroughList(giveDot));
+            shapes.put("LIE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 0, 4, 6));
-            shapes.put("Live Again", new ThroughList(giveDot));
+            shapes.put("LIVE AGAIN", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(6, 1));
-            shapes.put("Lose", new ThroughList(giveDot));
+            shapes.put("LOSE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 0, 1, 6));
-            shapes.put("Message", new ThroughList(giveDot));
+            shapes.put("MESSAGE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 3, 0, 8));
-            shapes.put("Idea", new ThroughList(giveDot));
+            shapes.put("IDEA", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 1));
-            shapes.put("More", new ThroughList(giveDot));
+            shapes.put("MORE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 5, 4, 3, 2));
-            shapes.put("Mystery", new ThroughList(giveDot));
+            shapes.put("MYSTERY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 4, 1, 7));
-            shapes.put("Nature", new ThroughList(giveDot));
+            shapes.put("NATURE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 1, 7));
-            shapes.put("New", new ThroughList(giveDot));
+            shapes.put("NEW", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 1));
-            shapes.put("No", new ThroughList(giveDot));
+            shapes.put("NO", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 9, 2, 0, 8));
-            shapes.put("Nourish", new ThroughList(giveDot));
+            shapes.put("NOURISH", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2));
-            shapes.put("Old", new ThroughList(giveDot));
+            shapes.put("OLD", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 1, 8));
-            shapes.put("Open", new ThroughList(giveDot));
+            shapes.put("OPEN", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 1, 8, 9, 10, 5, 6, 7, 8));
-            shapes.put("Open All", new ThroughList(giveDot));
+            shapes.put("OPEN ALL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 4, 6, 7, 1, 2, 9, 10));
-            shapes.put("Opening", new ThroughList(giveDot));
+            shapes.put("OPENING", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 9));
-            shapes.put("Past", new ThroughList(giveDot));
+            shapes.put("PAST", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 2, 9));
-            shapes.put("Path", new ThroughList(giveDot));
+            shapes.put("PATH", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 2, 9, 8, 7, 1, 0));
-            shapes.put("Perfection", new ThroughList(giveDot));
+            shapes.put("PERFECTION", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 4, 5, 3, 0, 1, 7));
-            shapes.put("Perspective", new ThroughList(giveDot));
+            shapes.put("PERSPECTIVE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 1, 7, 6));
-            shapes.put("Potential", new ThroughList(giveDot));
+            shapes.put("POTENTIAL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 0, 4, 1, 2, 8, 1));
-            shapes.put("Presence", new ThroughList(giveDot));
+            shapes.put("PRESENCE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 2, 1, 4));
-            shapes.put("Present", new ThroughList(giveDot));
+            shapes.put("PRESENT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 4, 1, 0));
-            shapes.put("Pure", new ThroughList(giveDot));
+            shapes.put("PURE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 5, 4));
-            shapes.put("Pursue", new ThroughList(giveDot));
+            shapes.put("PURSUE", new ThroughList(giveDot));
+            shapes.put("" + counter++, new ThroughList(giveDot));
+            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 3, 2, 9));
+            shapes.put("CHASE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 3, 2));
-            shapes.put("Question", new ThroughList(giveDot));
+            shapes.put("QUESTION", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 0, 1, 7));
-            shapes.put("React", new ThroughList(giveDot));
+            shapes.put("REACT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 0, 4, 6, 7));
-            shapes.put("Rebel", new ThroughList(giveDot));
+            shapes.put("REBEL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(0, 3, 10, 5, 0));
-            shapes.put("Recharge", new ThroughList(giveDot));
+            shapes.put("RECHARGE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 5, 0, 8, 2));
-            shapes.put("Resistance_A", new ThroughList(giveDot));
+            shapes.put("RESISTANCE_A", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 5, 0, 8, 1));
-            shapes.put("Resistance_B", new ThroughList(giveDot));
+            shapes.put("RESISTANCE_B", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 1, 7, 8));
-            shapes.put("Restraint", new ThroughList(giveDot));
+            shapes.put("RESTRAINT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 7));
-            shapes.put("Retreat", new ThroughList(giveDot));
+            shapes.put("RETREAT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 4, 7));
-            shapes.put("Safety", new ThroughList(giveDot));
+            shapes.put("SAFETY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 1, 6));
-            shapes.put("Save", new ThroughList(giveDot));
+            shapes.put("SAVE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 3));
-            shapes.put("See", new ThroughList(giveDot));
+            shapes.put("SEE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(0, 4, 3, 2, 1));
-            shapes.put("Seek", new ThroughList(giveDot));
+            shapes.put("SEEK", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 8, 7));
-            shapes.put("Self", new ThroughList(giveDot));
+            shapes.put("SELF", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 0, 4, 1, 7));
-            shapes.put("Separate", new ThroughList(giveDot));
+            shapes.put("SEPARATE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 5, 4, 1, 7));
-            shapes.put("Shaper", new ThroughList(giveDot));
+            shapes.put("SHAPER", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(7, 1, 2, 9, 8));
-            shapes.put("Share", new ThroughList(giveDot));
+            shapes.put("SHARE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 1));
-            shapes.put("Simple", new ThroughList(giveDot));
+            shapes.put("SIMPLE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 4, 1, 8));
-            shapes.put("Soul", new ThroughList(giveDot));
+            shapes.put("SOUL", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 1, 7));
-            shapes.put("Stability", new ThroughList(giveDot));
+            shapes.put("STABILITY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 4, 1, 2));
-            shapes.put("Strong", new ThroughList(giveDot));
+            shapes.put("STRONG", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 4, 3, 0));
-            shapes.put("Together", new ThroughList(giveDot));
+            shapes.put("TOGETHER", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 1, 4, 0, 2, 3));
-            shapes.put("Truth", new ThroughList(giveDot));
+            shapes.put("TRUTH", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(0, 1, 6));
-            shapes.put("Use", new ThroughList(giveDot));
+            shapes.put("USE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(8, 3, 5, 4, 8));
-            shapes.put("Victory", new ThroughList(giveDot));
+            shapes.put("VICTORY", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 8, 1));
-            shapes.put("Want", new ThroughList(giveDot));
+            shapes.put("WANT", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 8));
-            shapes.put("We", new ThroughList(giveDot));
+            shapes.put("WE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 4, 1));
-            shapes.put("Weak", new ThroughList(giveDot));
+            shapes.put("WEAK", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 0, 1, 6));
-            shapes.put("Worth", new ThroughList(giveDot));
+            shapes.put("WORTH", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 4, 1, 0, 2));
             shapes.put("XM", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 2, 1, 5));
-            shapes.put("You", new ThroughList(giveDot));
+            shapes.put("YOU", new ThroughList(giveDot));
             shapes.put("" + counter, new ThroughList(giveDot));
 
             ArrayList<String> giveStrings;
-            giveStrings = new ArrayList<String>(Arrays.asList("Past", "Present", "Future"));
-            shapesSets.add(giveStrings);
+            ArrayList<String> collectStrings;
+            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "PAST", "PRESENT", "FUTURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "PURE", "FUTURE", "BEING", "GOVERNMENT"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "HUMAN", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "SELF", "AVOID", "BEING", "LIE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("OUTSIDE", "", "", "HUMAN", "LIE"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "GOVERNMENT", "AGAIN", "FAILURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "REPEAT", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE", "NO", "ATTACK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "NOT", "WAR"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURSUE", "SAFETY"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
 
-            //qTotal = (int)(Math.random() * 4 + 1);
-            qTotal = 3;
-            throughList = new ThroughList[qTotal];
-            answerThroughList = new ThroughList[qTotal];
-            for (int i = 0; i < qTotal; i++) {
-                throughList[i] = new ThroughList();
-                int randomVal = (int)(Math.random()*shapesSets.size());
-                while (shapesSets.get(randomVal).size() != qTotal) {
-                    randomVal = (int)(Math.random()*shapesSets.size());
+            int giveTime = 200;
+            int giveQs = 1;
+            for (int i = 0; i < 9; i++) {
+                if (i > 3) {
+                    giveTime -= 10;
                 }
-                answerThroughList[i] = shapes.get(shapesSets.get(randomVal).get(i));
+                if (i == 2 || i == 3 || i == 6 || i == 8) {
+                    giveQs++;
+                }
+                difficulty.add(i, new Difficulty(giveQs, giveTime));
+            }
+
+            int level = (int)(Math.random() * 9);
+            defTime = difficulty.get(level).time;
+            if (difficulty.get(level).qs > 1) {
+                int randomVal = (int) (Math.random() * shapesSets.size());
+                while (shapesSets.get(randomVal).strings.size() != difficulty.get(level).qs) {
+                    randomVal = (int) (Math.random() * shapesSets.size());
+                }
+                qTotal = shapesSets.get(randomVal).strings.size();
+                Log.v("echo", "qTotal:" + qTotal);
+                throughList = new ThroughList[qTotal];
+                answerThroughList = new ThroughList[qTotal];
+                for (int i = 0; i < qTotal; i++) {
+                    throughList[i] = new ThroughList();
+                    answerThroughList[i] = shapes.get(shapesSets.get(randomVal).strings.get(i));
                 /*
                 int randomVal = (int)(Math.random()*counter);
                 answerThroughList[i] = shapes.get("" + randomVal);
                 */
+                }
+            } else {
+                qTotal = 1;
+                int randomVal = (int)(Math.random() * shapes.size());
+                throughList = new ThroughList[qTotal];
+                answerThroughList = new ThroughList[qTotal];
+                throughList[0] = new ThroughList();
+                answerThroughList[0] = shapes.get("" + randomVal);
             }
 
             display.getSize(point);
@@ -570,6 +637,7 @@ public class MyActivity extends Activity {
                     c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
                 }
             }
+
             for (Point point: Locus) {
                 p.setColor(Color.YELLOW);
                 p.setStyle(Paint.Style.FILL);
@@ -579,51 +647,87 @@ public class MyActivity extends Activity {
             p.setStyle(Paint.Style.STROKE);
             c.drawPath(locusPath, p);
 
-            p.setTextSize(50);
-            p.setColor(Color.WHITE);
-            int leftTime = defTime - framec / 4;
-            if (leftTime <= 0) {
-                doCount = false;
-                if (isFirstOnTimeup) {
-                    for (int i = 0; i < qTotal; i++) {
-                        Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
-                    }
-                    isFirstOnTimeup = false;
-                }
+            if (!isStartGame) {
+                showAnswer(c, 0, framec);
             }
-            c.drawText(leftTime / 10 + "." + leftTime % 10, offsetX, offsetY / 6, p);
+
+            if (isStartGame) {
+                p.setTextSize(50);
+                p.setColor(Color.WHITE);
+                int leftTime = defTime - framec / 4;
+                if (leftTime <= 0) {
+                    doCount = false;
+                    if (isFirstOnTimeup) {
+                        for (int i = 0; i < qTotal; i++) {
+                            Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                        }
+                        isFirstOnTimeup = false;
+                    }
+                }
+                c.drawText(leftTime / 10 + "." + leftTime % 10, offsetX, offsetY / 6, p);
+            }
 
             if (doCount) {
                 framec++;
             } else {
                 float width = (qTotal - 1) * dotRadius * 6;
                 for (int i = 0; i < qTotal; i++) {
+                    p.setColor(Color.WHITE);
                     if (judgeLocus(answerThroughList[i], throughList[i])) {
-                        p.setColor(Color.WHITE);
+                        p.setStyle(Paint.Style.FILL);
                     } else {
-                        p.setColor(Color.BLACK);
+                        p.setStyle(Paint.Style.STROKE);
                     }
-                    p.setStyle(Paint.Style.FILL);
                     c.drawCircle(offsetX - width / 2 + i * dotRadius * 6, offsetY / 4, dotRadius * 3 / 2, p);
                 }
             }
         }
 
-        public void showAnswer(Canvas c) {
+        public void showAnswer(Canvas c, int initTime, int currentTime) {
+            int interval = 20;
+            int que = 0;
+            if ((currentTime - initTime) / interval < (qTotal - 1) * 2 + 1) {
+                for (int i = 0; i < (currentTime - initTime) / interval; i++) {
+                    que++;
+                }
+            } else {
+                que = (qTotal - 1) * 2 + 1;
+                Log.v("echo", "que:" + que +", qTotal:" + qTotal);
+            }
+            if (!(que / 2 == qTotal - 1 && que % 2 == 1)) {
+                if (que % 2 == 0) {
+                    for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
+                        if (i == 0) {
+                            resetLocus();
+                            setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                        } else {
+                            setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                        }
+                    }
+                } else {
+                    resetLocus();
+                }
+                Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
+            }
 
+            if (que / 2 == qTotal - 1 && que % 2 == 1) {
+                resetLocus();
+                framec = 0;
+                isStartGame = true;
+            }
         }
 
-        public boolean judgeLocus (ThroughList answer, ThroughList throughed) {
+        public boolean judgeLocus (ThroughList answer, ThroughList through) {
             ArrayList<int[]> answerPaths = new ArrayList<int[]>();
             ArrayList<int[]> passedPaths = new ArrayList<int[]>();
 
-            if (answer.dots.size() != throughed.dots.size()) {
+            if (answer.dots.size() != through.dots.size()) {
                 return false;
             } else {
                 for (int i = 0; i < answer.dots.size() - 1; i++) {
                     int[] path0 = {answer.dots.get(i), answer.dots.get(i + 1)};
                     answerPaths.add(path0);
-                    int[] path1 = {throughed.dots.get(i), throughed.dots.get(i + 1)};
+                    int[] path1 = {through.dots.get(i), through.dots.get(i + 1)};
                     passedPaths.add(path1);
                 }
 
@@ -638,8 +742,8 @@ public class MyActivity extends Activity {
                 }
                 //Log.v("echo", "clearC:"+clearC+", answerPaths.size():"+answerPaths.size());
                 int clearC = 0;
-                for (int i = 0; i < clearFrags.length; i++) {
-                    if (clearFrags[i]) {
+                for (boolean flag: clearFrags) {
+                    if (flag) {
                         clearC++;
                     }
                 }
