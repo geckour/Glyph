@@ -2,6 +2,7 @@
 <resources>
     <color name="background">#000000</color>
     <color name="dots">#ffffff</color>
-    <color name="button">#40a080</color>
-    <color name="button_pressed">#80ffa0</color>
+    <color name="button">#5002ffc5</color>
+    <color name="button_pressed">#b002ffc5</color>
+    <color name="button_text">#ffffff</color>
 </resources>

@@ -3,6 +3,8 @@ package jp.org.geckour.glyph;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -12,6 +14,7 @@ import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -27,15 +30,39 @@ import java.util.TimerTask;
 
 
 public class MyActivity extends Activity {
+    SharedPreferences sp;
+    int min = 0;
+    int max = 8;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MyView view = new MyView(this);
-        setContentView(view);
 
         ActionBar actionBar = getActionBar();
         actionBar.hide();
+
+        sp = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sp.getString("min_level", "null").equals("null")) {
+            sp.edit().putString("min_level", "0").apply();
+        }
+        try {
+            min = Integer.parseInt(sp.getString("min_level", "0"));
+            Log.v("echo", "min:" + min);
+        } catch (Exception e) {
+            Log.v("error", "Can't translate minimum-level to int.");
+        }
+        if (sp.getString("max_level", "null").equals("null")) {
+            sp.edit().putString("max_level", "8").apply();
+        }
+        try {
+            max = Integer.parseInt(sp.getString("max_level", "8"));
+            Log.v("echo", "max:" + max);
+        } catch (Exception e) {
+            Log.v("error", "Can't translate maximum-level to int.");
+        }
+
+        MyView view = new MyView(this);
+        setContentView(view);
     }
 
 
@@ -58,6 +85,15 @@ public class MyActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        //Pref.javaからの戻り値の場合
+        if (requestCode == 0){
+            if (resultCode == Activity.RESULT_OK) {
+                Log.v("echo", "level is changed.");
+            }
+        }
+    }
+
     class MyView extends View {
         private final Handler handler = new Handler();
         boolean state = true;
@@ -72,7 +108,7 @@ public class MyActivity extends Activity {
         ArrayList<Point> Locus = new ArrayList<Point>();
         Path locusPath = new Path();
         int framec = 0;
-        int minLv = 0, maxLv = 8;
+        int minLv = min, maxLv = max;
         boolean[] isThrough = new boolean[11];
         ThroughList[] throughList;
         ThroughList[] answerThroughList;
@@ -84,6 +120,7 @@ public class MyActivity extends Activity {
         boolean isFirstOnTimeup = true;
         ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
         boolean isStartGame = false;
+        boolean isEndGame = false;
         Typeface typeface;
 
         public class ThroughList {
@@ -100,7 +137,7 @@ public class MyActivity extends Activity {
 
         public class ShapesSet {
             ArrayList<String> strings;
-            ArrayList<String> correctString;
+            ArrayList<String> correctStrings;
 
             public ShapesSet(ArrayList<String> argStrings) {
                 strings = argStrings;
@@ -108,7 +145,23 @@ public class MyActivity extends Activity {
 
             public ShapesSet(ArrayList<String> argStrings, ArrayList<String> argCorrectString) {
                 strings = argStrings;
-                correctString = argCorrectString;
+                correctStrings = argCorrectString;
+            }
+
+            public ArrayList<String> getCorrectStrings() {
+                if (correctStrings != null) {
+                    ArrayList<String> tempStrings = new ArrayList<String>();
+                    for (int i = 0; i < correctStrings.size(); i++) {
+                        if (correctStrings.get(i).equals("")) {
+                            tempStrings.add(strings.get(i));
+                        } else {
+                            tempStrings.add(correctStrings.get(i));
+                        }
+                    }
+                    return tempStrings;
+                } else {
+                    return strings;
+                }
             }
         }
 
@@ -210,6 +263,9 @@ public class MyActivity extends Activity {
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(5, 3, 0, 8));
             shapes.put("DANGER", new ThroughList(giveDot));
+            shapes.put("" + counter++, new ThroughList(giveDot));
+            giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 0, 2, 8));
+            shapes.put("DATA", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 8, 1, 6));
             shapes.put("DEFEND", new ThroughList(giveDot));
@@ -452,7 +508,7 @@ public class MyActivity extends Activity {
             shapes.put("SEPARATE", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 5, 4, 1, 7));
-            shapes.put("SHAPER", new ThroughList(giveDot));
+            shapes.put("SHAPERS", new ThroughList(giveDot));
             shapes.put("" + counter++, new ThroughList(giveDot));
             giveDot = new ArrayList<Integer>(Arrays.asList(7, 1, 2, 9, 8));
             shapes.put("SHARE", new ThroughList(giveDot));
@@ -502,8 +558,9 @@ public class MyActivity extends Activity {
 
             ArrayList<String> giveStrings;
             ArrayList<String> collectStrings;
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "PAST", "PRESENT", "FUTURE"));
-            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
+            //#5
+            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "SHAPERS", "TOGETHER", "CREATE", "DESTINY"));
+            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "PURE", "FUTURE", "BEING", "GOVERNMENT"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "HUMAN", "CIVILIZATION"));
@@ -511,16 +568,103 @@ public class MyActivity extends Activity {
             giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "SELF", "AVOID", "BEING", "LIE"));
             collectStrings = new ArrayList<String>(Arrays.asList("OUTSIDE", "", "", "HUMAN", "LIE"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("WEAK", "BEING", "DESTINY", "DESTROY", "GOVERNMENT"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DEFEND", "BEING", "GOVERNMENT", "SHAPERS", "LIE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "NO", "XM", "LOSE", "SELF"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "INSIDE", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "OPENING", "DATA", "CREATE", "CHAOS"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            /////checked/////
+            //#4
+            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "PAST", "PRESENT", "FUTURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "GOVERNMENT", "AGAIN", "FAILURE"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "REPEAT", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE", "NO", "ATTACK"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "", "NOT", "WAR"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "OPENING", "ATTACK", "WEAK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "BODY", "PURSUE", "JOURNEY"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("TRUTH", "CREATIVITY", "DISCOVER", "XM"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "IDEA", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "AGAIN", "JOURNEY", "AGAIN"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("COURAGE", "ATTACK", "SHAPERS", "FUTURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "WAR", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "COMPLEX", "SHAPERS", "LIE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "GOVERNMENT", "IMPURE", "WEAK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("MORE", "CREATIVITY", "LESS", "SOUL"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "MIND", "", "SPIRIT"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("LESS", "TRUTH", "MORE", "CHAOS"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            /////checked/////
+            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "COMPLEX", "SHAPERS", "GOVERNMENT"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            //#3
             giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURSUE", "SAFETY"));
             shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "XM", "OPENING"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            /////checked/////
+            giveStrings = new ArrayList<String>(Arrays.asList("OPEN", "BEING", "WEAK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("ACCEPT", "HUMAN", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "ENLIGHTENMENT_A"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "RESISTANCE_A"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "PURE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AGAIN", "JOURNEY", "DISTANCE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "OUTSIDE"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ALL", "GOVERNMENT", "CHAOS"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "DIFFICULT", "FUTURE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "ADVANCE", "PRESENT"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "OPENING", "EVOLUTION"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "SUCCESS"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "SIMPLE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AGAIN", "SEEK", "SAFETY"));
+            collectStrings = new ArrayList<String>(Arrays.asList("REPEAT", "SEARCH", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            //#2
             giveStrings = new ArrayList<String>(Arrays.asList("PURE", "TRUTH"));
             shapesSets.add(new ShapesSet(giveStrings));
+            /////checked/////
+            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "EVOLUTION"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "OPENING"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+
+
 
             int giveTime = 200;
             int giveQs = 1;
@@ -535,9 +679,11 @@ public class MyActivity extends Activity {
             }
 
             int level = (int) (Math.random() * (maxLv - minLv + 1) + minLv);
+            //int level = 8;
             defTime = difficulty.get(level).time;
             if (difficulty.get(level).qs > 1) {
                 int randomVal = (int) (Math.random() * shapesSets.size());
+                //int randomVal = 0;
                 while (shapesSets.get(randomVal).strings.size() != difficulty.get(level).qs) {
                     randomVal = (int) (Math.random() * shapesSets.size());
                 }
@@ -548,11 +694,8 @@ public class MyActivity extends Activity {
                 for (int i = 0; i < qTotal; i++) {
                     throughList[i] = new ThroughList();
                     answerThroughList[i] = shapes.get(shapesSets.get(randomVal).strings.get(i));
-                /*
-                int randomVal = (int)(Math.random()*counter);
-                answerThroughList[i] = shapes.get("" + randomVal);
-                */
                 }
+                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             } else {
                 qTotal = 1;
                 Log.v("echo", "qTotal:" + qTotal);
@@ -561,6 +704,7 @@ public class MyActivity extends Activity {
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
                 answerThroughList[0] = shapes.get("" + randomVal);
+                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             }
 
             display.getSize(point);
@@ -625,6 +769,10 @@ public class MyActivity extends Activity {
             c.drawPath(path, p);
             */
 
+            if (!isStartGame) {
+                showAnswer(c, 0, framec);
+            }
+
             float dotRadius = (float) radius / 18;
             for (int i = 0; i < 11; i++) {
                 int alpha = 0;
@@ -635,7 +783,11 @@ public class MyActivity extends Activity {
                     if (j >= 16 && j % 2 == 0) {
                         alpha++;
                     }
-                    p.setColor(Color.argb(alpha, 150, 120, 150));
+                    if (isThrough[i]) {
+                        p.setColor(Color.argb(alpha, 220, 175, 50));
+                    } else {
+                        p.setColor(Color.argb(alpha, 150, 120, 150));
+                    }
                     p.setStyle(Paint.Style.FILL);
                     c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 36 - j, p);
                 }
@@ -658,10 +810,6 @@ public class MyActivity extends Activity {
             p.setStyle(Paint.Style.STROKE);
             c.drawPath(locusPath, p);
 
-            if (!isStartGame) {
-                showAnswer(0, framec);
-            }
-
             if (isStartGame) {
                 p.setTextSize(50);
                 p.setTypeface(typeface);
@@ -669,6 +817,7 @@ public class MyActivity extends Activity {
                 int leftTime = defTime - framec / 4;
                 if (leftTime <= 0) {
                     doCount = false;
+                    isEndGame = true;
                     if (isFirstOnTimeup) {
                         for (int i = 0; i < qTotal; i++) {
                             Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
@@ -695,10 +844,18 @@ public class MyActivity extends Activity {
             }
         }
 
-        public void showAnswer(int initTime, int currentTime) {
-            int interval = 30;
+        public void showAnswer(Canvas c, int initTime, int currentTime) {
+            int margin = 30;
+            int showLength = 49;
+            int hideLength = 1;
             int que = -1;
-            for (int i = 0; i < (currentTime - initTime) / interval; i++) {
+            if (currentTime - initTime > margin) {
+                que++;
+            }
+            if (currentTime - initTime - margin >= 0) {
+                que = (currentTime - initTime - margin) * 2 / (showLength + hideLength);
+            }
+            if ((currentTime - initTime - margin) % 2 >= showLength) {
                 que++;
             }
             if (!(que > (qTotal - 1) * 2 + 1)) {
@@ -715,10 +872,35 @@ public class MyActivity extends Activity {
                 } else {
                     resetLocus();
                 }
+            } else if (!(que > (qTotal - 1) * 2 + 1 + 6)) {
+                showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
             } else {
                 framec = 0;
                 isStartGame = true;
             }
+        }
+
+        public void showFlash(Canvas c, int initTime, int currentTime, int argInterval) {
+            int que = 0;
+            int interval = argInterval;
+            int alpha = 255;
+            //Log.v("echo", "initTime:" + initTime + ", currentTime:" + currentTime);
+
+            que = (currentTime - initTime) / interval;
+
+            if (que == 0) {
+                alpha = 150 - 150 * (currentTime - initTime) / interval;
+            }
+            if (que == 1) {
+                alpha = 200 - 200 * (currentTime - initTime) / interval;
+            }
+            p.setColor(Color.argb(alpha, 220, 175, 50));
+            if (que == 2) {
+                alpha = 255 - 255 * (currentTime - initTime) / interval;
+                p.setColor(Color.argb(alpha, 255, 255, 255));
+            }
+            p.setStyle(Paint.Style.FILL);
+            c.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, p);
         }
 
         public boolean judgeLocus(ThroughList answer, ThroughList through) {
@@ -851,6 +1033,9 @@ public class MyActivity extends Activity {
                     float currentY = event.getY();
                     if (doCount && isStartGame) {
                         //if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
+                        if (Locus.size() == 0) {
+                            setLocusStart(currentX, currentY, true);
+                        }
                         setLocus(currentX, currentY, true);
                         memX = currentX;
                         memY = currentY;
@@ -883,6 +1068,7 @@ public class MyActivity extends Activity {
                             qNum++;
                         } else {
                             doCount = false;
+                            isEndGame = true;
                             for (int i = 0; i < qTotal; i++) {
                                 Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
                             }
