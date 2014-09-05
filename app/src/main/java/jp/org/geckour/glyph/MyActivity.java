@@ -42,17 +42,11 @@ public class MyActivity extends Activity {
         actionBar.hide();
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
-        if (sp.getString("min_level", "null").equals("null")) {
-            sp.edit().putString("min_level", "0").apply();
-        }
         try {
             min = Integer.parseInt(sp.getString("min_level", "0"));
             Log.v("echo", "min:" + min);
         } catch (Exception e) {
             Log.v("error", "Can't translate minimum-level to int.");
-        }
-        if (sp.getString("max_level", "null").equals("null")) {
-            sp.edit().putString("max_level", "8").apply();
         }
         try {
             max = Integer.parseInt(sp.getString("max_level", "8"));
@@ -119,6 +113,7 @@ public class MyActivity extends Activity {
         ArrayList<ShapesSet> shapesSets = new ArrayList<ShapesSet>();
         boolean isFirstOnTimeup = true;
         ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
+        boolean isLastFlash = false;
         boolean isStartGame = false;
         boolean isEndGame = false;
         Typeface typeface;
@@ -849,6 +844,7 @@ public class MyActivity extends Activity {
             int showLength = 49;
             int hideLength = 1;
             int que = -1;
+
             if (currentTime - initTime > margin) {
                 que++;
             }
@@ -858,45 +854,77 @@ public class MyActivity extends Activity {
             if ((currentTime - initTime - margin) % 2 >= showLength) {
                 que++;
             }
-            if (!(que > (qTotal - 1) * 2 + 1)) {
-                //Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
-                if (que % 2 == 0 && que >= 0) {
-                    for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
-                        if (i == 0) {
-                            resetLocus();
-                            setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
-                        } else {
-                            setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+            if (isLastFlash) {
+                que++;
+            }
+            switch (que - (qTotal * 2 - 1)) {
+                default:
+                    //Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
+                    if (que % 2 == 0 && que >= 0) {
+                        for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
+                            if (i == 0) {
+                                resetLocus();
+                                setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                            } else {
+                                setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                            }
                         }
+                    } else {
+                        resetLocus();
                     }
-                } else {
-                    resetLocus();
-                }
-            } else if (!(que > (qTotal - 1) * 2 + 1 + 6)) {
-                showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
-            } else {
-                framec = 0;
-                isStartGame = true;
+                    break;
+
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
+                    break;
+
+                case 5:
+                    showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
+                    if (currentTime - initTime >= (qTotal + 2.2) * (showLength + hideLength) + margin) {
+                        isLastFlash = true;
+                    }
+                    break;
+                case 6:
+                case 7:
+                    framec = 0;
+                    isStartGame = true;
+                    break;
             }
         }
 
-        public void showFlash(Canvas c, int initTime, int currentTime, int argInterval) {
-            int que = 0;
-            int interval = argInterval;
+        public void showFlash(Canvas c, int initTime, int currentTime, int interval) {
+            int que;
+            int margin = interval / 20;
+            int diffTime = currentTime - initTime;
             int alpha = 255;
             //Log.v("echo", "initTime:" + initTime + ", currentTime:" + currentTime);
 
-            que = (currentTime - initTime) / interval;
+            que = (diffTime) / interval;
 
             if (que == 0) {
-                alpha = 150 - 150 * (currentTime - initTime) / interval;
+                if (diffTime < margin) {
+                    alpha = 150 * diffTime / margin;
+                } else {
+                    alpha = 150 - 150 * diffTime / interval;
+                }
             }
             if (que == 1) {
-                alpha = 200 - 200 * (currentTime - initTime) / interval;
+                if (diffTime < margin) {
+                    alpha = 200 * diffTime / margin;
+                } else {
+                    alpha = 200 - 200 * diffTime / interval;
+                }
             }
             p.setColor(Color.argb(alpha, 220, 175, 50));
             if (que == 2) {
-                alpha = 255 - 255 * (currentTime - initTime) / interval;
+                if (diffTime < margin) {
+                    alpha = 255 * diffTime / margin;
+                } else {
+                    alpha = 255;
+                }
                 p.setColor(Color.argb(alpha, 255, 255, 255));
             }
             p.setStyle(Paint.Style.FILL);

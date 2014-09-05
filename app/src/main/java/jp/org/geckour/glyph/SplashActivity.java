@@ -3,15 +3,26 @@ package jp.org.geckour.glyph;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 
 public class SplashActivity extends Activity {
+    SharedPreferences sp;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
+
+        sp = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sp.getString("min_level", "null").equals("null")) {
+            sp.edit().putString("min_level", "0").apply();
+        }
+        if (sp.getString("max_level", "null").equals("null")) {
+            sp.edit().putString("max_level", "8").apply();
+        }
 
         ActionBar actionBar = getActionBar();
         actionBar.hide();
