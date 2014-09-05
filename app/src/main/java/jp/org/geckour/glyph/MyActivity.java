@@ -102,7 +102,6 @@ public class MyActivity extends Activity {
         ArrayList<Point> Locus = new ArrayList<Point>();
         Path locusPath = new Path();
         int framec = 0;
-        int minLv = min, maxLv = max;
         boolean[] isThrough = new boolean[11];
         ThroughList[] throughList;
         ThroughList[] answerThroughList;
@@ -113,10 +112,10 @@ public class MyActivity extends Activity {
         ArrayList<ShapesSet> shapesSets = new ArrayList<ShapesSet>();
         boolean isFirstOnTimeup = true;
         ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
-        boolean isLastFlash = false;
         boolean isStartGame = false;
         boolean isEndGame = false;
         Typeface typeface;
+        ArrayList<String> correctStrings;
 
         public class ThroughList {
             ArrayList<Integer> dots;
@@ -554,80 +553,123 @@ public class MyActivity extends Activity {
             ArrayList<String> giveStrings;
             ArrayList<String> collectStrings;
             //#5
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "SHAPERS", "TOGETHER", "CREATE", "DESTINY"));
-            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", "", ""));
+            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "NO", "XM", "LOSE", "SELF"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "INSIDE", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CLEAR", "CREATIVITY", "LIBERATE", "BARRIER", "BODY"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "MIND", "", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "PURE", "FUTURE", "BEING", "GOVERNMENT"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "HUMAN", "CIVILIZATION"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "SELF", "AVOID", "BEING", "LIE"));
-            collectStrings = new ArrayList<String>(Arrays.asList("OUTSIDE", "", "", "HUMAN", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("WEAK", "BEING", "DESTINY", "DESTROY", "GOVERNMENT"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", "", "CIVILIZATION"));
+            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "PURE", "FUTURE", "NO", "ATTACK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "NOT", "WAR"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("DEFEND", "BEING", "GOVERNMENT", "SHAPERS", "LIE"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "NO", "XM", "LOSE", "SELF"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "INSIDE", "", "", ""));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "BEING", "GOVERNMENT", "SHAPERS", "LIE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "GOVERNMENT", "END", "CONFLICT", "ATTACK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "", "", "WAR"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "I", "AVOID", "BEING", "LIE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "SELF", "", "HUMAN", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("FORGET", "PAST", "SEE", "PRESENT", "DANGER"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("FORGET", "ATTACK", "SEE", "DISTANCE", "HARMONY"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "WAR", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "SHAPERS", "TOGETHER", "CREATE", "DESTINY"));
+            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("HARM", "EVOLUTION", "PURSUE", "MORE", "ATTACK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "PROGRESS", "", "", "WAR"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("MORE", "DATA", "GAIN", "OPENING", "ADVANCE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "PORTAL", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "SELF", "AVOID", "BEING", "LIE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("OUTSIDE", "", "", "HUMAN", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("PURSUE", "CONFLICT", "ATTACK", "ADVANCE", "CHAOS"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "WAR", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SAVE", "BEING", "GOVERNMENT", "DESTROY", "OPENING"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "CREATIVITY", "BODY", "DISCOVER", "ENLIGHTENED_A"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "MIND", "", "", "ENLIGHTENMENT"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "TRUTH", "LIE", "SHAPERS", "FUTURE"));
+            shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "OPENING", "DATA", "CREATE", "CHAOS"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            /////checked/////
-            //#4
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "PAST", "PRESENT", "FUTURE"));
-            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
+            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "WANT", "BEING", "CREATIVITY", "FUTURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "HUMAN", "MIND", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "TRUTH", "FORGET", "EASY", "EVOLUTION"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "", "SUCCESS"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("STABILITY", "STRONG", "TOGETHER", "DEFEND", "RESISTANCE_A"));
+            collectStrings = new ArrayList<String>(Arrays.asList("STAY", "", "", "", "RESISTANCE"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("USE", "RESTRAINT", "FOLLOW", "EASY", "PATH"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("WANT", "TRUTH", "PURSUE", "DIFFICULT", "PATH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("WEAK", "BEING", "DESTINY", "DESTROY", "GOVERNMENT"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            //#4
             giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "GOVERNMENT", "AGAIN", "FAILURE"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "REPEAT", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "AGAIN", "JOURNEY", "AGAIN"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "COMPLEX", "SHAPERS", "GOVERNMENT"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("COURAGE", "ATTACK", "SHAPERS", "FUTURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "WAR", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE", "NO", "ATTACK"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "", "NOT", "WAR"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "COMPLEX", "SHAPERS", "LIE"));
+            shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "OPENING", "ATTACK", "WEAK"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "PAST", "PRESENT", "FUTURE"));
+            collectStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "BODY", "PURSUE", "JOURNEY"));
             shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("TRUTH", "CREATIVITY", "DISCOVER", "XM"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "IDEA", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "AGAIN", "JOURNEY", "AGAIN"));
+            giveStrings = new ArrayList<String>(Arrays.asList("LESS", "TRUTH", "MORE", "CHAOS"));
             shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("COURAGE", "ATTACK", "SHAPERS", "FUTURE"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "WAR", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "COMPLEX", "SHAPERS", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "GOVERNMENT", "IMPURE", "WEAK"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("MORE", "CREATIVITY", "LESS", "SOUL"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "MIND", "", "SPIRIT"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LESS", "TRUTH", "MORE", "CHAOS"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            /////checked/////
-            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "COMPLEX", "SHAPERS", "GOVERNMENT"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "", "", "CIVILIZATION"));
+            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "GOVERNMENT", "IMPURE", "WEAK"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("TRUTH", "CREATIVITY", "DISCOVER", "XM"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "IDEA", "", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             //#3
-            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURSUE", "SAFETY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "XM", "OPENING"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            /////checked/////
             giveStrings = new ArrayList<String>(Arrays.asList("OPEN", "BEING", "WEAK"));
             collectStrings = new ArrayList<String>(Arrays.asList("ACCEPT", "HUMAN", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "ENLIGHTENMENT_A"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", ""));
+            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "ENLIGHTENED_A"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "ENLIGHTENED"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "RESISTANCE_A"));
-            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", ""));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "RESISTANCE"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "PURE", "TRUTH"));
             shapesSets.add(new ShapesSet(giveStrings));
@@ -641,6 +683,9 @@ public class MyActivity extends Activity {
             shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "ADVANCE", "PRESENT"));
             shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "XM", "OPENING"));
+            collectStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, collectStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "OPENING", "EVOLUTION"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "SUCCESS"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
@@ -649,17 +694,16 @@ public class MyActivity extends Activity {
             giveStrings = new ArrayList<String>(Arrays.asList("AGAIN", "SEEK", "SAFETY"));
             collectStrings = new ArrayList<String>(Arrays.asList("REPEAT", "SEARCH", ""));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-            //#2
-            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "TRUTH"));
+            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURSUE", "SAFETY"));
             shapesSets.add(new ShapesSet(giveStrings));
-            /////checked/////
+            //#2
             giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "EVOLUTION"));
             shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "OPENING"));
             collectStrings = new ArrayList<String>(Arrays.asList("", "PORTAL"));
             shapesSets.add(new ShapesSet(giveStrings, collectStrings));
-
-
+            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
 
             int giveTime = 200;
             int giveQs = 1;
@@ -673,7 +717,7 @@ public class MyActivity extends Activity {
                 difficulty.add(i, new Difficulty(giveQs, giveTime));
             }
 
-            int level = (int) (Math.random() * (maxLv - minLv + 1) + minLv);
+            int level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
             defTime = difficulty.get(level).time;
             if (difficulty.get(level).qs > 1) {
@@ -690,6 +734,7 @@ public class MyActivity extends Activity {
                     throughList[i] = new ThroughList();
                     answerThroughList[i] = shapes.get(shapesSets.get(randomVal).strings.get(i));
                 }
+                correctStrings = shapesSets.get(randomVal).getCorrectStrings();
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             } else {
                 qTotal = 1;
@@ -801,13 +846,11 @@ public class MyActivity extends Activity {
                 p.setStyle(Paint.Style.FILL);
                 c.drawCircle(point.x, point.y, dotRadius / 4, p);
             }
-            p.setColor(Color.RED);
+            p.setColor(Color.WHITE);
             p.setStyle(Paint.Style.STROKE);
             c.drawPath(locusPath, p);
 
             if (isStartGame) {
-                p.setTextSize(50);
-                p.setTypeface(typeface);
                 p.setColor(Color.WHITE);
                 int leftTime = defTime - framec / 4;
                 if (leftTime <= 0) {
@@ -854,7 +897,7 @@ public class MyActivity extends Activity {
             if ((currentTime - initTime - margin) % 2 >= showLength) {
                 que++;
             }
-            if (isLastFlash) {
+            if (currentTime - initTime >= (qTotal + 2.2) * (showLength + hideLength) + margin) {
                 que++;
             }
             switch (que - (qTotal * 2 - 1)) {
@@ -868,6 +911,11 @@ public class MyActivity extends Activity {
                             } else {
                                 setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
                             }
+                            p.setColor(Color.WHITE);
+                            p.setTextSize(50);
+                            p.setTypeface(typeface);
+                            p.setTextAlign(Paint.Align.CENTER);
+                            c.drawText(correctStrings.get(que / 2), offsetX, offsetY / 4, p);
                         }
                     } else {
                         resetLocus();
@@ -878,14 +926,8 @@ public class MyActivity extends Activity {
                 case 2:
                 case 3:
                 case 4:
-                    showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
-                    break;
-
                 case 5:
                     showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
-                    if (currentTime - initTime >= (qTotal + 2.2) * (showLength + hideLength) + margin) {
-                        isLastFlash = true;
-                    }
                     break;
                 case 6:
                 case 7:
