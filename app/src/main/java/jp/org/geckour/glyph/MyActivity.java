@@ -1034,7 +1034,7 @@ public class MyActivity extends Activity {
         }
 
         public void showTime(Canvas c, int currentTime) {
-            p.setColor(Color.YELLOW);
+            p.setColor(Color.rgb(220, 190, 50));
             int leftTime = defTime - currentTime / 4;
             if (leftTime <= 0) {
                 doCount = false;
@@ -1047,6 +1047,9 @@ public class MyActivity extends Activity {
                 }
             }
             c.drawText(String.format("%02d", leftTime / 10) + ":" + leftTime % 10, offsetX, offsetY / 3, p);
+            float barWidth = (float)(offsetX * 0.8 / defTime) * leftTime;
+            p.setStyle(Paint.Style.FILL);
+            c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
         }
 
         public void showQueNumber(Canvas c, int currentTime, int marginTime, int normalColor, int strongColor) {
