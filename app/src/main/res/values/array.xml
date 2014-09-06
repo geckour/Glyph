@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="gamemode_entries">
+        <item>name + shaper</item>
+        <item>name</item>
+        <item>shaper</item>
+    </string-array>
+    <string-array name="gamemode_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+</resources>

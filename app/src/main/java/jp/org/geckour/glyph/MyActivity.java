@@ -92,6 +92,7 @@ public class MyActivity extends Activity {
     class MyView extends View {
         private final Handler handler = new Handler();
         boolean state = true;
+        int gameMode;
         boolean doCount = true;
         Display display = getWindowManager().getDefaultDisplay();
         Point point = new Point();
@@ -857,7 +858,7 @@ public class MyActivity extends Activity {
                 }
                 difficulty.add(i, new Difficulty(giveQs, giveTime));
             }
-
+            gameMode = Integer.parseInt(sp.getString("gamemode", "0"));
             int level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
             defTime = difficulty.get(level).time;
@@ -1113,17 +1114,21 @@ public class MyActivity extends Activity {
                     //Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
                     if (que % 2 == 0 && que >= 0) {
                         for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
-                            if (i == 0) {
-                                resetLocus();
-                                setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
-                            } else {
-                                setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                            if (gameMode == 0 || gameMode == 2) {
+                                if (i == 0) {
+                                    resetLocus();
+                                    setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                                } else {
+                                    setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                                }
                             }
-                            p.setColor(Color.WHITE);
-                            p.setTextSize(80);
-                            p.setTypeface(typeface);
-                            p.setTextAlign(Paint.Align.CENTER);
-                            c.drawText(correctStr.get(que / 2), offsetX, offsetY / 3, p);
+                            if (gameMode == 0 || gameMode == 1) {
+                                p.setColor(Color.WHITE);
+                                p.setTextSize(80);
+                                p.setTypeface(typeface);
+                                p.setTextAlign(Paint.Align.CENTER);
+                                c.drawText(correctStr.get(que / 2), offsetX, offsetY / 3, p);
+                            }
                         }
                     } else {
                         resetLocus();
