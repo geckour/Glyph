@@ -1,16 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+        android:key="gamemode"
+        android:title="ゲームモード"
+        android:entries="@array/gamemode_entries"
+        android:entryValues="@array/gamemode_values"
+        android:defaultValue="0"
+        android:order="0" />
     <EditTextPreference
         android:key="min_level"
         android:title="最低レベル minimum-level"
         android:summary="@string/min_level"
         android:dialogTitle="最低値:0"
-        android:order="0" />
+        android:order="1" />
     <EditTextPreference
         android:key="max_level"
         android:title="最高レベル max-level"
         android:summary="@string/max_level"
         android:dialogTitle="最大値:8"
-        android:order="1" />
+        android:order="2" />
 </PreferenceScreen>
