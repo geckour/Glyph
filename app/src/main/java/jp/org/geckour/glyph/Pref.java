@@ -8,33 +8,52 @@ import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class Pref extends android.preference.PreferenceActivity {
     static SharedPreferences sp;
+    static int min, max;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
+        try {
+            min = Integer.parseInt(sp.getString("min_level", "0"));
+            max = Integer.parseInt(sp.getString("max_level", "8"));
+        } catch (Exception e) {
+            min = 0;
+            max = 8;
+            Log.v("E", "Can't translate level into Integer. min:" + min + ", max:" + max);
+        }
         getFragmentManager().beginTransaction().replace(android.R.id.content, new prefFragment()).commit();
     }
 
     public static boolean isMinLevelChanged (Preference preference, Object newValue) {
-        int level = Integer.parseInt(newValue.toString());
+        int level;
+        boolean isException = false;
+        try {
+            level = Integer.parseInt(newValue.toString());
+        } catch (Exception e) {
+            isException = true;
+            Log.v("E", "Can't translate minimum level into Integer. min:" + min + ", max:" + max);
+            sp.edit().putString("min_level", String.valueOf(min)).apply();
+            level = min;
+        }
         int maxLevel = Integer.parseInt(sp.getString("max_level", "0"));
         if (-1 < level || level < 9) {
             if (level > maxLevel){
                 sp.edit().putString("min_level", String.valueOf(maxLevel)).apply();
                 sp.edit().putString("max_level", String.valueOf(level)).apply();
-
                 return false;
             } else {
-                preference.setSummary(newValue.toString());
-                /*
-                Intent intent = new Intent();
-                intent.putExtra("min_level", "" + newValue);
-                setResult(Activity.RESULT_OK, intent);
-                */
-                return true;
+                if (isException) {
+                    preference.setSummary(String.valueOf(min));
+                    return false;
+                } else {
+                    preference.setSummary(newValue.toString());
+                    return true;
+                }
             }
         } else {
             return false;
@@ -42,22 +61,30 @@ public class Pref extends android.preference.PreferenceActivity {
     }
 
     public static boolean isMaxLevelChanged (Preference preference, Object newValue) {
-        int level = Integer.parseInt(newValue.toString());
+        int level;
+        boolean isException = false;
+        try {
+            level = Integer.parseInt(newValue.toString());
+        } catch (Exception e) {
+            isException = true;
+            Log.v("E", "Can't translate maximum level into Integer. min:" + min + ", max:" + max);
+            sp.edit().putString("max_level", String.valueOf(max)).apply();
+            level = max;
+        }
         int minLevel = Integer.parseInt(sp.getString("min_level", "0"));
         if (-1 < level || level < 9) {
             if (level < minLevel) {
                 sp.edit().putString("min_level", String.valueOf(level)).apply();
                 sp.edit().putString("max_level", String.valueOf(minLevel)).apply();
-
                 return false;
             } else {
-                preference.setSummary(newValue.toString());
-                /*
-                Intent intent = new Intent();
-                intent.putExtra("max_level", "" + newValue);
-                setResult(Activity.RESULT_OK, intent);
-                */
-                return true;
+                if (isException) {
+                    preference.setSummary(String.valueOf(max));
+                    return false;
+                } else {
+                    preference.setSummary(newValue.toString());
+                    return true;
+                }
             }
         } else {
             return false;
