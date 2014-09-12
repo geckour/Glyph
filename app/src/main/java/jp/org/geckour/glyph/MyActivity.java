@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -34,6 +33,9 @@ public class MyActivity extends Activity {
     SharedPreferences sp;
     int min = 0;
     int max = 8;
+    MyView view;
+    float offsetX, offsetY;
+    boolean isFocused = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +57,17 @@ public class MyActivity extends Activity {
         } catch (Exception e) {
             Log.v("error", "Can't translate maximum-level to int.");
         }
-
-        MyView view = new MyView(this);
+        view = new MyView(this);
         setContentView(view);
     }
 
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        offsetX = view.getWidth() / 2;
+        offsetY = view.getHeight() / 2;
+        isFocused = true;
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -93,10 +101,6 @@ public class MyActivity extends Activity {
         private final Handler handler = new Handler();
         boolean state = true;
         int gameMode;
-        boolean doCount = true;
-        Display display = getWindowManager().getDefaultDisplay();
-        Point point = new Point();
-        float offsetX, offsetY;
         Paint p = new Paint();
         double cr = Math.PI / 3;
         double radius;
@@ -110,15 +114,22 @@ public class MyActivity extends Activity {
         int qTotal = 0;
         int qNum = 0;
         int defTime = 200;
+        int marginTime = 30;
         LinkedHashMap<String, ThroughList> shapes = new LinkedHashMap<String, ThroughList>();
         List shapesKeyList;
         ArrayList<ShapesSet> shapesSets = new ArrayList<ShapesSet>();
-        boolean isFirstOnTimeup = true;
+        boolean isEndLoad = false;
+        boolean isFirstDraw = true;
+        boolean isFirstTimeUp = true;
+        boolean isFirstEndGame = true;
         ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
         boolean isStartGame = false;
         boolean isEndGame = false;
+        boolean doShow = true;
         Typeface typeface;
         ArrayList<String> correctStr;
+        int holdTime;
+        PointF[] buttonPoint = new PointF[2];
 
         public class ThroughList {
             ArrayList<Integer> dots;
@@ -504,7 +515,7 @@ public class MyActivity extends Activity {
             shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("WEAK", "BEING", "DESTINY", "DESTROY", "GOVERNMENT"));
             correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings)); //25
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
             //#4
             giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "GOVERNMENT", "AGAIN", "FAILURE"));
             correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "REPEAT", ""));
@@ -741,7 +752,124 @@ public class MyActivity extends Activity {
             shapesSets.add(new ShapesSet(giveStrings, correctStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "DIFFICULT", "FUTURE"));
             shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "SHAPERS", "EVOLUTION"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "CHAOS", "SOUL"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "COMPLEX", "CONFLICT"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "COMPLEX", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "DESTINY", "LIE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "PURE", "CHAOS"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "ATTACK", "CHAOS"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "WAR", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ANSWER", "AGAIN", "AVOID"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "REPEAT", "STRUGGLE"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "SHAPERS", "OPENING"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "XM", "OPENING"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("COMPLEX", "JOURNEY", "FUTURE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "JOURNEY", "DISTANCE"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "OUTSIDE"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "POTENTIAL", "PERFECTION"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("COURAGE", "DESTINY", "REBEL"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "GOVERNMENT", "DANGER"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "IMPURE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "WEAK", "GOVERNMENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "OPENING", "TRUTH"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "PURE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "RESISTANCE_A", "TRUTH"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SAFETY", "GOVERNMENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "GOVERNMENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "ENLIGHTENED_A"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "ENLIGHTENMENT"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "LIE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "MESSAGE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "IMPURE", "EVOLUTION"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "IMPURE", "FUTURE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "SHAPERS", "HARM"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("FEAR", "CHAOS", "XM"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("FOLLOW", "PURE", "JOURNEY"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("FUTURE", "EQUAL", "PAST"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "GOVERNMENT", "HARMONY"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "PEACE"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "FUTURE", "ESCAPE"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("HARM", "DANGER", "AVOID"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("HIDE", "JOURNEY", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "GAIN", "SAFETY"));
+            correctStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "ADVANCE", "PRESENT"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "FUTURE", "TOGETHER"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "BEING", "SHAPERS"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("NO", "MIND", "FUTURE"));
+            correctStrings = new ArrayList<String>(Arrays.asList("INSIDE", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("NO", "XM", "TRUTH"));
+            correctStrings = new ArrayList<String>(Arrays.asList("INSIDE", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("LEAD", "ENLIGHTENED_A", "GOVERNMENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "ENLIGHTENMENT", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("LEAD", "RESISTANCE_A", "QUESTION"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("LIBERATE", "OPENING", "POTENTIAL"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("LOSE", "ATTACK", "RETREAT"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("MIND", "EQUAL", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("MIND", "OPEN", "BREATHE"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "LIVE"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("NATURE", "PURE", "DEFEND"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "MIND", "JOURNEY"));
             shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "XM", "OPENING"));
             correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
@@ -751,11 +879,58 @@ public class MyActivity extends Activity {
             shapesSets.add(new ShapesSet(giveStrings, correctStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "SIMPLE", "TRUTH"));
             shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("PATH", "HARMONY", "DIFFICULT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "PEACE", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("HARMONY", "SIMPLE", "JOURNEY"));
+            correctStrings = new ArrayList<String>(Arrays.asList("PEACE", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("HARMONY", "STABILITY", "FUTURE"));
+            correctStrings = new ArrayList<String>(Arrays.asList("PEACE", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("POTENTIAL", "XM", "ATTACK"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("POTENTIAL", "XM", "HARMONY"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PEACE"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("PURSUE", "COMPLEX", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "CONFLICT", "DATA"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "HIDE", "TRUTH"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("REACT", "IMPURE", "GOVERNMENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("REPEAT", "SEARCH", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("AGAIN", "SEEK", "SAFETY"));
             correctStrings = new ArrayList<String>(Arrays.asList("REPEAT", "SEARCH", ""));
             shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SEEK", "XM", "OPENING"));
+            correctStrings = new ArrayList<String>(Arrays.asList("SEARCH", "", "PORTAL"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SEE", "TRUTH", "PRESENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "NOW"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "FUTURE", "EVOLUTION"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURE", "JOURNEY"));
+            shapesSets.add(new ShapesSet(giveStrings));
             giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURSUE", "SAFETY"));
             shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("TRUTH", "NOURISH", "SOUL"));
+            shapesSets.add(new ShapesSet(giveStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("WANT", "TRUTH", "PRESENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "NOW"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "CREATE", "DANGER"));
+            correctStrings = new ArrayList<String>(Arrays.asList("WAR", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "DESTROY", "FUTURE"));
+            correctStrings = new ArrayList<String>(Arrays.asList("WAR", "", ""));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
+            giveStrings = new ArrayList<String>(Arrays.asList("XM", "NOURISH", "GOVERNMENT"));
+            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
+            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
             //#2
             giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "EVOLUTION"));
             shapesSets.add(new ShapesSet(giveStrings));
@@ -847,6 +1022,8 @@ public class MyActivity extends Activity {
             giveStrings = new ArrayList<String>(Arrays.asList("STRONG", "BODY"));
             shapesSets.add(new ShapesSet(giveStrings));
 
+            isEndLoad = true;
+
             int giveTime = 200;
             int giveQs = 1;
             for (int i = 0; i < 9; i++) {
@@ -869,7 +1046,7 @@ public class MyActivity extends Activity {
                     randomVal = (int) (Math.random() * shapesSets.size());
                 }
                 qTotal = shapesSets.get(randomVal).strings.size();
-                Log.v("echo", "qTotal:" + qTotal);
+                //Log.v("echo", "qTotal:" + qTotal);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 for (int i = 0; i < qTotal; i++) {
@@ -880,41 +1057,22 @@ public class MyActivity extends Activity {
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             } else {
                 qTotal = 1;
-                Log.v("echo", "qTotal:" + qTotal);
+                //Log.v("echo", "qTotal:" + qTotal);
                 int randomVal = (int) (Math.random() * shapes.size());
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
                 answerThroughList[0] = shapes.get(shapesKeyList.get(randomVal).toString());
                 correctStr = new ArrayList<String>(Arrays.asList(shapesKeyList.get(randomVal).toString()));
+                //for debug of shapes
                 //answerThroughList[0] = shapes.get("");
                 //correctStr = new ArrayList<String>(Arrays.asList(""));
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             }
-
-            display.getSize(point);
-            offsetX = point.x / 2;
-            offsetY = point.y / 2 + (point.y - point.x) / 5;
-            radius = offsetX * 0.8;
             p.setAntiAlias(true);
 
             for (int i = 0; i < 11; i++) {
                 dots[i] = new PointF();
-            }
-
-            dots[0].set(offsetX, offsetY);
-            for (int i = 1; i < 5; i++) {
-                int j = i;
-                if (i > 1) {
-                    j++;
-                    if (i > 3) {
-                        j++;
-                    }
-                }
-                dots[i].set((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY));
-            }
-            for (int i = 5; i < 11; i++) {
-                dots[i].set((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY));
             }
 
             for (int i = 0; i < 11; i++) {
@@ -953,74 +1111,115 @@ public class MyActivity extends Activity {
             }
             c.drawPath(path, p);
             */
-
-            if (!isStartGame) {
-                showAnswer(c, 0, framec);
-            }
-
-            float dotRadius = (float) radius / 18;
-            for (int i = 0; i < 11; i++) {
-                int alpha = 0;
-                for (int j = 0; j < 36; j++) {
-                    if (j % 3 == 0) {
-                        alpha++;
+            if (isEndLoad) {
+                if (isFirstDraw) {
+                    radius = offsetX * 0.8;
+                    dots[0].set(offsetX, (float) (offsetY * 1.2));
+                    for (int i = 1; i < 5; i++) {
+                        int j = i;
+                        if (i > 1) {
+                            j++;
+                            if (i > 3) {
+                                j++;
+                            }
+                        }
+                        dots[i].set((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2));
                     }
-                    if (j >= 16 && j % 2 == 0) {
-                        alpha++;
+                    for (int i = 5; i < 11; i++) {
+                        dots[i].set((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2));
                     }
-                    if (isThrough[i]) {
-                        p.setColor(Color.argb(alpha, 220, 175, 50));
-                    } else {
-                        p.setColor(Color.argb(alpha, 150, 120, 150));
-                    }
-                    p.setStyle(Paint.Style.FILL);
-                    c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 36 - j, p);
+                    isFirstDraw = false;
                 }
-                p.setColor(getResources().getColor(R.color.dots));
-                p.setStyle(Paint.Style.FILL);
-                c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4, p);
-                if (!isThrough[i]) {
-                    p.setColor(getResources().getColor(R.color.background));
-                    p.setStyle(Paint.Style.FILL);
-                    c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
+
+                if (!isStartGame) {
+                    showAnswer(c, 0, framec);
                 }
-            }
+                if (isEndGame) {
+                    if (isFirstEndGame) {
+                        holdTime = framec;
+                        isFirstEndGame = false;
+                    }
+                    if (framec > holdTime + marginTime) {
+                        doShow = false;
+                        showResult(c, marginTime, holdTime + marginTime, framec);
+                    }
+                }
 
-            for (Point point : Locus) {
-                p.setColor(Color.YELLOW);
-                p.setStyle(Paint.Style.FILL);
-                c.drawCircle(point.x, point.y, dotRadius / 4, p);
-            }
-            p.setColor(Color.WHITE);
-            p.setStyle(Paint.Style.STROKE);
-            c.drawPath(locusPath, p);
-
-            if (isStartGame) {
-                showTime(c, framec);
-                showQueNumber(c, framec, 0, Color.argb(0x40, 0x02, 0xff, 0xc5), Color.argb(0xb0, 0x02, 0xff, 0xc5));
-            } else {
-                showQueNumber(c, framec, 30, Color.argb(0x40, 220, 175, 50), Color.argb(0xb0, 220, 175, 50));
-            }
-
-            if (doCount) {
-                framec++;
-            } else {
-                float width = (qTotal - 1) * dotRadius * 6;
-                for (int i = 0; i < qTotal; i++) {
-                    p.setColor(Color.WHITE);
-                    if (judgeLocus(answerThroughList[i], throughList[i])) {
+                float dotRadius = (float) radius / 18;
+                if (doShow) {
+                    for (int i = 0; i < 11; i++) {
+                        int alpha = 0;
+                        for (int j = 0; j < 36; j++) {
+                            if (j % 3 == 0) {
+                                alpha++;
+                            }
+                            if (j >= 16 && j % 2 == 0) {
+                                alpha++;
+                            }
+                            if (isThrough[i]) {
+                                p.setColor(Color.argb(alpha, 220, 175, 50));
+                            } else {
+                                p.setColor(Color.argb(alpha, 150, 120, 150));
+                            }
+                            p.setStyle(Paint.Style.FILL);
+                            c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 36 - j, p);
+                        }
+                        p.setColor(getResources().getColor(R.color.dots));
                         p.setStyle(Paint.Style.FILL);
-                    } else {
-                        p.setStyle(Paint.Style.STROKE);
+                        c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4, p);
+                        if (!isThrough[i]) {
+                            p.setColor(getResources().getColor(R.color.background));
+                            p.setStyle(Paint.Style.FILL);
+                            c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
+                        }
                     }
-                    c.drawCircle(offsetX - width / 2 + i * dotRadius * 6, offsetY / 2.5f, dotRadius * 3 / 2, p);
+
+                    for (Point point : Locus) {
+                        p.setColor(Color.YELLOW);
+                        p.setStyle(Paint.Style.FILL);
+                        c.drawCircle(point.x, point.y, dotRadius / 4, p);
+                    }
+                    p.setColor(Color.WHITE);
+                    p.setStrokeWidth(3);
+                    p.setStyle(Paint.Style.STROKE);
+                    c.drawPath(locusPath, p);
+                    p.setStrokeWidth(0);
                 }
+
+                if (isStartGame && doShow) {
+                    showTime(c, framec);
+                    showQueNumber(c, framec, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
+                    showButton(c);
+                } else if (doShow) {
+                    showQueNumber(c, framec, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
+                }
+
+                framec++;
             }
         }
 
-        public Path makeHexagon(PointF origin, float argRadius) {
+        public void showButton(Canvas c) {
+            float buttonWidth = doShow ? 250 : 180;
+            float buttonHeight = 80;
+            float margin = 20;
+            buttonPoint[0] = new PointF(offsetX * 2 - buttonWidth - margin, offsetY * 2 - buttonHeight - margin);
+            buttonPoint[1] = new PointF(offsetX * 2 - margin, offsetY * 2 - margin);
+            p.setColor(getResources().getColor(R.color.button));
+            p.setStyle(Paint.Style.FILL);
+            c.drawRect(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y, p);
+
+            p.setColor(Color.WHITE);
+            p.setTextAlign(Paint.Align.CENTER);
+            p.setTextSize(70);
+            if (doShow) {
+                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 20, p);
+            } else {
+                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 20, p);
+            }
+        }
+
+        public Path makeHexagon(PointF origin, float r) {
             Path path = new Path();
-            float r = argRadius;
 
             for (int i = 0; i < 7; i++) {
                 if (i == 0) {
@@ -1035,19 +1234,18 @@ public class MyActivity extends Activity {
 
         public void showTime(Canvas c, int currentTime) {
             p.setColor(Color.rgb(220, 190, 50));
-            int leftTime = defTime - currentTime / 4;
+            int leftTime = defTime - (isEndGame ? holdTime : currentTime) / 4;
             if (leftTime <= 0) {
-                doCount = false;
                 isEndGame = true;
-                if (isFirstOnTimeup) {
+                if (isFirstTimeUp) {
                     for (int i = 0; i < qTotal; i++) {
                         Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
                     }
-                    isFirstOnTimeup = false;
+                    isFirstTimeUp = false;
                 }
             }
             c.drawText(String.format("%02d", leftTime / 10) + ":" + leftTime % 10, offsetX, offsetY / 3, p);
-            float barWidth = (float)(offsetX * 0.8 / defTime) * leftTime;
+            float barWidth = (float)(offsetX * 0.7 / defTime) * leftTime;
             p.setStyle(Paint.Style.FILL);
             c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
         }
@@ -1060,14 +1258,20 @@ public class MyActivity extends Activity {
             float x, y;
             for (int i = 0; i < qTotal; i++) {
                 x = offsetX - (width / 2 + totalMargin) + i * (hexaRadius + hexaMargin) * 2;
-                y = offsetY / 7.5f;
+                y = (float)(offsetY / 7.5);
                 PointF giveOrigin = new PointF(x, y);
 
                 if (isStartGame) {
                     if (i == qNum) {
-                        p.setColor(strongColor);
-                        p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        if ((isReleased && throughList[qTotal - 1].dots.size() > 0)) {
+                            p.setColor(normalColor);
+                            p.setStyle(Paint.Style.FILL);
+                            c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        } else {
+                            p.setColor(strongColor);
+                            p.setStyle(Paint.Style.FILL);
+                            c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        }
                     } else if (i < qNum) {
                         p.setColor(normalColor);
                         p.setStyle(Paint.Style.FILL);
@@ -1088,6 +1292,7 @@ public class MyActivity extends Activity {
                         c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
                     }
                 }
+                p.setStrokeJoin(Paint.Join.BEVEL);
                 p.setColor(Color.argb(255, Color.red(normalColor), Color.green(normalColor), Color.blue(normalColor)));
                 p.setStyle(Paint.Style.STROKE);
                 c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
@@ -1095,21 +1300,20 @@ public class MyActivity extends Activity {
         }
 
         public void showAnswer(Canvas c, int initTime, int currentTime) {
-            int margin = 30;
             int showLength = 49;
             int hideLength = 1;
             int que = -1;
 
-            if (currentTime - initTime > margin) {
+            if (currentTime - initTime > marginTime) {
                 que++;
             }
-            if (currentTime - initTime - margin >= 0) {
-                que = (currentTime - initTime - margin) * 2 / (showLength + hideLength);
+            if (currentTime - initTime - marginTime >= 0) {
+                que = (currentTime - initTime - marginTime) * 2 / (showLength + hideLength);
             }
-            if ((currentTime - initTime - margin) % 2 >= showLength) {
+            if ((currentTime - initTime - marginTime) % 2 >= showLength) {
                 que++;
             }
-            if (currentTime - initTime >= (qTotal + 2.2) * (showLength + hideLength) + margin) {
+            if (currentTime - initTime >= (qTotal + 2.2) * (showLength + hideLength) + marginTime) {
                 que++;
             }
             switch (que - (qTotal * 2 - 1)) {
@@ -1142,13 +1346,7 @@ public class MyActivity extends Activity {
                 case 2:
                 case 3:
                 case 4:
-                case 5:
-                    showFlash(c, qTotal * (showLength + hideLength) + margin, currentTime, showLength + hideLength);
-                    break;
-                case 6:
-                case 7:
-                    framec = 0;
-                    isStartGame = true;
+                    showFlash(c, qTotal * (showLength + hideLength) + marginTime, currentTime, 35);
                     break;
             }
         }
@@ -1161,6 +1359,9 @@ public class MyActivity extends Activity {
             //Log.v("echo", "initTime:" + initTime + ", currentTime:" + currentTime);
 
             que = (diffTime) / interval;
+            if (diffTime > interval * 2.2) {
+                que++;
+            }
 
             if (que == 0) {
                 if (diffTime < margin) {
@@ -1187,6 +1388,54 @@ public class MyActivity extends Activity {
             }
             p.setStyle(Paint.Style.FILL);
             c.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, p);
+            if (que > 2) {
+                framec = 0;
+                isStartGame = true;
+            }
+        }
+
+        public void showResult(Canvas c, int margin, int initTime, int currentTime) {
+            if (currentTime > initTime + margin) {
+                showButton(c);
+
+                int blue = Color.rgb(0x02, 0xff, 0xc5), red = Color.RED;
+                int drawColor;
+                for (int i = 0; i < qTotal; i++) {
+                    Path answerPath = new Path();
+                    float hexaRadius = offsetX / 8;
+                    float hexaMargin = 10;
+                    float totalMargin = hexaMargin * (qTotal - 1);
+                    float height = (qTotal - 1) * (offsetX / 5);
+                    float x = offsetX / 6;
+                    float y = offsetY / 2 - (height / 2 + totalMargin) + i * (hexaRadius + hexaMargin) * 2;
+                    PointF giveOrigin = new PointF(x, y);
+                    if (judgeLocus(answerThroughList[i], throughList[i])) {
+                        drawColor = blue;
+                    } else {
+                        drawColor = red;
+                    }
+                    p.setColor(Color.argb(80, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor)));
+                    p.setStyle(Paint.Style.FILL);
+                    c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                    p.setColor(Color.argb(255, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor)));
+                    p.setStyle(Paint.Style.STROKE);
+                    c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                    for (int j = 0; j < answerThroughList[i].dots.size(); j++) {
+                        if (j == 0) {
+                            answerPath.moveTo(x - hexaRadius + dots[answerThroughList[i].dots.get(j)].x / 8, y + (float)(dots[answerThroughList[i].dots.get(j)].y - offsetY * 1.2) / 8);
+                        } else {
+                            answerPath.lineTo(x - hexaRadius + dots[answerThroughList[i].dots.get(j)].x / 8, y + (float)(dots[answerThroughList[i].dots.get(j)].y - offsetY * 1.2) / 8);
+                        }
+                    }
+                    p.setStrokeWidth(3);
+                    c.drawPath(answerPath, p);
+                    p.setStyle(Paint.Style.FILL);
+                    p.setStrokeWidth(1);
+                    p.setTextSize(70);
+                    p.setTextAlign(Paint.Align.LEFT);
+                    c.drawText(correctStr.get(i), x * 2, giveOrigin.y + 25, p);
+                }
+            }
         }
 
         public boolean judgeLocus(ThroughList answer, ThroughList through) {
@@ -1205,9 +1454,9 @@ public class MyActivity extends Activity {
 
                 boolean[] clearFrags = new boolean[answerPaths.size()];
                 for (int i = 0; i < answerPaths.size(); i++) {
-                    for (int j = 0; j < passedPaths.size(); j++) {
-                        int[] tempPaths = {passedPaths.get(j)[1], passedPaths.get(j)[0]};
-                        if (Arrays.equals(answerPaths.get(i), passedPaths.get(j)) || Arrays.equals(answerPaths.get(i), tempPaths)) {
+                    for (int[] path: passedPaths) {
+                        int[] tempPaths = {path[1], path[0]};
+                        if (Arrays.equals(answerPaths.get(i), path) || Arrays.equals(answerPaths.get(i), tempPaths)) {
                             clearFrags[i] = true;
                         }
                     }
@@ -1292,32 +1541,32 @@ public class MyActivity extends Activity {
 
         float downX = 0, downY = 0;
         float memX = 0, memY = 0;
+        //float lim = 40;
         boolean isReleased = false;
 
         public boolean onTouchEvent(MotionEvent event) {
             float upX = 0, upY = 0;
-            float lim = 40;
             switch (event.getAction()) {
                 //タッチ
                 case MotionEvent.ACTION_DOWN:
                     downX = event.getX();
                     downY = event.getY();
-                    if (doCount && isStartGame) {
+                    if (isStartGame && !isEndGame) {
                         if (isReleased) {
                             resetLocus();
                             resetThrough();
+                            isReleased = false;
                         }
-                        isReleased = false;
+                        setLocusStart(downX, downY, true);
                         memX = downX;
                         memY = downY;
-                        setLocusStart(downX, downY, true);
                     }
                     break;
                 //スワイプ
                 case MotionEvent.ACTION_MOVE:
                     float currentX = event.getX();
                     float currentY = event.getY();
-                    if (doCount && isStartGame) {
+                    if (isStartGame && !isEndGame) {
                         //if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
                         if (Locus.size() == 0) {
                             setLocusStart(currentX, currentY, true);
@@ -1333,30 +1582,45 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_CANCEL:
                     upX = event.getX();
                     upY = event.getY();
-                    if (doCount && isStartGame) {
-                        isReleased = true;
-                        String list = "";
-                        for (int throughDot : throughList[qNum].dots) {
-                            list += throughDot + ",";
-                        }
-                        Log.v("echo", "throughList:" + list);
-                        resetLocus();
-                        boolean isFirst = true;
-                        for (Integer integer : throughList[qNum].dots) {
-                            if (isFirst) {
-                                setLocusStart(dots[integer].x, dots[integer].y, false);
-                                isFirst = false;
+                    boolean isOnButton;
+                    isOnButton = isStartGame &&
+                            buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y &&
+                            buttonPoint[0].x <= upX && upX <= buttonPoint[1].x && buttonPoint[0].y <= upY && upY <= buttonPoint[1].y;
+
+                    if (isStartGame && !isEndGame) {
+                        if (!isOnButton) {
+                            isReleased = true;
+                            String list = "";
+                            for (int throughDot : throughList[qNum].dots) {
+                                list += throughDot + ",";
+                            }
+                            Log.v("echo", "throughList:" + list);
+                            resetLocus();
+                            boolean isFirst = true;
+                            for (Integer integer : throughList[qNum].dots) {
+                                if (isFirst) {
+                                    setLocusStart(dots[integer].x, dots[integer].y, false);
+                                    isFirst = false;
+                                } else {
+                                    setLocus(dots[integer].x, dots[integer].y, false);
+                                }
+                            }
+                            if (qTotal - 1 > qNum) {
+                                qNum++;
                             } else {
-                                setLocus(dots[integer].x, dots[integer].y, false);
+                                isEndGame = true;
+                                for (int i = 0; i < qTotal; i++) {
+                                    Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                                }
                             }
                         }
-                        if (qTotal - 1 > qNum) {
-                            qNum++;
-                        } else {
-                            doCount = false;
-                            isEndGame = true;
-                            for (int i = 0; i < qTotal; i++) {
-                                Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                    }
+                    if (isStartGame) {
+                        if (isOnButton) {
+                            if (doShow) {
+                                framec = defTime * 4;
+                            } else {
+                                startActivity(new Intent(MyActivity.this, MyActivity.class));
                             }
                         }
                     }
