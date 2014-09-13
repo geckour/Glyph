@@ -8,4 +8,4 @@ This app is incomplete, so please install at your own risk.
   
 If you notice bugs, I'm grad and willing to report on [Issues](https://github.com/geckour/Glyph/issues).  
   
-Thanks to [The Glyphtionary](http://glyphtionary.com/), many of site provides patterns of Glyph sequence, and all of supporters.
+Thanks to [The Glyphtionary](http://glyphtionary.com/), many of sites provide patterns of Glyph sequence, and all of supporters.
