@@ -89,8 +89,7 @@ public class MyActivity extends Activity {
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        //Pref.javaからの戻り値の場合
-        if (requestCode == 0){
+        if (requestCode == 0){ //Pref.javaからの戻り値の場合
             if (resultCode == Activity.RESULT_OK) {
                 Log.v("echo", "level is changed.");
             }
@@ -106,6 +105,7 @@ public class MyActivity extends Activity {
         double radius;
         PointF[] dots = new PointF[11];
         ArrayList<Point> Locus = new ArrayList<Point>();
+        ArrayList<Point> blurLocus = new ArrayList<Point>();
         Path locusPath = new Path();
         int framec = 0;
         boolean[] isThrough = new boolean[11];
@@ -1087,8 +1087,7 @@ public class MyActivity extends Activity {
                     handler.post(new Runnable() {
                         public void run() {
                             if (state) {
-                                //再描画
-                                invalidate();
+                                invalidate(); //再描画
                             }
                         }
                     });
@@ -1099,18 +1098,7 @@ public class MyActivity extends Activity {
         @Override
         public void onDraw(Canvas c) {
             c.drawColor(getResources().getColor(R.color.background));
-            /*
-            c.drawColor(Color.WHITE);
 
-            p.setColor(Color.BLACK);
-            p.setStyle(Paint.Style.FILL);
-            Path path = new Path();
-            path.moveTo((float) (Math.cos(cr*(-0.5)) * (offsetX / Math.cos(cr/2)) + offsetX), (float) (Math.sin(cr*(-0.5)) * (offsetX / Math.cos(cr/2)) + offsetY));
-            for (int i = 1; i < 7; i++) {
-                path.lineTo((float) (Math.cos(cr*(i-0.5)) * (offsetX / Math.cos(cr/2)) + offsetX), (float) (Math.sin(cr*(i-0.5)) * (offsetX / Math.cos(cr/2)) + offsetY));
-            }
-            c.drawPath(path, p);
-            */
             if (isEndLoad) {
                 if (isFirstDraw) {
                     radius = offsetX * 0.8;
@@ -1173,17 +1161,18 @@ public class MyActivity extends Activity {
                             c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
                         }
                     }
-
                     for (Point point : Locus) {
-                        p.setColor(Color.YELLOW);
+                        p.setColor(Color.rgb(255, 255, 150));
                         p.setStyle(Paint.Style.FILL);
-                        c.drawCircle(point.x, point.y, dotRadius / 4, p);
+                        c.drawCircle(point.x, point.y, dotRadius / 3, p);
                     }
-                    p.setColor(Color.WHITE);
-                    p.setStrokeWidth(3);
-                    p.setStyle(Paint.Style.STROKE);
-                    c.drawPath(locusPath, p);
-                    p.setStrokeWidth(0);
+                    if (!isStartGame || isReleased) {
+                        p.setColor(Color.WHITE);
+                        p.setStrokeWidth(3);
+                        p.setStyle(Paint.Style.STROKE);
+                        c.drawPath(locusPath, p);
+                        p.setStrokeWidth(0);
+                    }
                 }
 
                 if (isStartGame && doShow) {
@@ -1318,7 +1307,6 @@ public class MyActivity extends Activity {
             }
             switch (que - (qTotal * 2 - 1)) {
                 default:
-                    //Log.v("echo", "do, que:" + que + ", initTime:" + initTime + ", currentTime:" + currentTime);
                     if (que % 2 == 0 && que >= 0) {
                         for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
                             if (gameMode == 0 || gameMode == 2) {
@@ -1356,7 +1344,6 @@ public class MyActivity extends Activity {
             int margin = interval / 20;
             int diffTime = currentTime - initTime;
             int alpha = 255;
-            //Log.v("echo", "initTime:" + initTime + ", currentTime:" + currentTime);
 
             que = (diffTime) / interval;
             if (diffTime > interval * 2.2) {
@@ -1472,7 +1459,18 @@ public class MyActivity extends Activity {
         }
 
         public void setLocusStart(float x, float y, boolean doCD) {
-            Locus.add(new Point((int) x, (int) y));
+            if (isStartGame && !isReleased) {
+                for (int i = 0; i < 3; i++) {
+                    int blurR = (int) (Math.random() * offsetX * 0.8 / 18);
+                    double blurA = Math.random() * Math.PI * 2;
+
+                    Point locus = new Point((int) x + (int) (blurR * Math.cos(blurA)), (int) y + (int) (blurR * Math.sin(blurA)));
+                    Locus.add(locus);
+                }
+            } else {
+                Locus.add(new Point((int) x, (int) y));
+            }
+
             if (doCD) {
                 isCollision(x, y, x, y);
             }
@@ -1480,16 +1478,18 @@ public class MyActivity extends Activity {
         }
 
         public void setLocus(float x, float y, boolean doCD) {
-            /*
-            for (int i = 0; i < 3; i++){
-                int blurR = (int)(Math.random() * offsetX * 0.8 / 15);
-                double blurA = Math.random() * Math.PI * 2;
+            if (isStartGame && !isReleased) {
+                for (int i = 0; i < 3; i++) {
+                    int blurR = (int) (Math.random() * offsetX * 0.8 / 18);
+                    double blurA = Math.random() * Math.PI * 2;
 
-                Point locus = new Point((int)x + (int)(blurR * Math.cos(blurA)), (int)y + (int)(blurR * Math.sin(blurA)));
-                Locus.add(locus);
+                    Point locus = new Point((int) x + (int) (blurR * Math.cos(blurA)), (int) y + (int) (blurR * Math.sin(blurA)));
+                    Locus.add(locus);
+                }
+            } else {
+                Locus.add(new Point((int) x, (int) y));
             }
-            */
-            Locus.add(new Point((int) x, (int) y));
+
             if (doCD) {
                 isCollision(x, y, Locus.get(Locus.size() - 2).x, Locus.get(Locus.size() - 2).y);
             }
@@ -1545,10 +1545,9 @@ public class MyActivity extends Activity {
         boolean isReleased = false;
 
         public boolean onTouchEvent(MotionEvent event) {
-            float upX = 0, upY = 0;
+            float upX, upY;
             switch (event.getAction()) {
-                //タッチ
-                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_DOWN: //タッチ
                     downX = event.getX();
                     downY = event.getY();
                     if (isStartGame && !isEndGame) {
@@ -1562,8 +1561,7 @@ public class MyActivity extends Activity {
                         memY = downY;
                     }
                     break;
-                //スワイプ
-                case MotionEvent.ACTION_MOVE:
+                case MotionEvent.ACTION_MOVE: //スワイプ
                     float currentX = event.getX();
                     float currentY = event.getY();
                     if (isStartGame && !isEndGame) {
@@ -1577,9 +1575,8 @@ public class MyActivity extends Activity {
                         //}
                     }
                     break;
-                //リリース
                 case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
+                case MotionEvent.ACTION_CANCEL: //リリース
                     upX = event.getX();
                     upY = event.getY();
                     boolean isOnButton;
@@ -1615,13 +1612,11 @@ public class MyActivity extends Activity {
                             }
                         }
                     }
-                    if (isStartGame) {
-                        if (isOnButton) {
-                            if (doShow) {
-                                framec = defTime * 4;
-                            } else {
-                                startActivity(new Intent(MyActivity.this, MyActivity.class));
-                            }
+                    if (isStartGame && isOnButton) {
+                        if (doShow) {
+                            framec = defTime * 4;
+                        } else {
+                            startActivity(new Intent(MyActivity.this, MyActivity.class));
                         }
                     }
                     break;
