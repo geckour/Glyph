@@ -3,21 +3,21 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <ListPreference
         android:key="gamemode"
-        android:title="ゲームモード: game mode"
+        android:title="Game mode"
         android:entries="@array/gamemode_entries"
         android:entryValues="@array/gamemode_values"
         android:defaultValue="0"
         android:order="0" />
     <EditTextPreference
         android:key="min_level"
-        android:title="最低レベル: minimum level"
+        android:title="Minimum Portal level"
         android:summary="@string/min_level"
-        android:dialogTitle="最低値:0"
+        android:dialogTitle="Minimum value:0"
         android:order="1" />
     <EditTextPreference
         android:key="max_level"
-        android:title="最高レベル: maximum level"
+        android:title="Maximum Portal level"
         android:summary="@string/max_level"
-        android:dialogTitle="最大値:8"
+        android:dialogTitle="Maximum value:8"
         android:order="2" />
 </PreferenceScreen>

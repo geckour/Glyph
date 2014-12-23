@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -23,8 +25,6 @@ import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -105,7 +105,7 @@ public class MyActivity extends Activity {
         double radius;
         PointF[] dots = new PointF[11];
         ArrayList<Point> Locus = new ArrayList<Point>();
-        ArrayList<Point> blurLocus = new ArrayList<Point>();
+        //ArrayList<Point> blurLocus = new ArrayList<Point>();
         Path locusPath = new Path();
         int framec = 0;
         boolean[] isThrough = new boolean[11];
@@ -115,9 +115,6 @@ public class MyActivity extends Activity {
         int qNum = 0;
         int defTime = 200;
         int marginTime = 30;
-        LinkedHashMap<String, ThroughList> shapes = new LinkedHashMap<String, ThroughList>();
-        List shapesKeyList;
-        ArrayList<ShapesSet> shapesSets = new ArrayList<ShapesSet>();
         boolean isEndLoad = false;
         boolean isFirstDraw = true;
         boolean isFirstTimeUp = true;
@@ -130,6 +127,9 @@ public class MyActivity extends Activity {
         ArrayList<String> correctStr;
         int holdTime;
         PointF[] buttonPoint = new PointF[2];
+        DBHelper dbHelper;
+        SQLiteDatabase db;
+        Cursor c1, c2;
 
         public class ThroughList {
             ArrayList<Integer> dots;
@@ -137,38 +137,17 @@ public class MyActivity extends Activity {
             public ThroughList() {
                 dots = new ArrayList<Integer>();
             }
-
             public ThroughList(ArrayList<Integer> argDots) {
                 dots = new ArrayList<Integer>(argDots);
             }
-        }
-
-        public class ShapesSet {
-            ArrayList<String> strings;
-            ArrayList<String> correctStrings;
-
-            public ShapesSet(ArrayList<String> argStrings) {
-                strings = argStrings;
-            }
-
-            public ShapesSet(ArrayList<String> argStrings, ArrayList<String> argCorrectString) {
-                strings = argStrings;
-                correctStrings = argCorrectString;
-            }
-
-            public ArrayList<String> getCorrectStrings() {
-                if (correctStrings != null) {
-                    ArrayList<String> tempStrings = new ArrayList<String>();
-                    for (int i = 0; i < correctStrings.size(); i++) {
-                        if (correctStrings.get(i).equals("")) {
-                            tempStrings.add(strings.get(i));
-                        } else {
-                            tempStrings.add(correctStrings.get(i));
-                        }
+            public ThroughList(String[] argDots) {
+                dots = new ArrayList<Integer>();
+                for (String s: argDots) {
+                    try {
+                        dots.add(Integer.parseInt(s));
+                    } catch (Exception e) {
+                        Log.e("", e.getMessage());
                     }
-                    return tempStrings;
-                } else {
-                    return strings;
                 }
             }
         }
@@ -183,846 +162,31 @@ public class MyActivity extends Activity {
             }
         }
 
+        public ArrayList<String> getCorrectStrings(Cursor c) {
+            ArrayList<String> strings = new ArrayList<String>(Arrays.asList(c.getString(c.getColumnIndex("sequence")).split(",", -1)));
+            ArrayList<String> correctStrings = c.isNull(c.getColumnIndex("correctSeq")) ? null : new ArrayList<String>(Arrays.asList(c.getString(c.getColumnIndex("correctSeq")).split(",", -1)));
+
+            if (correctStrings != null) {
+                ArrayList<String> tStrings = new ArrayList<String>();
+                for (int i = 0; i < correctStrings.size(); i++) {
+                    if (correctStrings.get(i).equals("")) {
+                        tStrings.add(strings.get(i));
+                    } else {
+                        tStrings.add(correctStrings.get(i));
+                    }
+                }
+                return tStrings;
+            } else {
+                return strings;
+            }
+        }
+        
         public MyView(Context context) {
             super(context);
-
-            ArrayList<Integer> giveDot;
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 2, 9, 8));
-            shapes.put("ABANDON", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 0, 1));
-            shapes.put("ADAPT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 3, 9));
-            shapes.put("ADVANCE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 0, 4, 1));
-            shapes.put("AGAIN", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 6, 7, 8, 9, 10, 5));
-            shapes.put("ALL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 1, 0));
-            shapes.put("ANSWER", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 5, 4, 7));
-            shapes.put("ATTACK", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 5, 4, 6, 1));
-            shapes.put("AVOID", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 1, 7));
-            shapes.put("BARRIER", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 2, 8, 1));
-            shapes.put("BEGIN", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 3, 4, 1, 8));
-            shapes.put("BEING", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 3, 4, 0));
-            shapes.put("BODY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 4, 6));
-            shapes.put("BREATHE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 1, 0, 2, 9, 8));
-            shapes.put("CAPTURE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 8, 1));
-            shapes.put("CHANGE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 10, 5, 6, 4, 0, 2, 8));
-            shapes.put("CHAOS", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 8));
-            shapes.put("CLEAR", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 8, 9, 10, 5, 6, 7, 8));
-            shapes.put("CLEAR ALL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 0, 2));
-            shapes.put("COMPLEX", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 1, 4, 7));
-            shapes.put("CONFLICT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 1, 7));
-            shapes.put("CONSEQUENCE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 6, 7, 8, 2, 3, 0, 4));
-            shapes.put("CONTEMPLATE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(1, 4, 7));
-            shapes.put("CONTRACT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 1));
-            shapes.put("COURAGE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 4, 6));
-            shapes.put("CREATE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 8, 2, 10, 3, 0));
-            shapes.put("CREATIVITY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 9, 10, 3, 0, 1, 7, 6, 4));
-            shapes.put("MIND", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 3, 0, 8));
-            shapes.put("DANGER", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 0, 2, 8));
-            shapes.put("DATA", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 8, 1, 6));
-            shapes.put("DEFEND", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 7, 8));
-            shapes.put("DESTINATION", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 4, 1, 2, 8));
-            shapes.put("DESTINY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 1, 7));
-            shapes.put("DESTROY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 2, 9));
-            shapes.put("DETERIORATE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 1, 7));
-            shapes.put("DIE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 1, 4, 6));
-            shapes.put("DIFFICULT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 7, 8, 9));
-            shapes.put("DISCOVER", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 10, 9));
-            shapes.put("DISTANCE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 0, 2, 8));
-            shapes.put("EASY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 5, 6, 1, 8));
-            shapes.put("END", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 7, 6, 5, 3, 0, 4, 3));
-            shapes.put("ENLIGHTENED_A", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 8, 7, 6, 5, 3, 0, 4, 3));
-            shapes.put("ENLIGHTENED_B", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 4, 1));
-            shapes.put("EQUAL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 6, 4, 3, 2));
-            shapes.put("ESCAPE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 3, 2));
-            shapes.put("EVOLUTION", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 4, 1));
-            shapes.put("FAILURE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 1, 6));
-            shapes.put("FEAR", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 6, 7));
-            shapes.put("FOLLOW", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 9));
-            shapes.put("FORGET", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 1, 7));
-            shapes.put("FUTURE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 2));
-            shapes.put("GAIN", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 1, 4, 6));
-            shapes.put("GOVERNMENT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2));
-            shapes.put("GROW", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(7, 1, 0, 3, 5, 4, 0));
-            shapes.put("HARM", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 1, 8, 2, 0, 4, 5, 3, 0));
-            shapes.put("HARMONY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(1, 0, 2, 8));
-            shapes.put("HAVE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 2, 1));
-            shapes.put("HELP", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 5, 6, 1, 8));
-            shapes.put("END", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 6, 1, 2));
-            shapes.put("HIDE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 3, 4, 8));
-            shapes.put("I", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(1, 7));
-            shapes.put("IGNORE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 0, 2, 3, 0));
-            shapes.put("IMPERFECT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 1));
-            shapes.put("IMPROVE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 3, 2, 0));
-            shapes.put("IMPURE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 3, 10, 9, 2, 0, 8));
-            shapes.put("INTERRUPT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 4, 0, 3, 10, 9, 8));
-            shapes.put("JOURNEY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 3, 0, 4, 8));
-            shapes.put("KNOWLEDGE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 10, 9, 2, 8));
-            shapes.put("LEAD", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 10, 5, 6, 4, 1, 7));
-            shapes.put("LEGACY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 4));
-            shapes.put("LESS", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 0, 4, 6, 5));
-            shapes.put("LIBERATE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 0, 1, 4, 0));
-            shapes.put("LIE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 2, 0, 4, 6));
-            shapes.put("LIVE AGAIN", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(6, 1));
-            shapes.put("LOSE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 0, 1, 6));
-            shapes.put("MESSAGE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 3, 0, 8));
-            shapes.put("IDEA", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 1));
-            shapes.put("MORE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 5, 4, 3, 2));
-            shapes.put("MYSTERY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 4, 1, 7));
-            shapes.put("NATURE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 1, 7));
-            shapes.put("NEW", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 1));
-            shapes.put("NO", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 9, 2, 0, 8));
-            shapes.put("NOURISH", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2));
-            shapes.put("OLD", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 1, 8));
-            shapes.put("OPEN", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 2, 1, 8, 9, 10, 5, 6, 7, 8));
-            shapes.put("OPEN ALL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 4, 6, 7, 1, 2, 9, 10));
-            shapes.put("OPENING", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 9));
-            shapes.put("PAST", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 2, 9));
-            shapes.put("PATH", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 2, 9, 8, 7, 1, 0));
-            shapes.put("PERFECTION", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 4, 5, 3, 0, 1, 7));
-            shapes.put("PERSPECTIVE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 1, 7, 6));
-            shapes.put("POTENTIAL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 0, 4, 1, 2, 8, 1));
-            shapes.put("PRESENCE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 2, 1, 4));
-            shapes.put("PRESENT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 4, 1, 0));
-            shapes.put("PURE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 5, 4));
-            shapes.put("PURSUE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 0, 3, 2, 9));
-            shapes.put("CHASE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 3, 2));
-            shapes.put("QUESTION", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 0, 1, 7));
-            shapes.put("REACT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 0, 4, 6, 7));
-            shapes.put("REBEL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 3, 10, 5, 0));
-            shapes.put("RECHARGE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 5, 0, 8, 2));
-            shapes.put("RESISTANCE_A", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(4, 3, 5, 0, 8, 1));
-            shapes.put("RESISTANCE_B", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 0, 1, 7, 8));
-            shapes.put("RESTRAINT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 4, 7));
-            shapes.put("RETREAT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 3, 4, 7));
-            shapes.put("SAFETY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 0, 1, 6));
-            shapes.put("SAVE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 3));
-            shapes.put("SEE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 4, 3, 2, 1));
-            shapes.put("SEEK", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 8, 7));
-            shapes.put("SELF", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 2, 0, 4, 1, 7));
-            shapes.put("SEPARATE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 3, 5, 4, 1, 7));
-            shapes.put("SHAPERS", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(7, 1, 2, 9, 8));
-            shapes.put("SHARE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 1));
-            shapes.put("SIMPLE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 0, 4, 1, 8));
-            shapes.put("SOUL", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 1, 7));
-            shapes.put("STABILITY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 4, 1, 2));
-            shapes.put("STRONG", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 0, 4, 3, 0));
-            shapes.put("TOGETHER", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 0, 1, 4, 0, 2, 3));
-            shapes.put("TRUTH", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(0, 1, 6));
-            shapes.put("USE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(8, 3, 5, 4, 8));
-            shapes.put("VICTORY", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(9, 2, 8, 1));
-            shapes.put("WANT", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(3, 4, 8));
-            shapes.put("WE", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 3, 4, 1));
-            shapes.put("WEAK", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(10, 2, 0, 1, 6));
-            shapes.put("WORTH", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(2, 3, 4, 1, 0, 2));
-            shapes.put("XM", new ThroughList(giveDot));
-            giveDot = new ArrayList<Integer>(Arrays.asList(5, 2, 1, 5));
-            shapes.put("YOU", new ThroughList(giveDot));
-
-            shapesKeyList = new ArrayList<String>(shapes.keySet());
-
-            ArrayList<String> giveStrings;
-            ArrayList<String> correctStrings;
-            //#5
-            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "NO", "XM", "LOSE", "SELF"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "INSIDE", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CLEAR", "MIND", "LIBERATE", "BARRIER", "BODY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "PURE", "FUTURE", "BEING", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "HUMAN", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "PURE", "FUTURE", "NO", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "NOT", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DEFEND", "BEING", "GOVERNMENT", "SHAPERS", "LIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "BEING", "GOVERNMENT", "SHAPERS", "LIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "GOVERNMENT", "END", "CONFLICT", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "", "", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "I", "AVOID", "BEING", "LIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "SELF", "", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FORGET", "PAST", "SEE", "PRESENT", "DANGER"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FORGET", "ATTACK", "SEE", "DISTANCE", "HARMONY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "WAR", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "SHAPERS", "TOGETHER", "CREATE", "DESTINY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HARM", "EVOLUTION", "PURSUE", "MORE", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PROGRESS", "", "", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("MORE", "DATA", "GAIN", "OPENING", "ADVANCE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "PORTAL", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISTANCE", "SELF", "AVOID", "BEING", "LIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("OUTSIDE", "", "", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURSUE", "CONFLICT", "ATTACK", "ADVANCE", "CHAOS"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "WAR", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SAVE", "BEING", "GOVERNMENT", "DESTROY", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "CIVILIZATION", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "MIND", "BODY", "DISCOVER", "ENLIGHTENED_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "", "ENLIGHTENMENT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "TRUTH", "LIE", "SHAPERS", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "OPENING", "DATA", "CREATE", "CHAOS"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "WANT", "BEING", "MIND", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "TRUTH", "FORGET", "EASY", "EVOLUTION"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "", "SUCCESS"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("STABILITY", "STRONG", "TOGETHER", "DEFEND", "RESISTANCE_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("STAY", "", "", "", "RESISTANCE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("USE", "RESTRAINT", "FOLLOW", "EASY", "PATH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("WANT", "TRUTH", "PURSUE", "DIFFICULT", "PATH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("WEAK", "BEING", "DESTINY", "DESTROY", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            //#4
-            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "GOVERNMENT", "AGAIN", "FAILURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "REPEAT", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "ENLIGHTENED_A", "PURSUE", "RESISTANCE_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "ENLIGHTENMENT", "", "RESISTANCE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "RESISTANCE_A", "PURSUE", "ENLIGHTENED_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE", "", "ENLIGHTENMENT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "WEAK", "SHAPERS", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "XM", "MESSAGE", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "AGAIN", "JOURNEY", "AGAIN"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BREATHE", "NATURE", "PERFECTION", "HARMONY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "FEAR", "DISCOVER", "COURAGE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CHANGE", "BODY", "IMPROVE", "BEING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "HUMAN"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CHANGE", "FUTURE", "CAPTURE", "DESTINY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CHANGE", "BEING", "POTENTIAL", "USE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CHAOS", "BARRIER", "SHAPERS", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CHAOS", "DESTROY", "SHAPERS", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CLEAR", "MIND", "OPEN", "MIND"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CLEAR ALL", "OPEN ALL", "DISCOVER", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("COMPLEX", "SHAPERS", "GOVERNMENT", "STRONG"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "COMPLEX", "SHAPERS", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "COMPLEX", "SHAPERS", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "SELF", "PATH", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("COURAGE", "ATTACK", "SHAPERS", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "WAR", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "DISTANCE", "IMPURE", "PATH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE", "CHANGE", "DESTINY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE", "NO", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "INSIDE", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE", "NO", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "NOT", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DEFEND", "MESSAGE", "ANSWER", "MIND"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "IDEA"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "COMPLEX", "SHAPERS", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "DESTINY", "BEING", "LIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DETERIORATE", "BEING", "WEAK", "REBEL"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("END", "JOURNEY", "DISCOVER", "DESTINY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "SIMPLE", "BEING", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FOLLOW", "SHAPERS", "OPENING", "MESSAGE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FORGET", "CONFLICT", "OPEN", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "ACCEPT", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "OPENING", "ATTACK", "WEAK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HELP", "GAIN", "CREATE", "PURSUE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HELP", "SHAPERS", "CREATE", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HIDE", "IMPURE", "BEING", "MIND"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "HUMAN", "THOUGHT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "PAST", "PRESENT", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "SOUL", "STRONG", "PURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IGNORE", "BEING", "CHAOS", "LIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "BODY", "PURSUE", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "MIND", "JOURNEY", "NO"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "INSIDE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NO", "MIND", "JOURNEY", "PERFECTION"));
-            correctStrings = new ArrayList<String>(Arrays.asList("INSIDE", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("JOURNEY", "NO", "IMPROVE", "SOUL"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "INSIDE", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LEAD", "PURSUE", "REACT", "DEFEND"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LESS", "MIND", "MORE", "SOUL"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LESS", "TRUTH", "MORE", "CHAOS"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LIBERATE", "XM", "OPENING", "TOGETHER"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LOSE", "DANGER", "GAIN", "SAFETY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("MORE", "MIND", "LESS", "SOUL"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "SPIRIT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "XM", "CREATE", "MIND"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "THOUGHT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PAST", "AGAIN", "PRESENT", "AGAIN"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PATH", "RESTRAINT", "STRONG", "SAFETY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HARMONY", "PATH", "NOURISH", "PRESENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PEACE", "", "", "NOW"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PERFECTION", "PERFECTION", "SAFETY", "ALL"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "BALANCE", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPENING", "CHANGE", "GOVERNMENT", "END"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PORTAL", "", "CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPENING", "DIE", "GOVERNMENT", "DIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PORTAL", "", "CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPENING", "HAVE", "TRUTH", "DATA"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PORTAL", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPENING", "POTENTIAL", "CHANGE", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PORTAL", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "TRUTH", "GAIN", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("RESTRAINT", "FEAR", "AVOID", "DANGER"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("RESTRAINT", "PATH", "GAIN", "HARMONY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEEK", "DATA", "DISCOVER", "PATH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("SEARCH", "", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEEK", "TRUTH", "SAVE", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("SEARCH", "", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEEK", "XM", "SAVE", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("SEARCH", "", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "WEAK", "IGNORE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "CHAOS", "PURE", "HARM"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "HAVE", "STRONG", "PATH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "MESSAGE", "END", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "MIND", "COMPLEX", "HARMONY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "PAST", "PRESENT", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SHAPERS", "OPENING", "MIND", "RESTRAINT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "GOVERNMENT", "IMPURE", "WEAK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SIMPLE", "MESSAGE", "COMPLEX", "IDEA"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SOUL", "BEING", "REBEL", "DIE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("STABILITY", "TOGETHER", "DEFEND", "TRUTH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("STAY", "HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("STRONG", "MIND", "PURSUE", "TRUTH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "IDEA", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("STRONG", "RESISTANCE_A", "CAPTURE", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("STRONG", "TOGETHER", "AVOID", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "IMPROVE", "BEING", "SOUL"));
-            correctStrings = new ArrayList<String>(Arrays.asList("STRUGGLE", "", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "DISCOVER", "HARMONY", "EQUAL"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("TRUTH", "MIND", "DISCOVER", "XM"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "IDEA", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("XM", "DIE", "CHAOS", "BREATHE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "", "LIVE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("XM", "HAVE", "MIND", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            //#3
-            giveStrings = new ArrayList<String>(Arrays.asList("OPEN", "BEING", "WEAK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("ACCEPT", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "ENLIGHTENED_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "ENLIGHTENED"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "BEING", "RESISTANCE_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", "RESISTANCE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ADVANCE", "PURE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AGAIN", "JOURNEY", "DISTANCE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "OUTSIDE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ALL", "GOVERNMENT", "CHAOS"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "DIFFICULT", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "SHAPERS", "EVOLUTION"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "CHAOS", "SOUL"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "COMPLEX", "CONFLICT"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "COMPLEX", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "DESTINY", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "PURE", "CHAOS"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AVOID", "ATTACK", "CHAOS"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "WAR", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ANSWER", "AGAIN", "AVOID"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "REPEAT", "STRUGGLE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "SHAPERS", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "XM", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("COMPLEX", "JOURNEY", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "JOURNEY", "DISTANCE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "OUTSIDE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CONTEMPLATE", "POTENTIAL", "PERFECTION"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("COURAGE", "DESTINY", "REBEL"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "GOVERNMENT", "DANGER"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "IMPURE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DESTROY", "WEAK", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "OPENING", "TRUTH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "PURE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "RESISTANCE_A", "TRUTH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SAFETY", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "ENLIGHTENED_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "ENLIGHTENMENT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "SHAPERS", "MESSAGE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "IMPURE", "EVOLUTION"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "IMPURE", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "SHAPERS", "HARM"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FEAR", "CHAOS", "XM"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FOLLOW", "PURE", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FUTURE", "EQUAL", "PAST"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "GOVERNMENT", "HARMONY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION", "PEACE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "FUTURE", "ESCAPE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HARM", "DANGER", "AVOID"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HIDE", "JOURNEY", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("BEING", "GAIN", "SAFETY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("HUMAN", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "ADVANCE", "PRESENT"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "FUTURE", "TOGETHER"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "BEING", "SHAPERS"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NO", "MIND", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("INSIDE", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NO", "XM", "TRUTH"));
-            correctStrings = new ArrayList<String>(Arrays.asList("INSIDE", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LEAD", "ENLIGHTENED_A", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "ENLIGHTENMENT", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LEAD", "RESISTANCE_A", "QUESTION"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LIBERATE", "OPENING", "POTENTIAL"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LOSE", "ATTACK", "RETREAT"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("MIND", "EQUAL", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("MIND", "OPEN", "BREATHE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "LIVE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NATURE", "PURE", "DEFEND"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "MIND", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("NOURISH", "XM", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "OPENING", "EVOLUTION"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL", "SUCCESS"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "SIMPLE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PATH", "HARMONY", "DIFFICULT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PEACE", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HARMONY", "SIMPLE", "JOURNEY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PEACE", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HARMONY", "STABILITY", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PEACE", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("POTENTIAL", "XM", "ATTACK"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("POTENTIAL", "XM", "HARMONY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "PEACE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURSUE", "COMPLEX", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "CONFLICT", "DATA"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "HIDE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("REACT", "IMPURE", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("REPEAT", "SEARCH", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("AGAIN", "SEEK", "SAFETY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("REPEAT", "SEARCH", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEEK", "XM", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("SEARCH", "", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEE", "TRUTH", "PRESENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "NOW"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "FUTURE", "EVOLUTION"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURE", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("TOGETHER", "PURSUE", "SAFETY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("TRUTH", "NOURISH", "SOUL"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("WANT", "TRUTH", "PRESENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "NOW"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "CREATE", "DANGER"));
-            correctStrings = new ArrayList<String>(Arrays.asList("WAR", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "DESTROY", "FUTURE"));
-            correctStrings = new ArrayList<String>(Arrays.asList("WAR", "", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("XM", "NOURISH", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            //#2
-            giveStrings = new ArrayList<String>(Arrays.asList("ATTACK", "EVOLUTION"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CAPTURE", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CHANGE", "PRESENT"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GOVERNMENT", "CHAOS"));
-            correctStrings = new ArrayList<String>(Arrays.asList("CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GOVERNMENT", "WEAK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("CIVILIZATION", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "DANGER"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("CREATE", "FUTURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DEFEND", "NATURE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DIFFICULT", "BARRIER"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "ENLIGHTENED_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "ENLIGHTENMENT"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "OPENING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PORTAL"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("DISCOVER", "RESISTANCE_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("ESCAPE", "EVOLUTION"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("FOLLOW", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "HARMONY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "PEACE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("GAIN", "SAFETY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HIDE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("IMPROVE", "BEING"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "HUMAN"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("JOURNEY", "NO"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "INSIDE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LEAD", "RESISTANCE_A"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "RESISTANCE"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("LIBERATE", "XM"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("OPEN ALL", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("HARMONY", "STABILITY"));
-            correctStrings = new ArrayList<String>(Arrays.asList("PEACE", ""));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "CHAOS"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "LIE"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "MIND"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "SHAPERS"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURSUE", "CONFLICT"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("PURSUE", "JOURNEY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "ALL"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("QUESTION", "GOVERNMENT"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "CIVILIZATION"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("RETREAT", "SAFETY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEE", "SHAPERS"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEE", "TRUTH"));
-            shapesSets.add(new ShapesSet(giveStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("SEPARATE", "ATTACK"));
-            correctStrings = new ArrayList<String>(Arrays.asList("", "WAR"));
-            shapesSets.add(new ShapesSet(giveStrings, correctStrings));
-            giveStrings = new ArrayList<String>(Arrays.asList("STRONG", "BODY"));
-            shapesSets.add(new ShapesSet(giveStrings));
-
-            isEndLoad = true;
+            dbHelper = new DBHelper(context);
+            db = dbHelper.getReadableDatabase();
+            c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null);
+            c2 = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null);
 
             int giveTime = 200;
             int giveQs = 1;
@@ -1038,35 +202,45 @@ public class MyActivity extends Activity {
             gameMode = Integer.parseInt(sp.getString("gamemode", "0"));
             int level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
+            qTotal = difficulty.get(level).qs;
+            //Log.v("echo", "qTotal:" + qTotal);
             defTime = difficulty.get(level).time;
-            if (difficulty.get(level).qs > 1) {
-                int randomVal = (int) (Math.random() * shapesSets.size());
+            if (qTotal > 1) {
+                c2.moveToLast();
+                long max = c2.getLong(0);
+                int randomVal = (int) (Math.random() * max);
                 //int randomVal = 0;
-                while (shapesSets.get(randomVal).strings.size() != difficulty.get(level).qs) {
-                    randomVal = (int) (Math.random() * shapesSets.size());
+                c2.moveToPosition(randomVal);
+                while (c2.getInt(c2.getColumnIndex("level")) != qTotal) {
+                    randomVal = (int) (Math.random() * max);
+                    c2.moveToPosition(randomVal);
                 }
-                qTotal = shapesSets.get(randomVal).strings.size();
-                //Log.v("echo", "qTotal:" + qTotal);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
+                String[] shapesSplit = c2.getString(2).split(",", -1);
                 for (int i = 0; i < qTotal; i++) {
                     throughList[i] = new ThroughList();
-                    answerThroughList[i] = shapes.get(shapesSets.get(randomVal).strings.get(i));
+                    Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
+                    c.moveToFirst();
+                    String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
+                    answerThroughList[i] = new ThroughList(dotsSplit);
                 }
-                correctStr = shapesSets.get(randomVal).getCorrectStrings();
+                correctStr = getCorrectStrings(c2);
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             } else {
                 qTotal = 1;
                 //Log.v("echo", "qTotal:" + qTotal);
-                int randomVal = (int) (Math.random() * shapes.size());
+                c1.moveToLast();
+                long max = c1.getLong(0);
+                int randomVal = (int) (Math.random() * max);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
-                answerThroughList[0] = shapes.get(shapesKeyList.get(randomVal).toString());
-                correctStr = new ArrayList<String>(Arrays.asList(shapesKeyList.get(randomVal).toString()));
-                //for debug of shapes
-                //answerThroughList[0] = shapes.get("");
-                //correctStr = new ArrayList<String>(Arrays.asList(""));
+                Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where id = '" + randomVal + "';", null);
+                c.moveToFirst();
+                String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
+                answerThroughList[0] = new ThroughList(dotsSplit);
+                correctStr = new ArrayList<String>(Arrays.asList("" + c.getString(c.getColumnIndex("name"))));
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             }
             p.setAntiAlias(true);
@@ -1080,6 +254,8 @@ public class MyActivity extends Activity {
             }
 
             typeface = Typeface.createFromAsset(getContext().getAssets(), "Ricty-Regular.ttf");
+
+            isEndLoad = true;
 
             Timer timer = new Timer(false);
             timer.schedule(new TimerTask() {
@@ -1199,7 +375,7 @@ public class MyActivity extends Activity {
 
             p.setColor(Color.WHITE);
             p.setTextAlign(Paint.Align.CENTER);
-            p.setTextSize(70);
+            p.setTextSize(60);
             if (doShow) {
                 c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 20, p);
             } else {
@@ -1293,49 +469,33 @@ public class MyActivity extends Activity {
             int hideLength = 1;
             int que = -1;
 
-            if (currentTime - initTime > marginTime) {
-                que++;
-            }
             if (currentTime - initTime - marginTime >= 0) {
                 que = (currentTime - initTime - marginTime) * 2 / (showLength + hideLength);
             }
-            if ((currentTime - initTime - marginTime) % 2 >= showLength) {
-                que++;
-            }
-            if (currentTime - initTime >= (qTotal + 2.2) * (showLength + hideLength) + marginTime) {
-                que++;
-            }
-            switch (que - (qTotal * 2 - 1)) {
-                default:
-                    if (que % 2 == 0 && que >= 0) {
-                        for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
-                            if (gameMode == 0 || gameMode == 2) {
-                                if (i == 0) {
-                                    resetLocus();
-                                    setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
-                                } else {
-                                    setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
-                                }
-                            }
-                            if (gameMode == 0 || gameMode == 1) {
-                                p.setColor(Color.WHITE);
-                                p.setTextSize(80);
-                                p.setTypeface(typeface);
-                                p.setTextAlign(Paint.Align.CENTER);
-                                c.drawText(correctStr.get(que / 2), offsetX, offsetY / 3, p);
+            if (que < qTotal * 2) {
+                if (que % 2 == 0 && que >= 0) {
+                    for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
+                        if (gameMode == 0 || gameMode == 2) {
+                            if (i == 0) {
+                                resetLocus();
+                                setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
+                            } else {
+                                setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
                             }
                         }
-                    } else {
-                        resetLocus();
+                        if (gameMode == 0 || gameMode == 1) {
+                            p.setColor(Color.WHITE);
+                            p.setTextSize(80);
+                            p.setTypeface(typeface);
+                            p.setTextAlign(Paint.Align.CENTER);
+                            c.drawText(correctStr.get(que / 2), offsetX, offsetY / 3, p);
+                        }
                     }
-                    break;
-
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                    showFlash(c, qTotal * (showLength + hideLength) + marginTime, currentTime, 35);
-                    break;
+                } else {
+                    resetLocus();
+                }
+            } else {
+                showFlash(c, qTotal * (showLength + hideLength) + marginTime, currentTime, 35);
             }
         }
 
