@@ -1,4 +1,4 @@
-package jp.org.geckour.glyph;
+package jp.org.example.geckour.glyph;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -14,6 +14,7 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -22,6 +23,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,6 +63,10 @@ public class MyActivity extends Activity {
         }
         view = new MyView(this);
         setContentView(view);
+
+        Tracker t = ((Analytics) getApplication()).getTracker(Analytics.TrackerName.APP_TRACKER);
+        t.setScreenName("MyActivity");
+        t.send(new HitBuilders.AppViewBuilder().build());
     }
 
     @Override
@@ -104,7 +112,7 @@ public class MyActivity extends Activity {
         double cr = Math.PI / 3;
         double radius;
         PointF[] dots = new PointF[11];
-        ArrayList<Point> Locus = new ArrayList<Point>();
+        ArrayList<Point> Locus = new ArrayList<>();
         //ArrayList<Point> blurLocus = new ArrayList<Point>();
         Path locusPath = new Path();
         int framec = 0;
@@ -119,14 +127,14 @@ public class MyActivity extends Activity {
         boolean isFirstDraw = true;
         boolean isFirstTimeUp = true;
         boolean isFirstEndGame = true;
-        ArrayList<Difficulty> difficulty = new ArrayList<Difficulty>();
+        ArrayList<Difficulty> difficulty = new ArrayList<>();
         boolean isStartGame = false;
         boolean isEndGame = false;
         boolean doShow = true;
         Typeface typeface;
         ArrayList<String> correctStr;
         int holdTime;
-        PointF[] buttonPoint = new PointF[2];
+        Point[] buttonPoint = new Point[2];
         DBHelper dbHelper;
         SQLiteDatabase db;
         Cursor c1, c2;
@@ -135,13 +143,13 @@ public class MyActivity extends Activity {
             ArrayList<Integer> dots;
 
             public ThroughList() {
-                dots = new ArrayList<Integer>();
+                dots = new ArrayList<>();
             }
             public ThroughList(ArrayList<Integer> argDots) {
-                dots = new ArrayList<Integer>(argDots);
+                dots = new ArrayList<>(argDots);
             }
             public ThroughList(String[] argDots) {
-                dots = new ArrayList<Integer>();
+                dots = new ArrayList<>();
                 for (String s: argDots) {
                     try {
                         dots.add(Integer.parseInt(s));
@@ -163,11 +171,11 @@ public class MyActivity extends Activity {
         }
 
         public ArrayList<String> getCorrectStrings(Cursor c) {
-            ArrayList<String> strings = new ArrayList<String>(Arrays.asList(c.getString(c.getColumnIndex("sequence")).split(",", -1)));
-            ArrayList<String> correctStrings = c.isNull(c.getColumnIndex("correctSeq")) ? null : new ArrayList<String>(Arrays.asList(c.getString(c.getColumnIndex("correctSeq")).split(",", -1)));
+            ArrayList<String> strings = new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("sequence")).split(",", -1)));
+            ArrayList<String> correctStrings = c.isNull(c.getColumnIndex("correctSeq")) ? null : new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("correctSeq")).split(",", -1)));
 
             if (correctStrings != null) {
-                ArrayList<String> tStrings = new ArrayList<String>();
+                ArrayList<String> tStrings = new ArrayList<>();
                 for (int i = 0; i < correctStrings.size(); i++) {
                     if (correctStrings.get(i).equals("")) {
                         tStrings.add(strings.get(i));
@@ -220,9 +228,9 @@ public class MyActivity extends Activity {
                 String[] shapesSplit = c2.getString(2).split(",", -1);
                 for (int i = 0; i < qTotal; i++) {
                     throughList[i] = new ThroughList();
-                    Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
+                    Cursor c = db.rawQuery("select path from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
                     c.moveToFirst();
-                    String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
+                    String[] dotsSplit = c.getString(0).split(",", -1);
                     answerThroughList[i] = new ThroughList(dotsSplit);
                 }
                 correctStr = getCorrectStrings(c2);
@@ -240,7 +248,7 @@ public class MyActivity extends Activity {
                 c.moveToFirst();
                 String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
                 answerThroughList[0] = new ThroughList(dotsSplit);
-                correctStr = new ArrayList<String>(Arrays.asList("" + c.getString(c.getColumnIndex("name"))));
+                correctStr = new ArrayList<>(Arrays.asList("" + c.getString(c.getColumnIndex("name"))));
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             }
             p.setAntiAlias(true);
@@ -364,22 +372,22 @@ public class MyActivity extends Activity {
         }
 
         public void showButton(Canvas c) {
-            float buttonWidth = doShow ? 250 : 180;
-            float buttonHeight = 80;
-            float margin = 20;
-            buttonPoint[0] = new PointF(offsetX * 2 - buttonWidth - margin, offsetY * 2 - buttonHeight - margin);
-            buttonPoint[1] = new PointF(offsetX * 2 - margin, offsetY * 2 - margin);
-            p.setColor(getResources().getColor(R.color.button));
-            p.setStyle(Paint.Style.FILL);
-            c.drawRect(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y, p);
+            int buttonWidth = doShow ? 250 : 180;
+            int buttonHeight = 100;
+            int margin = 20;
+            buttonPoint[0] = new Point((int)(offsetX * 2 - buttonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
+            buttonPoint[1] = new Point((int)(offsetX * 2 - margin), (int)(offsetY * 2 - margin));
 
-            p.setColor(Color.WHITE);
+            p.setColor(getResources().getColor(R.color.button_text));
             p.setTextAlign(Paint.Align.CENTER);
             p.setTextSize(60);
+            Drawable drawable = getResources().getDrawable(R.drawable.button);
+            drawable.setBounds(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y);
+            drawable.draw(c);
             if (doShow) {
-                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 20, p);
+                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
             } else {
-                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 20, p);
+                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
             }
         }
 
@@ -495,7 +503,7 @@ public class MyActivity extends Activity {
                     resetLocus();
                 }
             } else {
-                showFlash(c, qTotal * (showLength + hideLength) + marginTime, currentTime, 35);
+                showFlash(c, qTotal * (showLength + hideLength) + marginTime, currentTime, 28);
             }
         }
 
@@ -506,7 +514,7 @@ public class MyActivity extends Activity {
             int alpha = 255;
 
             que = (diffTime) / interval;
-            if (diffTime > interval * 2.2) {
+            if (diffTime > interval * 2.5) {
                 que++;
             }
 
@@ -586,8 +594,8 @@ public class MyActivity extends Activity {
         }
 
         public boolean judgeLocus(ThroughList answer, ThroughList through) {
-            ArrayList<int[]> answerPaths = new ArrayList<int[]>();
-            ArrayList<int[]> passedPaths = new ArrayList<int[]>();
+            ArrayList<int[]> answerPaths = new ArrayList<>();
+            ArrayList<int[]> passedPaths = new ArrayList<>();
 
             if (answer.dots.size() != through.dots.size()) {
                 return false;
@@ -661,7 +669,7 @@ public class MyActivity extends Activity {
             for (int i = 0; i < 11; i++) {
                 if (x0 == x1 && y0 == y1) {
                     //円の方程式にて当たり判定
-                    if ((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y) < (offsetX * 0.8 / 18 + 20) * (offsetX * 0.8 / 18 + 20) && state) {
+                    if ((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y) < (offsetX * 0.8 / 18 + 30) * (offsetX * 0.8 / 18 + 30) && state) {
                         isThrough[i] = true;
                         collisionDot = i;
                     }
@@ -669,7 +677,7 @@ public class MyActivity extends Activity {
                 //線分と円の当たり判定
                 float a = y0 - y1, b = x1 - x0, c = x0 * y1 - x1 * y0;
                 double d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt(a * a + b * b);
-                double lim = offsetX * 0.8 / 18 + 20;
+                double lim = offsetX * 0.8 / 18 + 30;
                 if (-lim <= d && d <= lim) {    //線分への垂線と半径
                     double inner0 = x0 * dots[i].y - dots[i].x * y0, inner1 = x1 * dots[i].y - dots[i].x * y1;
                     double d0 = Math.sqrt((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y));

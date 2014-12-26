@@ -4,5 +4,5 @@
     <color name="dots">#ffffff</color>
     <color name="button">#5002ffc5</color>
     <color name="button_pressed">#b002ffc5</color>
-    <color name="button_text">#ffffff</color>
+    <color name="button_text">#c2fcff</color>
 </resources>

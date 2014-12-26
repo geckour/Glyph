@@ -1,4 +1,4 @@
-package jp.org.geckour.glyph;
+package jp.org.example.geckour.glyph;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

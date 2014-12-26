@@ -1,4 +1,4 @@
-package jp.org.geckour.glyph;
+package jp.org.example.geckour.glyph;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -9,12 +9,19 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+
 public class SplashActivity extends Activity {
     SharedPreferences sp;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
+
+        Tracker t = ((Analytics) getApplication()).getTracker(Analytics.TrackerName.APP_TRACKER);
+        t.setScreenName("SplashActivity");
+        t.send(new HitBuilders.AppViewBuilder().build());
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
         if (sp.getString("min_level", "null").equals("null")) {

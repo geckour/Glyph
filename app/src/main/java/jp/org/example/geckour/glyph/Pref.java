@@ -1,7 +1,5 @@
-package jp.org.geckour.glyph;
+package jp.org.example.geckour.glyph;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
@@ -9,6 +7,9 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 
 public class Pref extends android.preference.PreferenceActivity {
     static SharedPreferences sp;
@@ -27,6 +28,10 @@ public class Pref extends android.preference.PreferenceActivity {
             Log.v("E", "Can't translate level into Integer. min:" + min + ", max:" + max);
         }
         getFragmentManager().beginTransaction().replace(android.R.id.content, new prefFragment()).commit();
+
+        Tracker t = ((Analytics) getApplication()).getTracker(Analytics.TrackerName.APP_TRACKER);
+        t.setScreenName("PreferenceActivity");
+        t.send(new HitBuilders.AppViewBuilder().build());
     }
 
     public static boolean isMinLevelChanged (Preference preference, Object newValue) {
