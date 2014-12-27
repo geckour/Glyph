@@ -17,8 +17,10 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -37,8 +39,10 @@ public class MyActivity extends Activity {
     SharedPreferences sp;
     int min = 0;
     int max = 8;
+    int countView = 0;
     MyView view;
-    float offsetX, offsetY;
+    float offsetX;
+    float offsetY;
     boolean isFocused = false;
 
     @Override
@@ -49,6 +53,13 @@ public class MyActivity extends Activity {
         actionBar.hide();
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sp.getInt("countView", -1) != -1) {
+            countView = sp.getInt("countView", 0);
+        } else {
+            countView = 1;
+        }
+        sp.edit().putInt("countView", countView + 1).apply();
+
         try {
             min = Integer.parseInt(sp.getString("min_level", "0"));
             Log.v("echo", "min:" + min);
@@ -61,6 +72,7 @@ public class MyActivity extends Activity {
         } catch (Exception e) {
             Log.v("error", "Can't translate maximum-level to int.");
         }
+
         view = new MyView(this);
         setContentView(view);
 
@@ -127,6 +139,8 @@ public class MyActivity extends Activity {
         boolean isFirstDraw = true;
         boolean isFirstTimeUp = true;
         boolean isFirstEndGame = true;
+        boolean doVibrate = false;
+        boolean showCountView = false;
         ArrayList<Difficulty> difficulty = new ArrayList<>();
         boolean isStartGame = false;
         boolean isEndGame = false;
@@ -138,6 +152,7 @@ public class MyActivity extends Activity {
         DBHelper dbHelper;
         SQLiteDatabase db;
         Cursor c1, c2;
+        int previousDot = -1;
 
         public class ThroughList {
             ArrayList<Integer> dots;
@@ -208,6 +223,8 @@ public class MyActivity extends Activity {
                 difficulty.add(i, new Difficulty(giveQs, giveTime));
             }
             gameMode = Integer.parseInt(sp.getString("gamemode", "0"));
+            doVibrate = sp.getBoolean("doVibrate", false);
+            showCountView = sp.getBoolean("showCountView", false);
             int level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
             qTotal = difficulty.get(level).qs;
@@ -284,6 +301,9 @@ public class MyActivity extends Activity {
             c.drawColor(getResources().getColor(R.color.background));
 
             if (isEndLoad) {
+                if (showCountView) {
+                    showCount(c);
+                }
                 if (isFirstDraw) {
                     radius = offsetX * 0.8;
                     dots[0].set(offsetX, (float) (offsetY * 1.2));
@@ -363,7 +383,7 @@ public class MyActivity extends Activity {
                     showTime(c, framec);
                     showQueNumber(c, framec, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
                     showButton(c);
-                } else if (doShow) {
+                } else if (!isStartGame) {
                     showQueNumber(c, framec, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
                 }
 
@@ -389,6 +409,17 @@ public class MyActivity extends Activity {
             } else {
                 c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
             }
+        }
+
+        public void showCount(Canvas c) {
+            p.setColor(getResources().getColor(R.color.button_text));
+            p.setTextSize(40);
+            p.setTypeface(typeface);
+            p.setTextAlign(Paint.Align.RIGHT);
+            float x = (float)(offsetX * 2.0 - 20.0);
+            float y = (float)(offsetY * 2.0 - 130.0);
+
+            c.drawText("Hack:" + countView, x, y, p);
         }
 
         public Path makeHexagon(PointF origin, float r) {
@@ -417,6 +448,8 @@ public class MyActivity extends Activity {
                     isFirstTimeUp = false;
                 }
             }
+            p.setTextSize(60);
+            p.setTextAlign(Paint.Align.CENTER);
             c.drawText(String.format("%02d", leftTime / 10) + ":" + leftTime % 10, offsetX, offsetY / 3, p);
             float barWidth = (float)(offsetX * 0.7 / defTime) * leftTime;
             p.setStyle(Paint.Style.FILL);
@@ -432,43 +465,43 @@ public class MyActivity extends Activity {
             for (int i = 0; i < qTotal; i++) {
                 x = offsetX - (width / 2 + totalMargin) + i * (hexaRadius + hexaMargin) * 2;
                 y = (float)(offsetY / 7.5);
-                PointF giveOrigin = new PointF(x, y);
+                PointF origin = new PointF(x, y);
 
                 if (isStartGame) {
                     if (i == qNum) {
                         if ((isReleased && throughList[qTotal - 1].dots.size() > 0)) {
                             p.setColor(normalColor);
                             p.setStyle(Paint.Style.FILL);
-                            c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                            c.drawPath(makeHexagon(origin, hexaRadius), p);
                         } else {
                             p.setColor(strongColor);
                             p.setStyle(Paint.Style.FILL);
-                            c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                            c.drawPath(makeHexagon(origin, hexaRadius), p);
                         }
                     } else if (i < qNum) {
                         p.setColor(normalColor);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexaRadius), p);
                     } else {
                         p.setColor(Color.BLACK);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexaRadius), p);
                     }
                 } else {
                     if (i == (currentTime - marginTime) / 50 && currentTime > marginTime) {
                         p.setColor(strongColor);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexaRadius), p);
                     } else {
                         p.setColor(Color.BLACK);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexaRadius), p);
                     }
                 }
                 p.setStrokeJoin(Paint.Join.BEVEL);
                 p.setColor(Color.argb(255, Color.red(normalColor), Color.green(normalColor), Color.blue(normalColor)));
                 p.setStyle(Paint.Style.STROKE);
-                c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+                c.drawPath(makeHexagon(origin, hexaRadius), p);
             }
         }
 
@@ -693,6 +726,12 @@ public class MyActivity extends Activity {
             }
             if (collisionDot != -1 && (throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != collisionDot)) {
                 throughList[qNum].dots.add(collisionDot);
+                Log.v("echo", "c:" + collisionDot + ", p:" + previousDot);
+                if (doVibrate) {
+                    Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                    vibrator.vibrate(50);
+                }
+                previousDot = collisionDot;
             }
         }
 

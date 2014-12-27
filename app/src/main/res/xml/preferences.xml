@@ -8,16 +8,28 @@
         android:entryValues="@array/gamemode_values"
         android:defaultValue="0"
         android:order="0" />
+    <SwitchPreference
+        android:key="doVibrate"
+        android:title="Vibration"
+        android:switchTextOn="ON"
+        android:switchTextOff="OFF"
+        android:order="1" />
+    <SwitchPreference
+        android:key="showCountView"
+        android:title="Count Hack"
+        android:switchTextOn="ON"
+        android:switchTextOff="OFF"
+        android:order="2" />
     <EditTextPreference
         android:key="min_level"
         android:title="Minimum Portal level"
         android:summary="@string/min_level"
         android:dialogTitle="Minimum value:0"
-        android:order="1" />
+        android:order="3" />
     <EditTextPreference
         android:key="max_level"
         android:title="Maximum Portal level"
         android:summary="@string/max_level"
         android:dialogTitle="Maximum value:8"
-        android:order="2" />
+        android:order="4" />
 </PreferenceScreen>
