@@ -20,7 +20,6 @@ import android.os.Handler;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -124,8 +123,7 @@ public class MyActivity extends Activity {
         double cr = Math.PI / 3;
         double radius;
         PointF[] dots = new PointF[11];
-        ArrayList<Point> Locus = new ArrayList<>();
-        //ArrayList<Point> blurLocus = new ArrayList<Point>();
+        ArrayList<Particle> Locus = new ArrayList<>();
         Path locusPath = new Path();
         int framec = 0;
         boolean[] isThrough = new boolean[11];
@@ -153,6 +151,7 @@ public class MyActivity extends Activity {
         SQLiteDatabase db;
         Cursor c1, c2;
         int previousDot = -1;
+        Canvas c;
 
         public class ThroughList {
             ArrayList<Integer> dots;
@@ -298,11 +297,12 @@ public class MyActivity extends Activity {
 
         @Override
         public void onDraw(Canvas c) {
+            this.c = c;
             c.drawColor(getResources().getColor(R.color.background));
 
             if (isEndLoad) {
                 if (showCountView) {
-                    showCount(c);
+                    showCount();
                 }
                 if (isFirstDraw) {
                     radius = offsetX * 0.8;
@@ -324,7 +324,7 @@ public class MyActivity extends Activity {
                 }
 
                 if (!isStartGame) {
-                    showAnswer(c, 0, framec);
+                    showAnswer(0, framec);
                 }
                 if (isEndGame) {
                     if (isFirstEndGame) {
@@ -333,7 +333,7 @@ public class MyActivity extends Activity {
                     }
                     if (framec > holdTime + marginTime) {
                         doShow = false;
-                        showResult(c, marginTime, holdTime + marginTime, framec);
+                        showResult(marginTime, holdTime + marginTime, framec);
                     }
                 }
 
@@ -365,10 +365,8 @@ public class MyActivity extends Activity {
                             c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
                         }
                     }
-                    for (Point point : Locus) {
-                        p.setColor(Color.rgb(255, 255, 150));
-                        p.setStyle(Paint.Style.FILL);
-                        c.drawCircle(point.x, point.y, dotRadius / 3, p);
+                    for (Particle particle : Locus) {
+                        particle.move();
                     }
                     if (!isStartGame || isReleased) {
                         p.setColor(Color.WHITE);
@@ -377,21 +375,135 @@ public class MyActivity extends Activity {
                         c.drawPath(locusPath, p);
                         p.setStrokeWidth(0);
                     }
+                    showButton();
                 }
 
                 if (isStartGame && doShow) {
-                    showTime(c, framec);
-                    showQueNumber(c, framec, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
-                    showButton(c);
+                    showTime(framec);
+                    showQueNumber(framec, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
                 } else if (!isStartGame) {
-                    showQueNumber(c, framec, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
+                    showQueNumber(framec, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
                 }
 
                 framec++;
             }
         }
 
-        public void showButton(Canvas c) {
+        class Particle {
+            float x0, y0;
+            Grain grain[] = new Grain[3];
+            int phase = 0;
+            int moveFrames = 20;
+            int initFrames = 0;
+            float grainR = 5;
+            double circleR = 0.5;
+
+            public Particle(float x0, float y0) {
+                this.x0 = x0;
+                this.y0 = y0;
+                initFrames = framec;
+                grain[0] = new Grain(x0, y0);
+                grain[1] = new Grain(x0, y0);
+                grain[2] = new Grain(x0, y0);
+            }
+
+            public void move() {
+                int diffFrames = framec - initFrames;
+                if (diffFrames == moveFrames || isReleased || !isStartGame) phase = 1;
+
+                if (phase == 0) {
+                    grain[0].x = grain[0].step0[0] + grain[0].diff[0] * (moveFrames - diffFrames) / moveFrames;
+                    grain[0].y = grain[0].step0[1] + grain[0].diff[1] * (moveFrames - diffFrames) / moveFrames;
+                    grain[1].x = grain[1].step0[0] + grain[1].diff[0] * (moveFrames - diffFrames) / moveFrames;
+                    grain[1].y = grain[1].step0[1] + grain[1].diff[1] * (moveFrames - diffFrames) / moveFrames;
+                    grain[2].x = grain[2].step0[0] + grain[2].diff[0] * (moveFrames - diffFrames) / moveFrames;
+                    grain[2].y = grain[2].step0[1] + grain[2].diff[1] * (moveFrames - diffFrames) / moveFrames;
+                }
+                if (phase == 1) {
+                    grain[0].x += (float) (Math.cos(grain[0].a1) * circleR * Math.cos(grain[0].a0));
+                    grain[0].y += (float) (Math.sin(grain[0].a1) * circleR * Math.cos(grain[0].a0));
+                    grain[0].a0 += 0.05;
+                    grain[1].x += (float) (Math.cos(grain[1].a1) * circleR * Math.cos(grain[1].a0));
+                    grain[1].y += (float) (Math.sin(grain[1].a1) * circleR * Math.cos(grain[1].a0));
+                    grain[1].a0 += 0.05;
+                    grain[2].x += (float) (Math.cos(grain[2].a1) * circleR * Math.cos(grain[2].a0));
+                    grain[2].y += (float) (Math.sin(grain[2].a1) * circleR * Math.cos(grain[2].a0));
+                    grain[2].a0 += 0.05;
+                }
+                draw();
+            }
+
+            private void draw() {
+                for (Grain g : grain) {
+                    p.setColor(Color.parseColor("#ffffff"));
+                    p.setStyle(Paint.Style.FILL);
+                    c.drawCircle(g.x, g.y, grainR, p);
+                }
+            }
+        }
+
+        class Grain {
+            float x, y;
+            float origin[] = new float[2];
+            float step0[] = new float[2];
+            float step1[] = new float[2];
+            float diff[] = new float[2];
+            double a0 = Math.random() * Math.PI * 2;
+            double a1 = 0.0;
+
+            public Grain(float x, float y) {
+                origin[0] = x;
+                origin[1] = y;
+
+                double blurR = Math.random() * offsetX * 0.03;
+                double blurA = Math.random() * Math.PI * 2.0;
+                step0[0] = origin[0] + (float) (blurR * Math.cos(blurA));
+                step0[1] = origin[1] + (float) (blurR * Math.sin(blurA));
+
+
+                blurR = offsetX * 0.2 + Math.random() * offsetX * 0.05;
+                blurA = Math.random() * Math.PI * 2.0;
+                step1[0] = origin[0] + (float) (blurR * Math.cos(blurA));
+                step1[1] = origin[1] + (float) (blurR * Math.sin(blurA));
+
+                diff[0] = step1[0] - step0[0];
+                diff[1] = step1[1] - step0[1];
+
+                if (isReleased || !isStartGame) {
+                    this.x = step0[0];
+                    this.y = step0[1];
+                } else {
+                    this.x = step1[0];
+                    this.y = step1[1];
+                }
+            }
+        }
+
+        public void putParticles(ThroughList throughList) {
+            float length[] = new float[throughList.dots.size() - 1];
+            for (int i = 1; i < throughList.dots.size(); i++) {
+                PointF point1 = dots[throughList.dots.get(i)];
+                PointF point0 = dots[throughList.dots.get(i - 1)];
+                length[i - 1] = (float) Math.sqrt((point1.x - point0.x) * (point1.x - point0.x) + (point1.y - point0.y) * (point1.y - point0.y));
+            }
+            Locus.clear();
+            for (int i = 0; i < length.length; i++) {
+                float unitV[] = {(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) / length[i], (dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y) / length[i]};
+                float x = dots[throughList.dots.get(i)].x;
+                float y = dots[throughList.dots.get(i)].y;
+
+                float sumLength[] = {0, 0};
+                while (sumLength[0] <= Math.abs(dots[i + 1].x - dots[i].x) && sumLength[1] <= Math.abs(dots[i + 1].y - dots[i].y)) {
+                    Locus.add(new Particle(x, y));
+                    x += unitV[0] * 40;
+                    y += unitV[1] * 40;
+                    sumLength[0] += Math.abs(dots[i + 1].x - dots[i].x) * 40 / length[i];
+                    sumLength[1] += Math.abs(dots[i + 1].y - dots[i].y) * 40 / length[i];
+                }
+            }
+        }
+
+        public void showButton() {
             int buttonWidth = doShow ? 250 : 180;
             int buttonHeight = 100;
             int margin = 20;
@@ -411,7 +523,7 @@ public class MyActivity extends Activity {
             }
         }
 
-        public void showCount(Canvas c) {
+        public void showCount() {
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextSize(40);
             p.setTypeface(typeface);
@@ -436,7 +548,7 @@ public class MyActivity extends Activity {
             return path;
         }
 
-        public void showTime(Canvas c, int currentTime) {
+        public void showTime(int currentTime) {
             p.setColor(Color.rgb(220, 190, 50));
             int leftTime = defTime - (isEndGame ? holdTime : currentTime) / 4;
             if (leftTime <= 0) {
@@ -456,7 +568,7 @@ public class MyActivity extends Activity {
             c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
         }
 
-        public void showQueNumber(Canvas c, int currentTime, int marginTime, int normalColor, int strongColor) {
+        public void showQueNumber(int currentTime, int marginTime, int normalColor, int strongColor) {
             float hexaRadius = offsetX / 10;
             float hexaMargin = 5;
             float totalMargin = hexaMargin * (qTotal - 1);
@@ -505,7 +617,8 @@ public class MyActivity extends Activity {
             }
         }
 
-        public void showAnswer(Canvas c, int initTime, int currentTime) {
+        int preQue = -1;
+        public void showAnswer(int initTime, int currentTime) {
             int showLength = 49;
             int hideLength = 1;
             int que = -1;
@@ -516,14 +629,6 @@ public class MyActivity extends Activity {
             if (que < qTotal * 2) {
                 if (que % 2 == 0 && que >= 0) {
                     for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
-                        if (gameMode == 0 || gameMode == 2) {
-                            if (i == 0) {
-                                resetLocus();
-                                setLocusStart(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
-                            } else {
-                                setLocus(dots[answerThroughList[que / 2].dots.get(i)].x, dots[answerThroughList[que / 2].dots.get(i)].y, false);
-                            }
-                        }
                         if (gameMode == 0 || gameMode == 1) {
                             p.setColor(Color.WHITE);
                             p.setTextSize(80);
@@ -532,15 +637,19 @@ public class MyActivity extends Activity {
                             c.drawText(correctStr.get(que / 2), offsetX, offsetY / 3, p);
                         }
                     }
+                    if (preQue != que && (gameMode == 0 || gameMode == 2)) {
+                        putParticles(answerThroughList[que / 2]);
+                    }
                 } else {
                     resetLocus();
                 }
             } else {
-                showFlash(c, qTotal * (showLength + hideLength) + marginTime, currentTime, 28);
+                showFlash(qTotal * (showLength + hideLength) + marginTime, currentTime, 28);
             }
+            preQue = que;
         }
 
-        public void showFlash(Canvas c, int initTime, int currentTime, int interval) {
+        public void showFlash(int initTime, int currentTime, int interval) {
             int que;
             int margin = interval / 20;
             int diffTime = currentTime - initTime;
@@ -582,9 +691,9 @@ public class MyActivity extends Activity {
             }
         }
 
-        public void showResult(Canvas c, int margin, int initTime, int currentTime) {
+        public void showResult(int margin, int initTime, int currentTime) {
             if (currentTime > initTime + margin) {
-                showButton(c);
+                showButton();
 
                 int blue = Color.rgb(0x02, 0xff, 0xc5), red = Color.RED;
                 int drawColor;
@@ -660,17 +769,7 @@ public class MyActivity extends Activity {
         }
 
         public void setLocusStart(float x, float y, boolean doCD) {
-            if (isStartGame && !isReleased) {
-                for (int i = 0; i < 3; i++) {
-                    int blurR = (int) (Math.random() * offsetX * 0.8 / 18);
-                    double blurA = Math.random() * Math.PI * 2;
-
-                    Point locus = new Point((int) x + (int) (blurR * Math.cos(blurA)), (int) y + (int) (blurR * Math.sin(blurA)));
-                    Locus.add(locus);
-                }
-            } else {
-                Locus.add(new Point((int) x, (int) y));
-            }
+            Locus.add(new Particle(x, y));
 
             if (doCD) {
                 isCollision(x, y, x, y);
@@ -679,20 +778,10 @@ public class MyActivity extends Activity {
         }
 
         public void setLocus(float x, float y, boolean doCD) {
-            if (isStartGame && !isReleased) {
-                for (int i = 0; i < 3; i++) {
-                    int blurR = (int) (Math.random() * offsetX * 0.8 / 18);
-                    double blurA = Math.random() * Math.PI * 2;
-
-                    Point locus = new Point((int) x + (int) (blurR * Math.cos(blurA)), (int) y + (int) (blurR * Math.sin(blurA)));
-                    Locus.add(locus);
-                }
-            } else {
-                Locus.add(new Point((int) x, (int) y));
-            }
+            Locus.add(new Particle(x, y));
 
             if (doCD) {
-                isCollision(x, y, Locus.get(Locus.size() - 2).x, Locus.get(Locus.size() - 2).y);
+                isCollision(x, y, Locus.get(Locus.size() - 2).x0, Locus.get(Locus.size() - 2).y0);
             }
             locusPath.lineTo(x, y);
         }
@@ -748,7 +837,7 @@ public class MyActivity extends Activity {
 
         float downX = 0, downY = 0;
         float memX = 0, memY = 0;
-        //float lim = 40;
+        float lim = 40;
         boolean isReleased = false;
 
         public boolean onTouchEvent(MotionEvent event) {
@@ -772,14 +861,14 @@ public class MyActivity extends Activity {
                     float currentX = event.getX();
                     float currentY = event.getY();
                     if (isStartGame && !isEndGame) {
-                        //if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
-                        if (Locus.size() == 0) {
-                            setLocusStart(currentX, currentY, true);
+                        if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
+                            if (Locus.size() == 0) {
+                                setLocusStart(currentX, currentY, true);
+                            }
+                            setLocus(currentX, currentY, true);
+                            memX = currentX;
+                            memY = currentY;
                         }
-                        setLocus(currentX, currentY, true);
-                        memX = currentX;
-                        memY = currentY;
-                        //}
                     }
                     break;
                 case MotionEvent.ACTION_UP:
@@ -800,15 +889,7 @@ public class MyActivity extends Activity {
                             }
                             Log.v("echo", "throughList:" + list);
                             resetLocus();
-                            boolean isFirst = true;
-                            for (Integer integer : throughList[qNum].dots) {
-                                if (isFirst) {
-                                    setLocusStart(dots[integer].x, dots[integer].y, false);
-                                    isFirst = false;
-                                } else {
-                                    setLocus(dots[integer].x, dots[integer].y, false);
-                                }
-                            }
+                            putParticles(throughList[qNum]);
                             if (qTotal - 1 > qNum) {
                                 qNum++;
                             } else {
