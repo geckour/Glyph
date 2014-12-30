@@ -569,7 +569,7 @@ public class MyActivity extends Activity {
             p.setTextSize(60);
             p.setTextAlign(Paint.Align.CENTER);
             c.drawText(String.format("%02d", leftTime / 10) + ":" + leftTime % 10, offsetX, offsetY / 3, p);
-            float barWidth = (float)(offsetX * 0.7 / (defTime * 0.1)) * leftTime;
+            float barWidth = (float) (offsetX * 0.7 / defTime) * leftTime * 100;
             p.setStyle(Paint.Style.FILL);
             c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
         }
@@ -657,19 +657,19 @@ public class MyActivity extends Activity {
                     initFlashTime = System.currentTimeMillis();
                     isFirstFlash = false;
                 }
-                showFlash(initFlashTime, currentTime, 1120);
+                showFlash(initFlashTime, currentTime);
             }
             preQue = que;
         }
 
-        public void showFlash(long initTime, long currentTime, long interval) {
+        public void showFlash(long initTime, long currentTime) {
             int que;
-            int margin = (int) interval / 800;
+            int interval = 1000;
+            int margin = interval / 800;
             int diffTime = (int) (currentTime - initTime);
             int alpha = 255;
-            int intInterval = (int) interval;
 
-            que = diffTime / (int) interval;
+            que = diffTime / interval;
             if (diffTime > interval * 2.5) {
                 que++;
             }
@@ -678,14 +678,14 @@ public class MyActivity extends Activity {
                 if (diffTime < margin) {
                     alpha = 150 * diffTime / margin;
                 } else {
-                    alpha = 150 - 150 * diffTime / intInterval;
+                    alpha = 150 - 150 * diffTime / interval;
                 }
             }
             if (que == 1) {
                 if (diffTime < margin) {
                     alpha = 200 * diffTime / margin;
                 } else {
-                    alpha = 200 - 200 * diffTime / intInterval;
+                    alpha = 200 - 200 * diffTime / interval;
                 }
             }
             p.setColor(Color.argb(alpha, 220, 175, 50));
