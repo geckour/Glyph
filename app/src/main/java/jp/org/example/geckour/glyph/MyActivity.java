@@ -13,6 +13,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -131,8 +133,9 @@ public class MyActivity extends Activity {
         ThroughList[] answerThroughList;
         int qTotal = 0;
         int qNum = 0;
-        int defTime = 200;
-        int marginTime = 30;
+        int defTime = 20000;
+        long initTime;
+        long marginTime = 1200;
         boolean isEndLoad = false;
         boolean isFirstDraw = true;
         boolean isFirstTimeUp = true;
@@ -145,7 +148,7 @@ public class MyActivity extends Activity {
         boolean doShow = true;
         Typeface typeface;
         ArrayList<String> correctStr;
-        int holdTime;
+        long holdTime;
         Point[] buttonPoint = new Point[2];
         DBHelper dbHelper;
         SQLiteDatabase db;
@@ -210,11 +213,11 @@ public class MyActivity extends Activity {
             c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null);
             c2 = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null);
 
-            int giveTime = 200;
+            int giveTime = 20000;
             int giveQs = 1;
             for (int i = 0; i < 9; i++) {
                 if (i > 3) {
-                    giveTime -= 10;
+                    giveTime -= 1000;
                 }
                 if (i == 2 || i == 3 || i == 6 || i == 8) {
                     giveQs++;
@@ -246,6 +249,7 @@ public class MyActivity extends Activity {
                     throughList[i] = new ThroughList();
                     Cursor c = db.rawQuery("select path from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
                     c.moveToFirst();
+                    Log.v("echo", "path: " + c.getString(0));
                     String[] dotsSplit = c.getString(0).split(",", -1);
                     answerThroughList[i] = new ThroughList(dotsSplit);
                 }
@@ -268,10 +272,6 @@ public class MyActivity extends Activity {
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             }
             p.setAntiAlias(true);
-
-            for (int i = 0; i < 11; i++) {
-                dots[i] = new PointF();
-            }
 
             for (int i = 0; i < 11; i++) {
                 isThrough[i] = false;
@@ -297,43 +297,47 @@ public class MyActivity extends Activity {
 
         @Override
         public void onDraw(Canvas c) {
+            long now = System.currentTimeMillis();
             this.c = c;
             c.drawColor(getResources().getColor(R.color.background));
+
+            if (isFirstDraw) {
+                initTime = System.currentTimeMillis();
+                radius = offsetX * 0.8;
+                dots[0] = new PointF(offsetX, (float) (offsetY * 1.2));
+                for (int i = 1; i < 5; i++) {
+                    int j = i;
+                    if (i > 1) {
+                        j++;
+                        if (i > 3) {
+                            j++;
+                        }
+                    }
+                    dots[i] = new PointF((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2));
+                }
+                for (int i = 5; i < 11; i++) {
+                    dots[i] = new PointF((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2));
+                }
+
+                isFirstDraw = false;
+            }
 
             if (isEndLoad) {
                 if (showCountView) {
                     showCount();
                 }
-                if (isFirstDraw) {
-                    radius = offsetX * 0.8;
-                    dots[0].set(offsetX, (float) (offsetY * 1.2));
-                    for (int i = 1; i < 5; i++) {
-                        int j = i;
-                        if (i > 1) {
-                            j++;
-                            if (i > 3) {
-                                j++;
-                            }
-                        }
-                        dots[i].set((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2));
-                    }
-                    for (int i = 5; i < 11; i++) {
-                        dots[i].set((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2));
-                    }
-                    isFirstDraw = false;
-                }
 
                 if (!isStartGame) {
-                    showAnswer(0, framec);
+                    showAnswer(initTime, now);
                 }
                 if (isEndGame) {
                     if (isFirstEndGame) {
-                        holdTime = framec;
+                        holdTime = now;
                         isFirstEndGame = false;
                     }
-                    if (framec > holdTime + marginTime) {
+                    if (System.currentTimeMillis() > holdTime + marginTime) {
                         doShow = false;
-                        showResult(marginTime, holdTime + marginTime, framec);
+                        showResult(marginTime, holdTime + marginTime, now);
                     }
                 }
 
@@ -379,10 +383,10 @@ public class MyActivity extends Activity {
                 }
 
                 if (isStartGame && doShow) {
-                    showTime(framec);
+                    showTime(System.currentTimeMillis());
                     showQueNumber(framec, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
                 } else if (!isStartGame) {
-                    showQueNumber(framec, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
+                    showQueNumber(now, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
                 }
 
                 framec++;
@@ -393,23 +397,23 @@ public class MyActivity extends Activity {
             float x0, y0;
             Grain grain[] = new Grain[3];
             int phase = 0;
-            int moveFrames = 20;
-            int initFrames = 0;
-            float grainR = 5;
-            double circleR = 0.5;
+            long moveFrames = 400;
+            long initFrames = 0;
+            float grainR = 10;
+            double v = 0.15;
 
             public Particle(float x0, float y0) {
                 this.x0 = x0;
                 this.y0 = y0;
-                initFrames = framec;
+                initFrames = System.currentTimeMillis();
                 grain[0] = new Grain(x0, y0);
                 grain[1] = new Grain(x0, y0);
                 grain[2] = new Grain(x0, y0);
             }
 
             public void move() {
-                int diffFrames = framec - initFrames;
-                if (diffFrames == moveFrames || isReleased || !isStartGame) phase = 1;
+                long diffFrames = System.currentTimeMillis() - initFrames;
+                if (diffFrames > moveFrames || isReleased || !isStartGame) phase = 1;
 
                 if (phase == 0) {
                     grain[0].x = grain[0].step0[0] + grain[0].diff[0] * (moveFrames - diffFrames) / moveFrames;
@@ -420,25 +424,26 @@ public class MyActivity extends Activity {
                     grain[2].y = grain[2].step0[1] + grain[2].diff[1] * (moveFrames - diffFrames) / moveFrames;
                 }
                 if (phase == 1) {
-                    grain[0].x += (float) (Math.cos(grain[0].a1) * circleR * Math.cos(grain[0].a0));
-                    grain[0].y += (float) (Math.sin(grain[0].a1) * circleR * Math.cos(grain[0].a0));
-                    grain[0].a0 += 0.05;
-                    grain[1].x += (float) (Math.cos(grain[1].a1) * circleR * Math.cos(grain[1].a0));
-                    grain[1].y += (float) (Math.sin(grain[1].a1) * circleR * Math.cos(grain[1].a0));
-                    grain[1].a0 += 0.05;
-                    grain[2].x += (float) (Math.cos(grain[2].a1) * circleR * Math.cos(grain[2].a0));
-                    grain[2].y += (float) (Math.sin(grain[2].a1) * circleR * Math.cos(grain[2].a0));
-                    grain[2].a0 += 0.05;
+                    grain[0].x += (float) (Math.cos(grain[0].a1) * grain[0].circleR * Math.cos(grain[0].a0));
+                    grain[0].y += (float) (Math.sin(grain[0].a1) * grain[0].circleR * Math.cos(grain[0].a0));
+                    grain[0].a0 += v;
+                    grain[1].x += (float) (Math.cos(grain[1].a1) * grain[1].circleR * Math.cos(grain[1].a0));
+                    grain[1].y += (float) (Math.sin(grain[1].a1) * grain[1].circleR * Math.cos(grain[1].a0));
+                    grain[1].a0 += v;
+                    grain[2].x += (float) (Math.cos(grain[2].a1) * grain[2].circleR * Math.cos(grain[2].a0));
+                    grain[2].y += (float) (Math.sin(grain[2].a1) * grain[2].circleR * Math.cos(grain[2].a0));
+                    grain[2].a0 += v;
                 }
                 draw();
             }
 
             private void draw() {
-                for (Grain g : grain) {
-                    p.setColor(Color.parseColor("#ffffff"));
+                for (Grain gr : grain) {
+                    p.setShader(new RadialGradient(gr.x, gr.y, grainR, Color.WHITE, Color.argb(0, 220, 175, 50), Shader.TileMode.CLAMP));
                     p.setStyle(Paint.Style.FILL);
-                    c.drawCircle(g.x, g.y, grainR, p);
+                    c.drawCircle(gr.x, gr.y, grainR, p);
                 }
+                p.setShader(null);
             }
         }
 
@@ -449,13 +454,14 @@ public class MyActivity extends Activity {
             float step1[] = new float[2];
             float diff[] = new float[2];
             double a0 = Math.random() * Math.PI * 2;
-            double a1 = 0.0;
+            double a1 = Math.random() * Math.PI * 2;
+            double circleR = Math.random() * 0.5 + 0.7;
 
             public Grain(float x, float y) {
                 origin[0] = x;
                 origin[1] = y;
 
-                double blurR = Math.random() * offsetX * 0.03;
+                double blurR = Math.random() * offsetX * 0.05;
                 double blurA = Math.random() * Math.PI * 2.0;
                 step0[0] = origin[0] + (float) (blurR * Math.cos(blurA));
                 step0[1] = origin[1] + (float) (blurR * Math.sin(blurA));
@@ -493,12 +499,12 @@ public class MyActivity extends Activity {
                 float y = dots[throughList.dots.get(i)].y;
 
                 float sumLength[] = {0, 0};
-                while (sumLength[0] <= Math.abs(dots[i + 1].x - dots[i].x) && sumLength[1] <= Math.abs(dots[i + 1].y - dots[i].y)) {
+                while (sumLength[0] <= Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) && sumLength[1] <= Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y)) {
                     Locus.add(new Particle(x, y));
-                    x += unitV[0] * 40;
-                    y += unitV[1] * 40;
-                    sumLength[0] += Math.abs(dots[i + 1].x - dots[i].x) * 40 / length[i];
-                    sumLength[1] += Math.abs(dots[i + 1].y - dots[i].y) * 40 / length[i];
+                    x += unitV[0] * 30;
+                    y += unitV[1] * 30;
+                    sumLength[0] += Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) * 30 / length[i];
+                    sumLength[1] += Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y) * 30 / length[i];
                 }
             }
         }
@@ -548,9 +554,9 @@ public class MyActivity extends Activity {
             return path;
         }
 
-        public void showTime(int currentTime) {
+        public void showTime(long currentTime) {
             p.setColor(Color.rgb(220, 190, 50));
-            int leftTime = defTime - (isEndGame ? holdTime : currentTime) / 4;
+            long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 100;
             if (leftTime <= 0) {
                 isEndGame = true;
                 if (isFirstTimeUp) {
@@ -563,12 +569,12 @@ public class MyActivity extends Activity {
             p.setTextSize(60);
             p.setTextAlign(Paint.Align.CENTER);
             c.drawText(String.format("%02d", leftTime / 10) + ":" + leftTime % 10, offsetX, offsetY / 3, p);
-            float barWidth = (float)(offsetX * 0.7 / defTime) * leftTime;
+            float barWidth = (float)(offsetX * 0.7 / (defTime * 0.1)) * leftTime;
             p.setStyle(Paint.Style.FILL);
             c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
         }
 
-        public void showQueNumber(int currentTime, int marginTime, int normalColor, int strongColor) {
+        public void showQueNumber(long currentTime, long marginTime, int normalColor, int strongColor) {
             float hexaRadius = offsetX / 10;
             float hexaMargin = 5;
             float totalMargin = hexaMargin * (qTotal - 1);
@@ -618,13 +624,16 @@ public class MyActivity extends Activity {
         }
 
         int preQue = -1;
-        public void showAnswer(int initTime, int currentTime) {
-            int showLength = 49;
-            int hideLength = 1;
+        long initFlashTime = 0;
+        boolean isFirstFlash = true;
+        public void showAnswer(long initTime, long currentTime) {
+            int showLength = 1960;
+            int hideLength = 40;
             int que = -1;
+            long diffTIme = currentTime - initTime - marginTime;
 
-            if (currentTime - initTime - marginTime >= 0) {
-                que = (currentTime - initTime - marginTime) * 2 / (showLength + hideLength);
+            if (diffTIme >= 0) {
+                que = (int) (diffTIme) * 2 / (showLength + hideLength);
             }
             if (que < qTotal * 2) {
                 if (que % 2 == 0 && que >= 0) {
@@ -644,18 +653,23 @@ public class MyActivity extends Activity {
                     resetLocus();
                 }
             } else {
-                showFlash(qTotal * (showLength + hideLength) + marginTime, currentTime, 28);
+                if (isFirstFlash) {
+                    initFlashTime = System.currentTimeMillis();
+                    isFirstFlash = false;
+                }
+                showFlash(initFlashTime, currentTime, 1120);
             }
             preQue = que;
         }
 
-        public void showFlash(int initTime, int currentTime, int interval) {
+        public void showFlash(long initTime, long currentTime, long interval) {
             int que;
-            int margin = interval / 20;
-            int diffTime = currentTime - initTime;
+            int margin = (int) interval / 800;
+            int diffTime = (int) (currentTime - initTime);
             int alpha = 255;
+            int intInterval = (int) interval;
 
-            que = (diffTime) / interval;
+            que = diffTime / (int) interval;
             if (diffTime > interval * 2.5) {
                 que++;
             }
@@ -664,14 +678,14 @@ public class MyActivity extends Activity {
                 if (diffTime < margin) {
                     alpha = 150 * diffTime / margin;
                 } else {
-                    alpha = 150 - 150 * diffTime / interval;
+                    alpha = 150 - 150 * diffTime / intInterval;
                 }
             }
             if (que == 1) {
                 if (diffTime < margin) {
                     alpha = 200 * diffTime / margin;
                 } else {
-                    alpha = 200 - 200 * diffTime / interval;
+                    alpha = 200 - 200 * diffTime / intInterval;
                 }
             }
             p.setColor(Color.argb(alpha, 220, 175, 50));
@@ -687,11 +701,12 @@ public class MyActivity extends Activity {
             c.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, p);
             if (que > 2) {
                 framec = 0;
+                this.initTime = System.currentTimeMillis();
                 isStartGame = true;
             }
         }
 
-        public void showResult(int margin, int initTime, int currentTime) {
+        public void showResult(long margin, long initTime, long currentTime) {
             if (currentTime > initTime + margin) {
                 showButton();
 
@@ -815,7 +830,6 @@ public class MyActivity extends Activity {
             }
             if (collisionDot != -1 && (throughList[qNum].dots.size() < 1 || throughList[qNum].dots.get(throughList[qNum].dots.size() - 1) != collisionDot)) {
                 throughList[qNum].dots.add(collisionDot);
-                Log.v("echo", "c:" + collisionDot + ", p:" + previousDot);
                 if (doVibrate) {
                     Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
                     vibrator.vibrate(50);
@@ -837,7 +851,7 @@ public class MyActivity extends Activity {
 
         float downX = 0, downY = 0;
         float memX = 0, memY = 0;
-        float lim = 40;
+        float lim = 20;
         boolean isReleased = false;
 
         public boolean onTouchEvent(MotionEvent event) {
@@ -889,7 +903,10 @@ public class MyActivity extends Activity {
                             }
                             Log.v("echo", "throughList:" + list);
                             resetLocus();
-                            putParticles(throughList[qNum]);
+                            if (throughList[qNum].dots.size() > 0) {
+                                putParticles(throughList[qNum]);
+                            }
+
                             if (qTotal - 1 > qNum) {
                                 qNum++;
                             } else {
