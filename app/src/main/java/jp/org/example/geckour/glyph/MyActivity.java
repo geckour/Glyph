@@ -40,7 +40,7 @@ public class MyActivity extends Activity {
     SharedPreferences sp;
     int min = 0;
     int max = 8;
-    int countView = 0;
+    int viewCount = 0;
     MyView view;
     float offsetX;
     float offsetY;
@@ -54,12 +54,12 @@ public class MyActivity extends Activity {
         actionBar.hide();
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
-        if (sp.getInt("countView", -1) != -1) {
-            countView = sp.getInt("countView", 0);
+        if (sp.getInt("viewCount", -1) != -1) {
+            viewCount = sp.getInt("viewCount", 0);
         } else {
-            countView = 1;
+            viewCount = 1;
         }
-        sp.edit().putInt("countView", countView + 1).apply();
+        sp.edit().putInt("viewCount", viewCount + 1).apply();
 
         try {
             min = Integer.parseInt(sp.getString("min_level", "0"));
@@ -128,6 +128,7 @@ public class MyActivity extends Activity {
         ArrayList<Particle> Locus = new ArrayList<>();
         Path locusPath = new Path();
         int framec = 0;
+        long now = 0;
         boolean[] isThrough = new boolean[11];
         ThroughList[] throughList;
         ThroughList[] answerThroughList;
@@ -146,6 +147,7 @@ public class MyActivity extends Activity {
         boolean isStartGame = false;
         boolean isEndGame = false;
         boolean doShow = true;
+        boolean isPressedButton = false;
         Typeface typeface;
         ArrayList<String> correctStr;
         long holdTime;
@@ -247,10 +249,10 @@ public class MyActivity extends Activity {
                 String[] shapesSplit = c2.getString(2).split(",", -1);
                 for (int i = 0; i < qTotal; i++) {
                     throughList[i] = new ThroughList();
-                    Cursor c = db.rawQuery("select path from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
+                    Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
                     c.moveToFirst();
-                    Log.v("echo", "path: " + c.getString(0));
-                    String[] dotsSplit = c.getString(0).split(",", -1);
+                    Log.v("echo", "shaper name: " + c.getString(1));
+                    String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
                     answerThroughList[i] = new ThroughList(dotsSplit);
                 }
                 correctStr = getCorrectStrings(c2);
@@ -281,6 +283,7 @@ public class MyActivity extends Activity {
 
             isEndLoad = true;
 
+            now = System.currentTimeMillis();
             Timer timer = new Timer(false);
             timer.schedule(new TimerTask() {
                 public void run() {
@@ -297,7 +300,6 @@ public class MyActivity extends Activity {
 
         @Override
         public void onDraw(Canvas c) {
-            long now = System.currentTimeMillis();
             this.c = c;
             c.drawColor(getResources().getColor(R.color.background));
 
@@ -329,16 +331,6 @@ public class MyActivity extends Activity {
 
                 if (!isStartGame) {
                     showAnswer(initTime, now);
-                }
-                if (isEndGame) {
-                    if (isFirstEndGame) {
-                        holdTime = now;
-                        isFirstEndGame = false;
-                    }
-                    if (System.currentTimeMillis() > holdTime + marginTime) {
-                        doShow = false;
-                        showResult(marginTime, holdTime + marginTime, now);
-                    }
                 }
 
                 float dotRadius = (float) radius / 18;
@@ -379,16 +371,28 @@ public class MyActivity extends Activity {
                         c.drawPath(locusPath, p);
                         p.setStrokeWidth(0);
                     }
-                    showButton();
                 }
 
                 if (isStartGame && doShow) {
-                    showTime(System.currentTimeMillis());
-                    showQueNumber(framec, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
+                    showTime(now);
+                    showQueNumber(now - initTime, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
+                    showButton();
                 } else if (!isStartGame) {
-                    showQueNumber(now, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
+                    showQueNumber(now - initTime, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
                 }
 
+                if (isEndGame) {
+                    if (isFirstEndGame) {
+                        holdTime = now;
+                        isFirstEndGame = false;
+                    }
+                    if (now > holdTime + marginTime) {
+                        doShow = false;
+                        showResult(marginTime, holdTime + marginTime, now);
+                    }
+                }
+
+                now = System.currentTimeMillis() + (isPressedButton ? defTime : 0);
                 framec++;
             }
         }
@@ -537,7 +541,7 @@ public class MyActivity extends Activity {
             float x = (float)(offsetX * 2.0 - 20.0);
             float y = (float)(offsetY * 2.0 - 130.0);
 
-            c.drawText("Hack:" + countView, x, y, p);
+            c.drawText("HACK:" + viewCount, x, y, p);
         }
 
         public Path makeHexagon(PointF origin, float r) {
@@ -575,13 +579,13 @@ public class MyActivity extends Activity {
         }
 
         public void showQueNumber(long currentTime, long marginTime, int normalColor, int strongColor) {
-            float hexaRadius = offsetX / 10;
-            float hexaMargin = 5;
-            float totalMargin = hexaMargin * (qTotal - 1);
+            float hexRadius = offsetX / 10;
+            float hexMargin = 5;
+            float totalMargin = hexMargin * (qTotal - 1);
             float width = (qTotal - 1) * (offsetX / 5);
             float x, y;
             for (int i = 0; i < qTotal; i++) {
-                x = offsetX - (width / 2 + totalMargin) + i * (hexaRadius + hexaMargin) * 2;
+                x = offsetX - (width / 2 + totalMargin) + i * (hexRadius + hexMargin) * 2;
                 y = (float)(offsetY / 7.5);
                 PointF origin = new PointF(x, y);
 
@@ -590,36 +594,36 @@ public class MyActivity extends Activity {
                         if ((isReleased && throughList[qTotal - 1].dots.size() > 0)) {
                             p.setColor(normalColor);
                             p.setStyle(Paint.Style.FILL);
-                            c.drawPath(makeHexagon(origin, hexaRadius), p);
+                            c.drawPath(makeHexagon(origin, hexRadius), p);
                         } else {
                             p.setColor(strongColor);
                             p.setStyle(Paint.Style.FILL);
-                            c.drawPath(makeHexagon(origin, hexaRadius), p);
+                            c.drawPath(makeHexagon(origin, hexRadius), p);
                         }
                     } else if (i < qNum) {
                         p.setColor(normalColor);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(origin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
                     } else {
                         p.setColor(Color.BLACK);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(origin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
                     }
                 } else {
-                    if (i == (currentTime - marginTime) / 50 && currentTime > marginTime) {
+                    if (i == (currentTime - marginTime) / 2000 && currentTime > marginTime) {
                         p.setColor(strongColor);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(origin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
                     } else {
                         p.setColor(Color.BLACK);
                         p.setStyle(Paint.Style.FILL);
-                        c.drawPath(makeHexagon(origin, hexaRadius), p);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
                     }
                 }
                 p.setStrokeJoin(Paint.Join.BEVEL);
                 p.setColor(Color.argb(255, Color.red(normalColor), Color.green(normalColor), Color.blue(normalColor)));
                 p.setStyle(Paint.Style.STROKE);
-                c.drawPath(makeHexagon(origin, hexaRadius), p);
+                c.drawPath(makeHexagon(origin, hexRadius), p);
             }
         }
 
@@ -832,7 +836,7 @@ public class MyActivity extends Activity {
                 throughList[qNum].dots.add(collisionDot);
                 if (doVibrate) {
                     Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                    vibrator.vibrate(50);
+                    vibrator.vibrate(30);
                 }
                 previousDot = collisionDot;
             }
@@ -894,32 +898,31 @@ public class MyActivity extends Activity {
                             buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y &&
                             buttonPoint[0].x <= upX && upX <= buttonPoint[1].x && buttonPoint[0].y <= upY && upY <= buttonPoint[1].y;
 
-                    if (isStartGame && !isEndGame) {
-                        if (!isOnButton) {
-                            isReleased = true;
-                            String list = "";
-                            for (int throughDot : throughList[qNum].dots) {
-                                list += throughDot + ",";
-                            }
-                            Log.v("echo", "throughList:" + list);
-                            resetLocus();
-                            if (throughList[qNum].dots.size() > 0) {
-                                putParticles(throughList[qNum]);
-                            }
+                    if (!isOnButton && isStartGame && !isEndGame) {
+                        isReleased = true;
+                        String list = "";
+                        for (int throughDot : throughList[qNum].dots) {
+                            list += throughDot + ",";
+                        }
+                        Log.v("echo", "throughList:" + list);
+                        resetLocus();
+                        if (throughList[qNum].dots.size() > 0) {
+                            putParticles(throughList[qNum]);
+                        }
 
-                            if (qTotal - 1 > qNum) {
-                                qNum++;
-                            } else {
-                                isEndGame = true;
-                                for (int i = 0; i < qTotal; i++) {
-                                    Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
-                                }
+                        if (qTotal - 1 > qNum) {
+                            qNum++;
+                        } else {
+                            isEndGame = true;
+                            for (int i = 0; i < qTotal; i++) {
+                                Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
                             }
                         }
                     }
-                    if (isStartGame && isOnButton) {
+                    if (isOnButton) {
                         if (doShow) {
-                            framec = defTime * 4;
+                            now = initTime + defTime;
+                            isPressedButton = true;
                         } else {
                             startActivity(new Intent(MyActivity.this, MyActivity.class));
                         }

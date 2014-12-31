@@ -31,7 +31,7 @@ public class SplashActivity extends Activity {
             sp.edit().putString("max_level", "8").apply();
         }
         if (sp.getInt("countView", -1) != -1) {
-            sp.edit().putInt("countView", 1).apply();
+            sp.edit().putInt("viewCount", 1).apply();
         }
 
         ActionBar actionBar = getActionBar();
@@ -41,7 +41,7 @@ public class SplashActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        sp.edit().putInt("countView", 1).apply();
+        sp.edit().putInt("viewCount", 1).apply();
     }
 
     public void onClickStart(View v) {
