@@ -51,7 +51,9 @@ public class MyActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         ActionBar actionBar = getActionBar();
-        actionBar.hide();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
 
         sp = PreferenceManager.getDefaultSharedPreferences(this);
         if (sp.getInt("viewCount", -1) != -1) {
@@ -127,7 +129,6 @@ public class MyActivity extends Activity {
         PointF[] dots = new PointF[11];
         ArrayList<Particle> Locus = new ArrayList<>();
         Path locusPath = new Path();
-        int framec = 0;
         long now = 0;
         boolean[] isThrough = new boolean[11];
         ThroughList[] throughList;
@@ -136,7 +137,9 @@ public class MyActivity extends Activity {
         int qNum = 0;
         int defTime = 20000;
         long initTime;
+        int showAnswerLength = 1500;
         long marginTime = 1200;
+        long pressButtonTime = 0;
         boolean isEndLoad = false;
         boolean isFirstDraw = true;
         boolean isFirstTimeUp = true;
@@ -158,56 +161,6 @@ public class MyActivity extends Activity {
         int previousDot = -1;
         Canvas c;
 
-        public class ThroughList {
-            ArrayList<Integer> dots;
-
-            public ThroughList() {
-                dots = new ArrayList<>();
-            }
-            public ThroughList(ArrayList<Integer> argDots) {
-                dots = new ArrayList<>(argDots);
-            }
-            public ThroughList(String[] argDots) {
-                dots = new ArrayList<>();
-                for (String s: argDots) {
-                    try {
-                        dots.add(Integer.parseInt(s));
-                    } catch (Exception e) {
-                        Log.e("", e.getMessage());
-                    }
-                }
-            }
-        }
-
-        public class Difficulty {
-            int qs = 0;
-            int time = 0;
-
-            public Difficulty(int argQs, int argTime) {
-                qs = argQs;
-                time = argTime;
-            }
-        }
-
-        public ArrayList<String> getCorrectStrings(Cursor c) {
-            ArrayList<String> strings = new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("sequence")).split(",", -1)));
-            ArrayList<String> correctStrings = c.isNull(c.getColumnIndex("correctSeq")) ? null : new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("correctSeq")).split(",", -1)));
-
-            if (correctStrings != null) {
-                ArrayList<String> tStrings = new ArrayList<>();
-                for (int i = 0; i < correctStrings.size(); i++) {
-                    if (correctStrings.get(i).equals("")) {
-                        tStrings.add(strings.get(i));
-                    } else {
-                        tStrings.add(correctStrings.get(i));
-                    }
-                }
-                return tStrings;
-            } else {
-                return strings;
-            }
-        }
-        
         public MyView(Context context) {
             super(context);
             dbHelper = new DBHelper(context);
@@ -304,7 +257,7 @@ public class MyActivity extends Activity {
             c.drawColor(getResources().getColor(R.color.background));
 
             if (isFirstDraw) {
-                initTime = System.currentTimeMillis();
+                initTime = now;
                 radius = offsetX * 0.8;
                 dots[0] = new PointF(offsetX, (float) (offsetY * 1.2));
                 for (int i = 1; i < 5; i++) {
@@ -383,7 +336,6 @@ public class MyActivity extends Activity {
 
                 if (isEndGame) {
                     if (isFirstEndGame) {
-                        holdTime = now;
                         isFirstEndGame = false;
                     }
                     if (now > holdTime + marginTime) {
@@ -392,8 +344,38 @@ public class MyActivity extends Activity {
                     }
                 }
 
-                now = System.currentTimeMillis() + (isPressedButton ? defTime : 0);
-                framec++;
+                now = isPressedButton ? System.currentTimeMillis() - pressButtonTime + holdTime : System.currentTimeMillis();
+            }
+        }
+
+        class ThroughList {
+            ArrayList<Integer> dots;
+
+            public ThroughList() {
+                dots = new ArrayList<>();
+            }
+            public ThroughList(ArrayList<Integer> argDots) {
+                dots = new ArrayList<>(argDots);
+            }
+            public ThroughList(String[] argDots) {
+                dots = new ArrayList<>();
+                for (String s: argDots) {
+                    try {
+                        dots.add(Integer.parseInt(s));
+                    } catch (Exception e) {
+                        Log.e("", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        class Difficulty {
+            int qs = 0;
+            int time = 0;
+
+            public Difficulty(int argQs, int argTime) {
+                qs = argQs;
+                time = argTime;
             }
         }
 
@@ -443,11 +425,28 @@ public class MyActivity extends Activity {
 
             private void draw() {
                 for (Grain gr : grain) {
-                    p.setShader(new RadialGradient(gr.x, gr.y, grainR, Color.WHITE, Color.argb(0, 220, 175, 50), Shader.TileMode.CLAMP));
+                    p.setShader(new RadialGradient(gr.x, gr.y, grainR, Color.argb(255 - calcSubAlpha(), 255, 255, 255), Color.argb(0, 220, 175, 50), Shader.TileMode.CLAMP));
                     p.setStyle(Paint.Style.FILL);
                     c.drawCircle(gr.x, gr.y, grainR, p);
                 }
                 p.setShader(null);
+            }
+
+            private int calcSubAlpha() {
+                int que = (int) (now - initTime - marginTime) / showAnswerLength;
+                int timeInPhase = (int) (now - initTime - marginTime - showAnswerLength * que);
+
+                if (isStartGame) {
+                    return 0;
+                } else {
+                    if (timeInPhase < showAnswerLength * 0.2) {
+                        return (int) (255 - 255 * timeInPhase / (showAnswerLength * 0.2));
+                    } else if (timeInPhase < showAnswerLength * 0.7) {
+                        return 0;
+                    } else {
+                        return (int) (255 * (timeInPhase - timeInPhase * 0.7) / (showAnswerLength - showAnswerLength * 0.7));
+                    }
+                }
             }
         }
 
@@ -513,6 +512,26 @@ public class MyActivity extends Activity {
             }
         }
 
+
+        public ArrayList<String> getCorrectStrings(Cursor c) {
+            ArrayList<String> strings = new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("sequence")).split(",", -1)));
+            ArrayList<String> correctStrings = c.isNull(c.getColumnIndex("correctSeq")) ? null : new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("correctSeq")).split(",", -1)));
+
+            if (correctStrings != null) {
+                ArrayList<String> tStrings = new ArrayList<>();
+                for (int i = 0; i < correctStrings.size(); i++) {
+                    if (correctStrings.get(i).equals("")) {
+                        tStrings.add(strings.get(i));
+                    } else {
+                        tStrings.add(correctStrings.get(i));
+                    }
+                }
+                return tStrings;
+            } else {
+                return strings;
+            }
+        }
+
         public void showButton() {
             int buttonWidth = doShow ? 250 : 180;
             int buttonHeight = 100;
@@ -561,14 +580,13 @@ public class MyActivity extends Activity {
         public void showTime(long currentTime) {
             p.setColor(Color.rgb(220, 190, 50));
             long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 100;
-            if (leftTime <= 0) {
-                isEndGame = true;
-                if (isFirstTimeUp) {
-                    for (int i = 0; i < qTotal; i++) {
-                        Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
-                    }
-                    isFirstTimeUp = false;
+            if (leftTime <= 0 && isFirstTimeUp) {
+                for (int i = 0; i < qTotal; i++) {
+                    Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
                 }
+                holdTime = now;
+                isEndGame = true;
+                isFirstTimeUp = false;
             }
             p.setTextSize(60);
             p.setTextAlign(Paint.Align.CENTER);
@@ -610,7 +628,7 @@ public class MyActivity extends Activity {
                         c.drawPath(makeHexagon(origin, hexRadius), p);
                     }
                 } else {
-                    if (i == (currentTime - marginTime) / 2000 && currentTime > marginTime) {
+                    if (i == (currentTime - marginTime) / showAnswerLength && currentTime > marginTime) {
                         p.setColor(strongColor);
                         p.setStyle(Paint.Style.FILL);
                         c.drawPath(makeHexagon(origin, hexRadius), p);
@@ -631,33 +649,32 @@ public class MyActivity extends Activity {
         long initFlashTime = 0;
         boolean isFirstFlash = true;
         public void showAnswer(long initTime, long currentTime) {
-            int showLength = 1960;
-            int hideLength = 40;
             int que = -1;
             long diffTIme = currentTime - initTime - marginTime;
 
             if (diffTIme >= 0) {
-                que = (int) (diffTIme) * 2 / (showLength + hideLength);
+                que = (int) diffTIme / showAnswerLength;
             }
-            if (que < qTotal * 2) {
-                if (que % 2 == 0 && que >= 0) {
+            if (que < qTotal/* * 2*/) {
+                if (/*que % 2 == 0 && */que >= 0) {
                     for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
                         if (gameMode == 0 || gameMode == 1) {
                             p.setColor(Color.WHITE);
                             p.setTextSize(80);
                             p.setTypeface(typeface);
                             p.setTextAlign(Paint.Align.CENTER);
-                            c.drawText(correctStr.get(que / 2), offsetX, offsetY / 3, p);
+                            c.drawText(correctStr.get(que/* / 2*/), offsetX, offsetY / 3, p);
                         }
                     }
                     if (preQue != que && (gameMode == 0 || gameMode == 2)) {
-                        putParticles(answerThroughList[que / 2]);
+                        putParticles(answerThroughList[que/* / 2*/]);
                     }
-                } else {
+                }/* else {
                     resetLocus();
-                }
+                }*/
             } else {
                 if (isFirstFlash) {
+                    resetLocus();
                     initFlashTime = System.currentTimeMillis();
                     isFirstFlash = false;
                 }
@@ -704,7 +721,6 @@ public class MyActivity extends Activity {
             p.setStyle(Paint.Style.FILL);
             c.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, p);
             if (que > 2) {
-                framec = 0;
                 this.initTime = System.currentTimeMillis();
                 isStartGame = true;
             }
@@ -791,7 +807,7 @@ public class MyActivity extends Activity {
             Locus.add(new Particle(x, y));
 
             if (doCD) {
-                isCollision(x, y, x, y);
+                setCollision(x, y, x, y);
             }
             locusPath.moveTo(x, y);
         }
@@ -800,17 +816,21 @@ public class MyActivity extends Activity {
             Locus.add(new Particle(x, y));
 
             if (doCD) {
-                isCollision(x, y, Locus.get(Locus.size() - 2).x0, Locus.get(Locus.size() - 2).y0);
+                setCollision(x, y, Locus.get(Locus.size() - 2).x0, Locus.get(Locus.size() - 2).y0);
             }
             locusPath.lineTo(x, y);
         }
 
-        public void isCollision(float x0, float y0, float x1, float y1) {
+        public void setCollision(float x0, float y0, float x1, float y1) {
             int collisionDot = -1;
+            float tol = 25;
             for (int i = 0; i < 11; i++) {
                 if (x0 == x1 && y0 == y1) {
                     //円の方程式にて当たり判定
-                    if ((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y) < (offsetX * 0.8 / 18 + 30) * (offsetX * 0.8 / 18 + 30) && state) {
+                    float difX = x0 - dots[i].x;
+                    float difY = y0 - dots[i].y;
+                    double r = offsetX * 0.8 / 18 + tol;
+                    if (difX * difX + difY * difY < r * r && state) {
                         isThrough[i] = true;
                         collisionDot = i;
                     }
@@ -818,11 +838,16 @@ public class MyActivity extends Activity {
                 //線分と円の当たり判定
                 float a = y0 - y1, b = x1 - x0, c = x0 * y1 - x1 * y0;
                 double d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt(a * a + b * b);
-                double lim = offsetX * 0.8 / 18 + 30;
+                double lim = offsetX * 0.8 / 18 + tol;
                 if (-lim <= d && d <= lim) {    //線分への垂線と半径
-                    double inner0 = x0 * dots[i].y - dots[i].x * y0, inner1 = x1 * dots[i].y - dots[i].x * y1;
-                    double d0 = Math.sqrt((x0 - dots[i].x) * (x0 - dots[i].x) + (y0 - dots[i].y) * (y0 - dots[i].y));
-                    double d1 = Math.sqrt((x1 - dots[i].x) * (x1 - dots[i].x) + (y1 - dots[i].y) * (y1 - dots[i].y));
+                    float difX0 = x0 - dots[i].x;
+                    float difX1 = x1 - dots[i].x;
+                    float difY0 = x0 - dots[i].x;
+                    float difY1 = x1 - dots[i].x;
+                    double inner0 = x0 * dots[i].y - dots[i].x * y0;
+                    double inner1 = x1 * dots[i].y - dots[i].x * y1;
+                    double d0 = Math.sqrt(difX0 * difX0 + difY0 * difY0);
+                    double d1 = Math.sqrt(difX1 * difX1 + difY1 * difY1);
                     if (inner0 * inner1 <= 0) { //内積
                         isThrough[i] = true;
                         collisionDot = i;
@@ -857,6 +882,7 @@ public class MyActivity extends Activity {
         float memX = 0, memY = 0;
         float lim = 20;
         boolean isReleased = false;
+        boolean isFirstPress = true;
 
         public boolean onTouchEvent(MotionEvent event) {
             float upX, upY;
@@ -913,6 +939,7 @@ public class MyActivity extends Activity {
                         if (qTotal - 1 > qNum) {
                             qNum++;
                         } else {
+                            holdTime = now;
                             isEndGame = true;
                             for (int i = 0; i < qTotal; i++) {
                                 Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
@@ -921,8 +948,13 @@ public class MyActivity extends Activity {
                     }
                     if (isOnButton) {
                         if (doShow) {
-                            now = initTime + defTime;
-                            isPressedButton = true;
+                            if (isFirstPress) {
+                                now = initTime + defTime;
+                                holdTime = now;
+                                pressButtonTime = System.currentTimeMillis();
+                                isPressedButton = true;
+                                isFirstPress = false;
+                            }
                         } else {
                             startActivity(new Intent(MyActivity.this, MyActivity.class));
                         }

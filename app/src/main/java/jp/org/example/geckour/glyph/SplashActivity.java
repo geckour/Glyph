@@ -35,7 +35,9 @@ public class SplashActivity extends Activity {
         }
 
         ActionBar actionBar = getActionBar();
-        actionBar.hide();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
     }
 
     @Override
