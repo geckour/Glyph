@@ -11,12 +11,10 @@
         android:layout_height="wrap_content"
         android:text="SETTING"
         android:id="@+id/button"
-        android:layout_marginRight="20dip"
+        android:layout_marginRight="20sp"
         android:background="@drawable/button"
-        android:textSize="20dip"
+        android:textSize="20sp"
         android:textColor="@color/button_text"
-        android:paddingLeft="10dip"
-        android:paddingRight="10dip"
         android:onClick="onClickSetting"
         />
 
@@ -25,12 +23,10 @@
         android:layout_height="wrap_content"
         android:text="HACK"
         android:id="@+id/button2"
-        android:layout_marginLeft="20dip"
+        android:layout_marginLeft="20sp"
         android:background="@drawable/button"
-        android:textSize="20dip"
+        android:textSize="20sp"
         android:textColor="@color/button_text"
-        android:paddingLeft="10dip"
-        android:paddingRight="10dip"
         android:onClick="onClickStart"
         />
 

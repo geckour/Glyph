@@ -14,6 +14,8 @@ import com.google.android.gms.analytics.Tracker;
 public class Pref extends android.preference.PreferenceActivity {
     static SharedPreferences sp;
     static int min, max;
+    static EditTextPreference minLevelPref;
+    static EditTextPreference maxLevelPref;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,10 +48,12 @@ public class Pref extends android.preference.PreferenceActivity {
             level = min;
         }
         int maxLevel = Integer.parseInt(sp.getString("max_level", "0"));
-        if (-1 < level || level < 9) {
-            if (level > maxLevel){
+        if (-1 < level && level < 9) {
+            if (level > maxLevel) {
                 sp.edit().putString("min_level", String.valueOf(maxLevel)).apply();
+                preference.setSummary(String.valueOf(maxLevel));
                 sp.edit().putString("max_level", String.valueOf(level)).apply();
+                maxLevelPref.setSummary(String.valueOf(level));
                 return false;
             } else {
                 if (isException) {
@@ -61,6 +65,13 @@ public class Pref extends android.preference.PreferenceActivity {
                 }
             }
         } else {
+            if (level > maxLevel) {
+                sp.edit().putString("min_level", String.valueOf(maxLevel)).apply();
+                preference.setSummary(String.valueOf(maxLevel));
+            } else {
+                sp.edit().putString("min_level", "0").apply();
+                preference.setSummary("0");
+            }
             return false;
         }
     }
@@ -77,10 +88,12 @@ public class Pref extends android.preference.PreferenceActivity {
             level = max;
         }
         int minLevel = Integer.parseInt(sp.getString("min_level", "0"));
-        if (-1 < level || level < 9) {
+        if (-1 < level && level < 9) {
             if (level < minLevel) {
                 sp.edit().putString("min_level", String.valueOf(level)).apply();
+                minLevelPref.setSummary(String.valueOf(level));
                 sp.edit().putString("max_level", String.valueOf(minLevel)).apply();
+                preference.setSummary(String.valueOf(minLevel));
                 return false;
             } else {
                 if (isException) {
@@ -92,6 +105,13 @@ public class Pref extends android.preference.PreferenceActivity {
                 }
             }
         } else {
+            if (level < minLevel) {
+                sp.edit().putString("max_level", String.valueOf(minLevel)).apply();
+                preference.setSummary(String.valueOf(minLevel));
+            } else {
+                sp.edit().putString("max_level", "8").apply();
+                preference.setSummary("8");
+            }
             return false;
         }
     }
@@ -114,6 +134,7 @@ public class Pref extends android.preference.PreferenceActivity {
             EditTextPreference editTextMinLevel = (EditTextPreference) findPreference("min_level");
             editTextMinLevel.setOnPreferenceChangeListener(MinLevelChangeListener);
             editTextMinLevel.setSummary(editTextMinLevel.getText());
+            minLevelPref = editTextMinLevel;
 
             //preferences.xml内のmax_vertexが変更されたかをListen
             final Preference.OnPreferenceChangeListener MaxLevelChangeListener = new Preference.OnPreferenceChangeListener() {
@@ -127,6 +148,7 @@ public class Pref extends android.preference.PreferenceActivity {
             EditTextPreference editTextMaxLevel = (EditTextPreference) findPreference("max_level");
             editTextMaxLevel.setOnPreferenceChangeListener(MaxLevelChangeListener);
             editTextMaxLevel.setSummary(editTextMaxLevel.getText());
+            maxLevelPref = editTextMaxLevel;
         }
     }
 }

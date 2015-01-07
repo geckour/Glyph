@@ -67,13 +67,13 @@ public class MyActivity extends Activity {
             min = Integer.parseInt(sp.getString("min_level", "0"));
             Log.v("echo", "min:" + min);
         } catch (Exception e) {
-            Log.v("error", "Can't translate minimum-level to int.");
+            Log.e("onCreate", "Can't translate minimum-level to int.");
         }
         try {
             max = Integer.parseInt(sp.getString("max_level", "8"));
             Log.v("echo", "max:" + max);
         } catch (Exception e) {
-            Log.v("error", "Can't translate maximum-level to int.");
+            Log.e("onCreate", "Can't translate maximum-level to int.");
         }
 
         view = new MyView(this);
@@ -534,7 +534,7 @@ public class MyActivity extends Activity {
 
         public void showButton() {
             int buttonWidth = doShow ? 250 : 180;
-            int buttonHeight = 100;
+            int buttonHeight = 110;
             int margin = 20;
             buttonPoint[0] = new Point((int)(offsetX * 2 - buttonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
             buttonPoint[1] = new Point((int)(offsetX * 2 - margin), (int)(offsetY * 2 - margin));
@@ -542,13 +542,18 @@ public class MyActivity extends Activity {
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextAlign(Paint.Align.CENTER);
             p.setTextSize(60);
-            Drawable drawable = getResources().getDrawable(R.drawable.button);
+            Drawable drawable;
+            if (isOnButton) {
+                drawable = getResources().getDrawable(R.drawable.button1);
+            } else {
+                drawable = getResources().getDrawable(R.drawable.button0);
+            }
             drawable.setBounds(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y);
             drawable.draw(c);
             if (doShow) {
-                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
+                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 35, p);
             } else {
-                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
+                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 35, p);
             }
         }
 
@@ -558,7 +563,7 @@ public class MyActivity extends Activity {
             p.setTypeface(typeface);
             p.setTextAlign(Paint.Align.RIGHT);
             float x = (float)(offsetX * 2.0 - 20.0);
-            float y = (float)(offsetY * 2.0 - 130.0);
+            float y = (float)(offsetY * 2.0 - 135.0);
 
             c.drawText("HACK:" + viewCount, x, y, p);
         }
@@ -883,14 +888,16 @@ public class MyActivity extends Activity {
         float lim = 20;
         boolean isReleased = false;
         boolean isFirstPress = true;
-
+        boolean isOnButton = false;
         public boolean onTouchEvent(MotionEvent event) {
             float upX, upY;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN: //タッチ
                     downX = event.getX();
                     downY = event.getY();
-                    if (isStartGame && !isEndGame) {
+                    isOnButton = isStartGame &&
+                            buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y;
+                    if (!isOnButton && isStartGame && !isEndGame) {
                         if (isReleased) {
                             resetLocus();
                             resetThrough();
@@ -904,7 +911,9 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_MOVE: //スワイプ
                     float currentX = event.getX();
                     float currentY = event.getY();
-                    if (isStartGame && !isEndGame) {
+                    isOnButton = isStartGame &&
+                            buttonPoint[0].x <= currentX && currentX <= buttonPoint[1].x && buttonPoint[0].y <= currentY && currentY <= buttonPoint[1].y;
+                    if (!isOnButton && isStartGame && !isEndGame) {
                         if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
                             if (Locus.size() == 0) {
                                 setLocusStart(currentX, currentY, true);
@@ -919,7 +928,6 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_CANCEL: //リリース
                     upX = event.getX();
                     upY = event.getY();
-                    boolean isOnButton;
                     isOnButton = isStartGame &&
                             buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y &&
                             buttonPoint[0].x <= upX && upX <= buttonPoint[1].x && buttonPoint[0].y <= upY && upY <= buttonPoint[1].y;
@@ -959,6 +967,7 @@ public class MyActivity extends Activity {
                             startActivity(new Intent(MyActivity.this, MyActivity.class));
                         }
                     }
+                    isOnButton = false;
                     break;
             }
             return true;

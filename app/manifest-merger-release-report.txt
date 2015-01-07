@@ -29,7 +29,7 @@ application
 ADDED from AndroidManifest.xml:9:5
 MERGED from com.android.support:appcompat-v7:21.0.3:16:5
 MERGED from com.android.support:support-v4:21.0.3:16:5
-MERGED from com.google.android.gms:play-services-base:6.5.87:20:5
+MERGED from com.google.android.gms:play-services:6.1.71:16:5
 MERGED from com.android.support:support-v4:21.0.3:16:5
 	android:label
 		ADDED from AndroidManifest.xml:12:9
@@ -43,7 +43,6 @@ MERGED from com.android.support:support-v4:21.0.3:16:5
 		ADDED from AndroidManifest.xml:14:9
 meta-data#com.google.android.gms.version
 ADDED from AndroidManifest.xml:16:9
-MERGED from com.google.android.gms:play-services-base:6.5.87:21:9
 	android:name
 		ADDED from AndroidManifest.xml:16:20
 	android:value
@@ -94,7 +93,7 @@ uses-sdk
 INJECTED from AndroidManifest.xml:0:0 reason: use-sdk injection requested
 MERGED from com.android.support:appcompat-v7:21.0.3:15:5
 MERGED from com.android.support:support-v4:21.0.3:15:5
-MERGED from com.google.android.gms:play-services-base:6.5.87:18:5
+MERGED from com.google.android.gms:play-services:6.1.71:15:5
 MERGED from com.android.support:support-v4:21.0.3:15:5
 	android:targetSdkVersion
 		INJECTED from AndroidManifest.xml:0:0
