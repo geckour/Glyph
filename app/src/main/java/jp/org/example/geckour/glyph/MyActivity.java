@@ -185,7 +185,7 @@ public class MyActivity extends Activity {
             int level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
             qTotal = difficulty.get(level).qs;
-            //Log.v("echo", "qTotal:" + qTotal);
+            Log.v("echo", "qTotal:" + qTotal);
             defTime = difficulty.get(level).time;
             if (qTotal > 1) {
                 c2.moveToLast();
@@ -197,25 +197,27 @@ public class MyActivity extends Activity {
                     randomVal = (int) (Math.random() * max);
                     c2.moveToPosition(randomVal);
                 }
+                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 String[] shapesSplit = c2.getString(2).split(",", -1);
+                for (String s: shapesSplit) {
+                    Log.v("echo", "shapesSplit: " + s);
+                }
                 for (int i = 0; i < qTotal; i++) {
                     throughList[i] = new ThroughList();
                     Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
                     c.moveToFirst();
-                    Log.v("echo", "shaper name: " + c.getString(1));
+                    //Log.v("echo", "shaper name: " + c.getString(1));
                     String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
                     answerThroughList[i] = new ThroughList(dotsSplit);
                 }
                 correctStr = getCorrectStrings(c2);
-                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             } else {
-                qTotal = 1;
-                //Log.v("echo", "qTotal:" + qTotal);
                 c1.moveToLast();
                 long max = c1.getLong(0);
                 int randomVal = (int) (Math.random() * max);
+                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
@@ -224,7 +226,6 @@ public class MyActivity extends Activity {
                 String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
                 answerThroughList[0] = new ThroughList(dotsSplit);
                 correctStr = new ArrayList<>(Arrays.asList("" + c.getString(c.getColumnIndex("name"))));
-                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
             }
             p.setAntiAlias(true);
 
@@ -329,10 +330,11 @@ public class MyActivity extends Activity {
                 if (isStartGame && doShow) {
                     showTime(now);
                     showQueNumber(now - initTime, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
-                    showButton();
                 } else if (!isStartGame) {
                     showQueNumber(now - initTime, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
                 }
+
+                showButton();
 
                 if (isEndGame) {
                     if (isFirstEndGame) {
@@ -660,23 +662,21 @@ public class MyActivity extends Activity {
             if (diffTIme >= 0) {
                 que = (int) diffTIme / showAnswerLength;
             }
-            if (que < qTotal/* * 2*/) {
-                if (/*que % 2 == 0 && */que >= 0) {
+            if (que < qTotal) {
+                if (que >= 0) {
                     for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
                         if (gameMode == 0 || gameMode == 1) {
                             p.setColor(Color.WHITE);
                             p.setTextSize(80);
                             p.setTypeface(typeface);
                             p.setTextAlign(Paint.Align.CENTER);
-                            c.drawText(correctStr.get(que/* / 2*/), offsetX, offsetY / 3, p);
+                            c.drawText(correctStr.get(que), offsetX, offsetY / 3, p);
                         }
                     }
                     if (preQue != que && (gameMode == 0 || gameMode == 2)) {
-                        putParticles(answerThroughList[que/* / 2*/]);
+                        putParticles(answerThroughList[que]);
                     }
-                }/* else {
-                    resetLocus();
-                }*/
+                }
             } else {
                 if (isFirstFlash) {
                     resetLocus();
@@ -733,7 +733,6 @@ public class MyActivity extends Activity {
 
         public void showResult(long margin, long initTime, long currentTime) {
             if (currentTime > initTime + margin) {
-                showButton();
 
                 int blue = Color.rgb(0x02, 0xff, 0xc5), red = Color.RED;
                 int drawColor;
@@ -839,26 +838,29 @@ public class MyActivity extends Activity {
                         isThrough[i] = true;
                         collisionDot = i;
                     }
-                }
-                //線分と円の当たり判定
-                float a = y0 - y1, b = x1 - x0, c = x0 * y1 - x1 * y0;
-                double d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt(a * a + b * b);
-                double lim = offsetX * 0.8 / 18 + tol;
-                if (-lim <= d && d <= lim) {    //線分への垂線と半径
-                    float difX0 = x0 - dots[i].x;
-                    float difX1 = x1 - dots[i].x;
-                    float difY0 = x0 - dots[i].x;
-                    float difY1 = x1 - dots[i].x;
-                    double inner0 = x0 * dots[i].y - dots[i].x * y0;
-                    double inner1 = x1 * dots[i].y - dots[i].x * y1;
-                    double d0 = Math.sqrt(difX0 * difX0 + difY0 * difY0);
-                    double d1 = Math.sqrt(difX1 * difX1 + difY1 * difY1);
-                    if (inner0 * inner1 <= 0) { //内積
-                        isThrough[i] = true;
-                        collisionDot = i;
-                    } else if (d0 < lim || d1 < lim) {
-                        isThrough[i] = true;
-                        collisionDot = i;
+                } else {
+                    //線分と円の当たり判定
+                    float a = y0 - y1, b = x1 - x0, c = x0 * y1 - x1 * y0;
+                    double d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt(a * a + b * b);
+                    double lim = offsetX * 0.8 / 18 + tol;
+                    if (-lim <= d && d <= lim) {    //線分への垂線と半径
+                        float difX0 = dots[i].x - x0;
+                        float difX1 = dots[i].x - x1;
+                        float difY0 = dots[i].y - y0;
+                        float difY1 = dots[i].y - y1;
+                        float difX10 = x1 - x0;
+                        float difY10 = y1 - y0;
+                        double inner0 = difX0 * difX10 + difY0 * difY10;
+                        double inner1 = difX1 * difX10 + difY1 * difY10;
+                        double d0 = Math.sqrt(difX0 * difX0 + difY0 * difY0);
+                        double d1 = Math.sqrt(difX1 * difX1 + difY1 * difY1);
+                        if (inner0 * inner1 <= 0) { //内積
+                            isThrough[i] = true;
+                            collisionDot = i;
+                        } else if (d0 < lim || d1 < lim) {
+                            isThrough[i] = true;
+                            collisionDot = i;
+                        }
                     }
                 }
             }
@@ -928,7 +930,7 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_CANCEL: //リリース
                     upX = event.getX();
                     upY = event.getY();
-                    isOnButton = isStartGame &&
+                    isOnButton =
                             buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y &&
                             buttonPoint[0].x <= upX && upX <= buttonPoint[1].x && buttonPoint[0].y <= upY && upY <= buttonPoint[1].y;
 
@@ -955,7 +957,9 @@ public class MyActivity extends Activity {
                         }
                     }
                     if (isOnButton) {
-                        if (doShow) {
+                        if (!isStartGame) {
+                            startActivity(new Intent(MyActivity.this, MyActivity.class));
+                        } else if (doShow) {
                             if (isFirstPress) {
                                 now = initTime + defTime;
                                 holdTime = now;
