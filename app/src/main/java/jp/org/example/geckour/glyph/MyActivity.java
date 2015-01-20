@@ -143,7 +143,6 @@ public class MyActivity extends Activity {
         boolean isEndLoad = false;
         boolean isFirstDraw = true;
         boolean isFirstTimeUp = true;
-        boolean isFirstEndGame = true;
         boolean doVibrate = false;
         boolean showCountView = false;
         ArrayList<Difficulty> difficulty = new ArrayList<>();
@@ -159,6 +158,7 @@ public class MyActivity extends Activity {
         SQLiteDatabase db;
         Cursor c1, c2;
         int previousDot = -1;
+        long pathTime[];
         Canvas c;
 
         public MyView(Context context) {
@@ -186,6 +186,10 @@ public class MyActivity extends Activity {
             //int level = 8;
             qTotal = difficulty.get(level).qs;
             Log.v("echo", "qTotal:" + qTotal);
+            pathTime = new long[qTotal];
+            for (int i = 0; i < qTotal; i++) {
+                pathTime[i] = -1;
+            }
             defTime = difficulty.get(level).time;
             if (qTotal > 1) {
                 c2.moveToLast();
@@ -337,9 +341,6 @@ public class MyActivity extends Activity {
                 showButton();
 
                 if (isEndGame) {
-                    if (isFirstEndGame) {
-                        isFirstEndGame = false;
-                    }
                     if (now > holdTime + marginTime) {
                         doShow = false;
                         showResult(marginTime, holdTime + marginTime, now);
@@ -365,7 +366,7 @@ public class MyActivity extends Activity {
                     try {
                         dots.add(Integer.parseInt(s));
                     } catch (Exception e) {
-                        Log.e("", e.getMessage());
+                        Log.e("ThroughList", e.getMessage());
                     }
                 }
             }
@@ -535,15 +536,16 @@ public class MyActivity extends Activity {
         }
 
         public void showButton() {
-            int buttonWidth = doShow ? 250 : 180;
-            int buttonHeight = 110;
+            int buttonWidth = isStartGame && doShow ? 180 : 130;
+            int buttonHeight = 90;
             int margin = 20;
             buttonPoint[0] = new Point((int)(offsetX * 2 - buttonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
             buttonPoint[1] = new Point((int)(offsetX * 2 - margin), (int)(offsetY * 2 - margin));
 
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextAlign(Paint.Align.CENTER);
-            p.setTextSize(60);
+            p.setTypeface(Typeface.DEFAULT);
+            p.setTextSize(40);
             Drawable drawable;
             if (isOnButton) {
                 drawable = getResources().getDrawable(R.drawable.button1);
@@ -552,10 +554,10 @@ public class MyActivity extends Activity {
             }
             drawable.setBounds(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y);
             drawable.draw(c);
-            if (doShow) {
-                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 35, p);
+            if (isStartGame && doShow) {
+                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
             } else {
-                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 35, p);
+                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
             }
         }
 
@@ -565,7 +567,7 @@ public class MyActivity extends Activity {
             p.setTypeface(typeface);
             p.setTextAlign(Paint.Align.RIGHT);
             float x = (float)(offsetX * 2.0 - 20.0);
-            float y = (float)(offsetY * 2.0 - 135.0);
+            float y = (float)(offsetY * 2.0 - 120.0);
 
             c.drawText("HACK:" + viewCount, x, y, p);
         }
@@ -584,9 +586,10 @@ public class MyActivity extends Activity {
             return path;
         }
 
+        long upTime = 0;
         public void showTime(long currentTime) {
-            p.setColor(Color.rgb(220, 190, 50));
             long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 100;
+
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (int i = 0; i < qTotal; i++) {
                     Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
@@ -595,12 +598,22 @@ public class MyActivity extends Activity {
                 isEndGame = true;
                 isFirstTimeUp = false;
             }
-            p.setTextSize(60);
+
             p.setTextAlign(Paint.Align.CENTER);
-            c.drawText(String.format("%02d", leftTime / 10) + ":" + leftTime % 10, offsetX, offsetY / 3, p);
-            float barWidth = (float) (offsetX * 0.7 / defTime) * leftTime * 100;
-            p.setStyle(Paint.Style.FILL);
-            c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
+            p.setTypeface(typeface);
+            if (doShow) {
+                p.setTextSize(60);
+                p.setColor(Color.rgb(220, 190, 50));
+                long dispTime = isEndGame ? upTime : leftTime;
+                c.drawText(String.format("%02d", dispTime / 10) + ":" + dispTime % 10, offsetX, offsetY / 3, p);
+                float barWidth = (float) (offsetX * 0.7 / defTime) * leftTime * 100;
+                p.setStyle(Paint.Style.FILL);
+                c.drawRect(offsetX - barWidth, (float) (offsetY / 2.7), offsetX + barWidth, (float) (offsetY / 2.55), p);
+            } else {
+                p.setTextSize(70);
+                p.setColor(Color.WHITE);
+                c.drawText(String.format("%02d", upTime / 10) + ":" + upTime % 10, offsetX, offsetY / 9, p);
+            }
         }
 
         public void showQueNumber(long currentTime, long marginTime, int normalColor, int strongColor) {
@@ -732,7 +745,10 @@ public class MyActivity extends Activity {
         }
 
         public void showResult(long margin, long initTime, long currentTime) {
+            p.setTypeface(typeface);
+
             if (currentTime > initTime + margin) {
+                showTime(now);
 
                 int blue = Color.rgb(0x02, 0xff, 0xc5), red = Color.RED;
                 int drawColor;
@@ -770,6 +786,12 @@ public class MyActivity extends Activity {
                     p.setTextSize(70);
                     p.setTextAlign(Paint.Align.LEFT);
                     c.drawText(correctStr.get(i), x * 2, giveOrigin.y + 25, p);
+                    p.setTextSize(50);
+                    p.setTextAlign(Paint.Align.RIGHT);
+                    p.setColor(getResources().getColor(R.color.button_text));
+                    if (pathTime[i] > -1) {
+                        c.drawText(pathTime[i] / 10 + ":" + pathTime[i] % 10, offsetX * 2, giveOrigin.y + 20, p);
+                    }
                 }
             }
         }
@@ -936,6 +958,11 @@ public class MyActivity extends Activity {
 
                     if (!isOnButton && isStartGame && !isEndGame) {
                         isReleased = true;
+                        long tPathTime = (now - initTime) / 100;
+                        for (int i = 0; i < qNum; i++) {
+                            tPathTime -= pathTime[i];
+                        }
+                        pathTime[qNum] = tPathTime;
                         String list = "";
                         for (int throughDot : throughList[qNum].dots) {
                             list += throughDot + ",";
@@ -950,6 +977,7 @@ public class MyActivity extends Activity {
                             qNum++;
                         } else {
                             holdTime = now;
+                            upTime = (defTime - (holdTime - initTime)) / 100;
                             isEndGame = true;
                             for (int i = 0; i < qTotal; i++) {
                                 Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
@@ -964,6 +992,7 @@ public class MyActivity extends Activity {
                                 now = initTime + defTime;
                                 holdTime = now;
                                 pressButtonTime = System.currentTimeMillis();
+                                upTime = (defTime - (pressButtonTime - initTime)) / 100;
                                 isPressedButton = true;
                                 isFirstPress = false;
                             }
