@@ -10,13 +10,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="SETTING"
-        android:id="@+id/button"
+        android:id="@+id/button1"
         android:layout_marginRight="20sp"
         android:background="@drawable/button"
         android:textSize="20sp"
         android:textColor="@color/button_text"
         android:onClick="onClickSetting"
-        />
+        android:fontFamily="\@"
+        android:paddingLeft="15sp"
+        android:paddingRight="15sp"/>
 
     <Button
         android:layout_width="wrap_content"
@@ -28,6 +30,8 @@
         android:textSize="20sp"
         android:textColor="@color/button_text"
         android:onClick="onClickStart"
-        />
+        android:fontFamily="\@"
+        android:paddingLeft="15sp"
+        android:paddingRight="15sp"/>
 
 </LinearLayout>

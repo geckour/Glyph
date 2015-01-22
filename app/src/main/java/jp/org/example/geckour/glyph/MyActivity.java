@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
@@ -195,12 +196,23 @@ public class MyActivity extends Activity {
                 c2.moveToLast();
                 long max = c2.getLong(0);
                 int randomVal = (int) (Math.random() * max);
-                //int randomVal = 0;
+                //int randomVal = viewCount - 1;
                 c2.moveToPosition(randomVal);
                 while (c2.getInt(c2.getColumnIndex("level")) != qTotal) {
                     randomVal = (int) (Math.random() * max);
                     c2.moveToPosition(randomVal);
                 }
+                /*int tQ = c2.getInt(1);
+                if (tQ == 5) level = 8;
+                if (tQ == 4) level = 6;
+                if (tQ == 3) level = 3;
+                if (tQ == 2) level = 2;
+                qTotal = difficulty.get(level).qs;*/
+                pathTime = new long[qTotal];
+                for (int i = 0; i < qTotal; i++) {
+                    pathTime[i] = -1;
+                }
+                //defTime = difficulty.get(level).time;
                 Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
@@ -237,7 +249,8 @@ public class MyActivity extends Activity {
                 isThrough[i] = false;
             }
 
-            typeface = Typeface.createFromAsset(getContext().getAssets(), "Ricty-Regular.ttf");
+            typeface = Typeface.createFromAsset(getContext().getAssets(), "Coda-Regular.ttf");
+            p.setTypeface(typeface);
 
             isEndLoad = true;
 
@@ -333,9 +346,9 @@ public class MyActivity extends Activity {
 
                 if (isStartGame && doShow) {
                     showTime(now);
-                    showQueNumber(now - initTime, 0, Color.argb(50, 0x02, 0xff, 0xc5), Color.argb(100, 0x02, 0xff, 0xc5));
+                    showQueNumber(now - initTime, 0, 0x02, 0xff, 0xc5);
                 } else if (!isStartGame) {
-                    showQueNumber(now - initTime, marginTime, Color.argb(50, 220, 175, 50), Color.argb(100, 220, 175, 50));
+                    showQueNumber(now - initTime, marginTime, 240, 150, 40);
                 }
 
                 showButton();
@@ -388,7 +401,7 @@ public class MyActivity extends Activity {
             int phase = 0;
             long moveFrames = 400;
             long initFrames = 0;
-            float grainR = 10;
+            float grainR = 15;
             double v = 0.15;
 
             public Particle(float x0, float y0) {
@@ -427,8 +440,10 @@ public class MyActivity extends Activity {
             }
 
             private void draw() {
+                int colors[] = {Color.argb(255 - calcSubAlpha(), 225, 210, 190), Color.argb(127 - calcSubAlpha() / 2, 200, 180, 140), Color.argb(0, 40, 30, 0)};
+                float positions[] = {0f, 0.25f, 1f};
                 for (Grain gr : grain) {
-                    p.setShader(new RadialGradient(gr.x, gr.y, grainR, Color.argb(255 - calcSubAlpha(), 255, 255, 255), Color.argb(0, 220, 175, 50), Shader.TileMode.CLAMP));
+                    p.setShader(new RadialGradient(gr.x, gr.y, grainR, colors, positions, Shader.TileMode.CLAMP));
                     p.setStyle(Paint.Style.FILL);
                     c.drawCircle(gr.x, gr.y, grainR, p);
                 }
@@ -536,7 +551,7 @@ public class MyActivity extends Activity {
         }
 
         public void showButton() {
-            int buttonWidth = isStartGame && doShow ? 180 : 130;
+            int buttonWidth = isStartGame && doShow ? 200 : 150;
             int buttonHeight = 90;
             int margin = 20;
             buttonPoint[0] = new Point((int)(offsetX * 2 - buttonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
@@ -544,7 +559,6 @@ public class MyActivity extends Activity {
 
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextAlign(Paint.Align.CENTER);
-            p.setTypeface(Typeface.DEFAULT);
             p.setTextSize(40);
             Drawable drawable;
             if (isOnButton) {
@@ -564,7 +578,6 @@ public class MyActivity extends Activity {
         public void showCount() {
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextSize(40);
-            p.setTypeface(typeface);
             p.setTextAlign(Paint.Align.RIGHT);
             float x = (float)(offsetX * 2.0 - 20.0);
             float y = (float)(offsetY * 2.0 - 120.0);
@@ -588,7 +601,7 @@ public class MyActivity extends Activity {
 
         long upTime = 0;
         public void showTime(long currentTime) {
-            long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 100;
+            long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 10;
 
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (int i = 0; i < qTotal; i++) {
@@ -599,69 +612,128 @@ public class MyActivity extends Activity {
                 isFirstTimeUp = false;
             }
 
-            p.setTextAlign(Paint.Align.CENTER);
-            p.setTypeface(typeface);
             if (doShow) {
                 p.setTextSize(60);
                 p.setColor(Color.rgb(220, 190, 50));
                 long dispTime = isEndGame ? upTime : leftTime;
-                c.drawText(String.format("%02d", dispTime / 10) + ":" + dispTime % 10, offsetX, offsetY / 3, p);
-                float barWidth = (float) (offsetX * 0.7 / defTime) * leftTime * 100;
+
+                p.setTextAlign(Paint.Align.RIGHT);
+                c.drawText(String.format("%02d", dispTime / 100), offsetX - 3, offsetY / 3, p);
+                p.setTextAlign(Paint.Align.CENTER);
+                c.drawText(":", offsetX, offsetY / 3, p);
+                p.setTextAlign(Paint.Align.LEFT);
+                c.drawText(String.format("%02d", dispTime % 100), offsetX + 3, offsetY / 3, p);
+
+                float barWidth = (float) (offsetX * 0.7 / defTime) * leftTime * 10;
                 p.setStyle(Paint.Style.FILL);
                 c.drawRect(offsetX - barWidth, (float) (offsetY / 2.7), offsetX + barWidth, (float) (offsetY / 2.55), p);
             } else {
                 p.setTextSize(70);
                 p.setColor(Color.WHITE);
-                c.drawText(String.format("%02d", upTime / 10) + ":" + upTime % 10, offsetX, offsetY / 9, p);
+                p.setTextAlign(Paint.Align.RIGHT);
+                c.drawText(String.format("%02d", upTime / 100), offsetX - 5, offsetY / 9, p);
+                p.setTextAlign(Paint.Align.CENTER);
+                c.drawText(":", offsetX, offsetY / 9, p);
+                p.setTextAlign(Paint.Align.LEFT);
+                c.drawText(String.format("%02d", upTime % 100), offsetX + 5, offsetY / 9, p);
             }
         }
 
-        public void showQueNumber(long currentTime, long marginTime, int normalColor, int strongColor) {
+        public void showQueNumber(long currentTime, long marginTime, int r, int g, int b) {
             float hexRadius = offsetX / 10;
             float hexMargin = 5;
             float totalMargin = hexMargin * (qTotal - 1);
             float width = (qTotal - 1) * (offsetX / 5);
             float x, y;
+            int[] arrayNormal = {Color.argb(140, r, g, b), Color.argb(80, r, g, b), Color.argb(40, r, g, b), Color.argb(80, r, g, b), Color.argb(140, r, g, b)};
+            int[] arrayStrong = {Color.argb(255, r, g, b), Color.argb(150, r, g, b), Color.argb(90, r, g, b), Color.argb(150, r, g, b), Color.argb(255 ,r, g, b)};
+            float[] positions = {0f, 0.1f, 0.5f, 0.9f, 1f};
+
             for (int i = 0; i < qTotal; i++) {
                 x = offsetX - (width / 2 + totalMargin) + i * (hexRadius + hexMargin) * 2;
                 y = (float)(offsetY / 7.5);
                 PointF origin = new PointF(x, y);
+                LinearGradient lgNormal = new LinearGradient(x, y - hexRadius, x, y + hexRadius, arrayNormal, positions, Shader.TileMode.CLAMP);
+                LinearGradient lgStrong = new LinearGradient(x, y - hexRadius, x, y + hexRadius, arrayStrong, positions, Shader.TileMode.CLAMP);
 
+                p.setColor(Color.BLACK);
                 if (isStartGame) {
                     if (i == qNum) {
                         if ((isReleased && throughList[qTotal - 1].dots.size() > 0)) {
-                            p.setColor(normalColor);
+                            p.setShader(lgNormal);
                             p.setStyle(Paint.Style.FILL);
                             c.drawPath(makeHexagon(origin, hexRadius), p);
+                            p.setShader(null);
+
+                            p.setStrokeJoin(Paint.Join.BEVEL);
+                            p.setColor(Color.argb(140, r, g, b));
+                            p.setStrokeWidth(2);
+                            p.setStyle(Paint.Style.STROKE);
+                            c.drawPath(makeHexagon(origin, hexRadius), p);
+                            p.setStrokeWidth(0);
                         } else {
-                            p.setColor(strongColor);
+                            p.setShader(lgStrong);
                             p.setStyle(Paint.Style.FILL);
                             c.drawPath(makeHexagon(origin, hexRadius), p);
+                            p.setShader(null);
+
+                            p.setStrokeJoin(Paint.Join.BEVEL);
+                            p.setColor(Color.rgb(r, g, b));
+                            p.setStrokeWidth(2);
+                            p.setStyle(Paint.Style.STROKE);
+                            c.drawPath(makeHexagon(origin, hexRadius), p);
+                            p.setStrokeWidth(0);
                         }
                     } else if (i < qNum) {
-                        p.setColor(normalColor);
+                        p.setShader(lgNormal);
                         p.setStyle(Paint.Style.FILL);
                         c.drawPath(makeHexagon(origin, hexRadius), p);
+                        p.setShader(null);
+
+                        p.setStrokeJoin(Paint.Join.BEVEL);
+                        p.setColor(Color.argb(140, r, g, b));
+                        p.setStrokeWidth(2);
+                        p.setStyle(Paint.Style.STROKE);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
+                        p.setStrokeWidth(0);
                     } else {
                         p.setColor(Color.BLACK);
                         p.setStyle(Paint.Style.FILL);
                         c.drawPath(makeHexagon(origin, hexRadius), p);
+
+                        p.setStrokeJoin(Paint.Join.BEVEL);
+                        p.setColor(Color.argb(80, r, g, b));
+                        p.setStrokeWidth(2);
+                        p.setStyle(Paint.Style.STROKE);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
+                        p.setStrokeWidth(0);
                     }
                 } else {
                     if (i == (currentTime - marginTime) / showAnswerLength && currentTime > marginTime) {
-                        p.setColor(strongColor);
+                        p.setShader(lgStrong);
                         p.setStyle(Paint.Style.FILL);
                         c.drawPath(makeHexagon(origin, hexRadius), p);
+                        p.setShader(null);
+
+                        p.setStrokeJoin(Paint.Join.BEVEL);
+                        p.setColor(Color.rgb(r, g, b));
+                        p.setStrokeWidth(2);
+                        p.setStyle(Paint.Style.STROKE);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
+                        p.setStrokeWidth(0);
                     } else {
                         p.setColor(Color.BLACK);
                         p.setStyle(Paint.Style.FILL);
                         c.drawPath(makeHexagon(origin, hexRadius), p);
+
+                        p.setStrokeJoin(Paint.Join.BEVEL);
+                        p.setColor(Color.argb(140, r, g, b));
+                        p.setStrokeWidth(2);
+                        p.setStyle(Paint.Style.STROKE);
+                        c.drawPath(makeHexagon(origin, hexRadius), p);
+                        p.setStrokeWidth(0);
                     }
                 }
-                p.setStrokeJoin(Paint.Join.BEVEL);
-                p.setColor(Color.argb(255, Color.red(normalColor), Color.green(normalColor), Color.blue(normalColor)));
-                p.setStyle(Paint.Style.STROKE);
-                c.drawPath(makeHexagon(origin, hexRadius), p);
             }
         }
 
@@ -681,7 +753,6 @@ public class MyActivity extends Activity {
                         if (gameMode == 0 || gameMode == 1) {
                             p.setColor(Color.WHITE);
                             p.setTextSize(80);
-                            p.setTypeface(typeface);
                             p.setTextAlign(Paint.Align.CENTER);
                             c.drawText(correctStr.get(que), offsetX, offsetY / 3, p);
                         }
@@ -745,7 +816,6 @@ public class MyActivity extends Activity {
         }
 
         public void showResult(long margin, long initTime, long currentTime) {
-            p.setTypeface(typeface);
 
             if (currentTime > initTime + margin) {
                 showTime(now);
@@ -790,7 +860,7 @@ public class MyActivity extends Activity {
                     p.setTextAlign(Paint.Align.RIGHT);
                     p.setColor(getResources().getColor(R.color.button_text));
                     if (pathTime[i] > -1) {
-                        c.drawText(pathTime[i] / 10 + ":" + pathTime[i] % 10, offsetX * 2, giveOrigin.y + 20, p);
+                        c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2, giveOrigin.y + 20, p);
                     }
                 }
             }
@@ -958,7 +1028,7 @@ public class MyActivity extends Activity {
 
                     if (!isOnButton && isStartGame && !isEndGame) {
                         isReleased = true;
-                        long tPathTime = (now - initTime) / 100;
+                        long tPathTime = (now - initTime) / 10;
                         for (int i = 0; i < qNum; i++) {
                             tPathTime -= pathTime[i];
                         }
@@ -977,7 +1047,7 @@ public class MyActivity extends Activity {
                             qNum++;
                         } else {
                             holdTime = now;
-                            upTime = (defTime - (holdTime - initTime)) / 100;
+                            upTime = (defTime - (holdTime - initTime)) / 10;
                             isEndGame = true;
                             for (int i = 0; i < qTotal; i++) {
                                 Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
@@ -992,7 +1062,7 @@ public class MyActivity extends Activity {
                                 now = initTime + defTime;
                                 holdTime = now;
                                 pressButtonTime = System.currentTimeMillis();
-                                upTime = (defTime - (pressButtonTime - initTime)) / 100;
+                                upTime = (defTime - (pressButtonTime - initTime)) / 10;
                                 isPressedButton = true;
                                 isFirstPress = false;
                             }
