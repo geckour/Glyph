@@ -10,7 +10,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "shaper.db";
     public static final String TABLE_NAME1 = "shapers";
     public static final String TABLE_NAME2 = "sets";
-    public static final int DB_VERSION = 2;
+    public static final int DB_VERSION = 4;
 
     private String[][] SHAPERS = {
             {"ABANDON", "6,4,0,2,9,8"},
@@ -199,7 +199,7 @@ public class DBHelper extends SQLiteOpenHelper {
             {"5", "LIBERATE,SELF,LIBERATE,BEING,GOVERNMENT", ",,,HUMAN,CIVILIZATION"},
             {"5", "BREATHE,NO,XM,LOSE,SELF", "LIVE,INSIDE,,,"},
             {"5", "LOSE,SHAPERS,MESSAGE,GAIN,CHAOS", null},
-            {"5", "MIND,BODY,SOUL,PURE,BEING", ",,,HUMAN"},
+            {"5", "MIND,BODY,SOUL,PURE,BEING", ",,,,HUMAN"},
             {"5", "MORE,DATA,GAIN,OPENING,ADVANCE", ",,,PORTAL,"},
             {"5", "OLD,NATURE,LESS,STRONG,PRESENT", ",,,,NOW"},
             {"5", "DISTANCE,SELF,AVOID,BEING,LIE", "OUTSIDE,,,HUMAN,"},

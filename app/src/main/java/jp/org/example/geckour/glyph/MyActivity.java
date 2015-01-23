@@ -18,6 +18,7 @@ import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
@@ -50,6 +51,7 @@ public class MyActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        String tag = "onCreate";
 
         ActionBar actionBar = getActionBar();
         if (actionBar != null) {
@@ -66,18 +68,21 @@ public class MyActivity extends Activity {
 
         try {
             min = Integer.parseInt(sp.getString("min_level", "0"));
-            Log.v("echo", "min:" + min);
+            Log.v(tag, "min:" + min);
         } catch (Exception e) {
-            Log.e("onCreate", "Can't translate minimum-level to int.");
+            Log.e(tag, "Can't translate minimum-level to int.");
         }
         try {
             max = Integer.parseInt(sp.getString("max_level", "8"));
-            Log.v("echo", "max:" + max);
+            Log.v(tag, "max:" + max);
         } catch (Exception e) {
-            Log.e("onCreate", "Can't translate maximum-level to int.");
+            Log.e(tag, "Can't translate maximum-level to int.");
         }
 
         view = new MyView(this);
+        /*if (Build.VERSION_CODES.HONEYCOMB < Build.VERSION.SDK_INT && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }*/
         setContentView(view);
 
         Tracker t = ((Analytics) getApplication()).getTracker(Analytics.TrackerName.APP_TRACKER);
@@ -113,9 +118,10 @@ public class MyActivity extends Activity {
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        String tag = "onActivityResult";
         if (requestCode == 0){ //Pref.javaからの戻り値の場合
             if (resultCode == Activity.RESULT_OK) {
-                Log.v("echo", "level is changed.");
+                Log.v(tag, "level is changed.");
             }
         }
     }
@@ -164,6 +170,7 @@ public class MyActivity extends Activity {
 
         public MyView(Context context) {
             super(context);
+            String tag = "MyView";
             dbHelper = new DBHelper(context);
             db = dbHelper.getReadableDatabase();
             c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null);
@@ -186,7 +193,7 @@ public class MyActivity extends Activity {
             int level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
             qTotal = difficulty.get(level).qs;
-            Log.v("echo", "qTotal:" + qTotal);
+            Log.v(tag, "qTotal:" + qTotal);
             pathTime = new long[qTotal];
             for (int i = 0; i < qTotal; i++) {
                 pathTime[i] = -1;
@@ -213,18 +220,18 @@ public class MyActivity extends Activity {
                     pathTime[i] = -1;
                 }
                 //defTime = difficulty.get(level).time;
-                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
+                Log.v(tag, "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 String[] shapesSplit = c2.getString(2).split(",", -1);
                 for (String s: shapesSplit) {
-                    Log.v("echo", "shapesSplit: " + s);
+                    Log.v(tag, "shapesSplit: " + s);
                 }
                 for (int i = 0; i < qTotal; i++) {
                     throughList[i] = new ThroughList();
                     Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null);
                     c.moveToFirst();
-                    //Log.v("echo", "shaper name: " + c.getString(1));
+                    //Log.v(tag, "shaper name: " + c.getString(1));
                     String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
                     answerThroughList[i] = new ThroughList(dotsSplit);
                 }
@@ -233,7 +240,7 @@ public class MyActivity extends Activity {
                 c1.moveToLast();
                 long max = c1.getLong(0);
                 int randomVal = (int) (Math.random() * max);
-                Log.v("echo", "randomVal:" + randomVal + ", level:" + level);
+                Log.v(tag, "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
@@ -374,12 +381,13 @@ public class MyActivity extends Activity {
                 dots = new ArrayList<>(argDots);
             }
             public ThroughList(String[] argDots) {
+                String tag = "ThroughList";
                 dots = new ArrayList<>();
                 for (String s: argDots) {
                     try {
                         dots.add(Integer.parseInt(s));
                     } catch (Exception e) {
-                        Log.e("ThroughList", e.getMessage());
+                        Log.e(tag, e.getMessage());
                     }
                 }
             }
@@ -601,11 +609,12 @@ public class MyActivity extends Activity {
 
         long upTime = 0;
         public void showTime(long currentTime) {
+            String tag = "showTime";
             long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 10;
 
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (int i = 0; i < qTotal; i++) {
-                    Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                    Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
                 }
                 holdTime = now;
                 isEndGame = true;
@@ -645,9 +654,9 @@ public class MyActivity extends Activity {
             float totalMargin = hexMargin * (qTotal - 1);
             float width = (qTotal - 1) * (offsetX / 5);
             float x, y;
-            int[] arrayNormal = {Color.argb(140, r, g, b), Color.argb(80, r, g, b), Color.argb(40, r, g, b), Color.argb(80, r, g, b), Color.argb(140, r, g, b)};
-            int[] arrayStrong = {Color.argb(255, r, g, b), Color.argb(150, r, g, b), Color.argb(90, r, g, b), Color.argb(150, r, g, b), Color.argb(255 ,r, g, b)};
-            float[] positions = {0f, 0.1f, 0.5f, 0.9f, 1f};
+            int[] arrayNormal = {Color.argb(140, r, g, b), Color.argb(70, r, g, b), Color.argb(45, r, g, b), Color.argb(40, r, g, b), Color.argb(45, r, g, b), Color.argb(70, r, g, b), Color.argb(140, r, g, b)};
+            int[] arrayStrong = {Color.argb(255, r, g, b), Color.argb(130, r, g, b), Color.argb(85, r, g, b), Color.argb(75, r, g, b), Color.argb(85, r, g, b), Color.argb(130, r, g, b), Color.argb(255 ,r, g, b)};
+            float[] positions = {0f, 0.15f, 0.35f, 0.5f, 0.65f, 0.85f, 1f};
 
             for (int i = 0; i < qTotal; i++) {
                 x = offsetX - (width / 2 + totalMargin) + i * (hexRadius + hexMargin) * 2;
@@ -829,7 +838,7 @@ public class MyActivity extends Activity {
                     float totalMargin = hexaMargin * (qTotal - 1);
                     float height = (qTotal - 1) * (offsetX / 5);
                     float x = offsetX / 6;
-                    float y = offsetY / 2 - (height / 2 + totalMargin) + i * (hexaRadius + hexaMargin) * 2;
+                    float y = offsetY * 2 / 3 - (height / 2 + totalMargin) + i * (hexaRadius + hexaMargin) * 2;
                     PointF giveOrigin = new PointF(x, y);
                     if (judgeLocus(answerThroughList[i], throughList[i])) {
                         drawColor = blue;
@@ -860,7 +869,7 @@ public class MyActivity extends Activity {
                     p.setTextAlign(Paint.Align.RIGHT);
                     p.setColor(getResources().getColor(R.color.button_text));
                     if (pathTime[i] > -1) {
-                        c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2, giveOrigin.y + 20, p);
+                        c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2 - 5, giveOrigin.y + 20, p);
                     }
                 }
             }
@@ -984,6 +993,7 @@ public class MyActivity extends Activity {
         boolean isFirstPress = true;
         boolean isOnButton = false;
         public boolean onTouchEvent(MotionEvent event) {
+            String tag = "onTouchEvent";
             float upX, upY;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN: //タッチ
@@ -1037,7 +1047,7 @@ public class MyActivity extends Activity {
                         for (int throughDot : throughList[qNum].dots) {
                             list += throughDot + ",";
                         }
-                        Log.v("echo", "throughList:" + list);
+                        Log.v(tag, "throughList:" + list);
                         resetLocus();
                         if (throughList[qNum].dots.size() > 0) {
                             putParticles(throughList[qNum]);
@@ -1050,7 +1060,7 @@ public class MyActivity extends Activity {
                             upTime = (defTime - (holdTime - initTime)) / 10;
                             isEndGame = true;
                             for (int i = 0; i < qTotal; i++) {
-                                Log.v("echo", "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
+                                Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i], throughList[i]));
                             }
                         }
                     }

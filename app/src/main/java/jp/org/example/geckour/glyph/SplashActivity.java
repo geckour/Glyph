@@ -63,10 +63,11 @@ public class SplashActivity extends Activity {
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        String tag = "SplashActivity.onActivityResult";
         //Pref.javaからの戻り値の場合
         if (requestCode == 0){
             if (resultCode == Activity.RESULT_OK) {
-                Log.v("echo", "Setting is changed.");
+                Log.v(tag, "Setting is changed.");
             }
         }
     }
