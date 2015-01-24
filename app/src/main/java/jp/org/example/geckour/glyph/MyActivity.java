@@ -46,7 +46,7 @@ public class MyActivity extends Activity {
     MyView view;
     float offsetX;
     float offsetY;
-    boolean isFocused = false;
+    float scale;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,9 +93,10 @@ public class MyActivity extends Activity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+
         offsetX = view.getWidth() / 2;
         offsetY = view.getHeight() / 2;
-        isFocused = true;
+        scale = offsetY * 2 / 1280;
     }
 
     @Override
@@ -530,10 +531,10 @@ public class MyActivity extends Activity {
                 float sumLength[] = {0, 0};
                 while (sumLength[0] <= Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) && sumLength[1] <= Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y)) {
                     Locus.add(new Particle(x, y));
-                    x += unitV[0] * 30;
-                    y += unitV[1] * 30;
-                    sumLength[0] += Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) * 30 / length[i];
-                    sumLength[1] += Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y) * 30 / length[i];
+                    x += unitV[0] * 35 * scale;
+                    y += unitV[1] * 35 * scale;
+                    sumLength[0] += Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) * 35 * scale / length[i];
+                    sumLength[1] += Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y) * 35 * scale / length[i];
                 }
             }
         }
@@ -559,15 +560,15 @@ public class MyActivity extends Activity {
         }
 
         public void showButton() {
-            int buttonWidth = isStartGame && doShow ? 200 : 150;
-            int buttonHeight = 90;
-            int margin = 20;
+            float buttonWidth = (isStartGame && doShow ? 200 : 150) * scale;
+            float buttonHeight = 90 * scale;
+            float margin = 20 * scale;
             buttonPoint[0] = new Point((int)(offsetX * 2 - buttonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
             buttonPoint[1] = new Point((int)(offsetX * 2 - margin), (int)(offsetY * 2 - margin));
 
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextAlign(Paint.Align.CENTER);
-            p.setTextSize(40);
+            p.setTextSize(40 * scale);
             Drawable drawable;
             if (isOnButton) {
                 drawable = getResources().getDrawable(R.drawable.button1);
@@ -577,9 +578,9 @@ public class MyActivity extends Activity {
             drawable.setBounds(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y);
             drawable.draw(c);
             if (isStartGame && doShow) {
-                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
+                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30 * scale, p);
             } else {
-                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30, p);
+                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30 * scale, p);
             }
         }
 
@@ -622,7 +623,7 @@ public class MyActivity extends Activity {
             }
 
             if (doShow) {
-                p.setTextSize(60);
+                p.setTextSize(60 * scale);
                 p.setColor(Color.rgb(220, 190, 50));
                 long dispTime = isEndGame ? upTime : leftTime;
 
@@ -635,9 +636,9 @@ public class MyActivity extends Activity {
 
                 float barWidth = (float) (offsetX * 0.7 / defTime) * leftTime * 10;
                 p.setStyle(Paint.Style.FILL);
-                c.drawRect(offsetX - barWidth, (float) (offsetY / 2.7), offsetX + barWidth, (float) (offsetY / 2.55), p);
+                c.drawRect(offsetX - barWidth, (float)(offsetY / 2.7), offsetX + barWidth, (float)(offsetY / 2.55), p);
             } else {
-                p.setTextSize(70);
+                p.setTextSize(70 * scale);
                 p.setColor(Color.WHITE);
                 p.setTextAlign(Paint.Align.RIGHT);
                 c.drawText(String.format("%02d", upTime / 100), offsetX - 5, offsetY / 9, p);
@@ -761,7 +762,7 @@ public class MyActivity extends Activity {
                     for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
                         if (gameMode == 0 || gameMode == 1) {
                             p.setColor(Color.WHITE);
-                            p.setTextSize(80);
+                            p.setTextSize(80 * scale);
                             p.setTextAlign(Paint.Align.CENTER);
                             c.drawText(correctStr.get(que), offsetX, offsetY / 3, p);
                         }
@@ -845,12 +846,15 @@ public class MyActivity extends Activity {
                     } else {
                         drawColor = red;
                     }
+
                     p.setColor(Color.argb(80, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor)));
                     p.setStyle(Paint.Style.FILL);
                     c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+
                     p.setColor(Color.argb(255, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor)));
                     p.setStyle(Paint.Style.STROKE);
                     c.drawPath(makeHexagon(giveOrigin, hexaRadius), p);
+
                     for (int j = 0; j < answerThroughList[i].dots.size(); j++) {
                         if (j == 0) {
                             answerPath.moveTo(x - hexaRadius + dots[answerThroughList[i].dots.get(j)].x / 8, y + (float)(dots[answerThroughList[i].dots.get(j)].y - offsetY * 1.2) / 8);
@@ -860,16 +864,17 @@ public class MyActivity extends Activity {
                     }
                     p.setStrokeWidth(3);
                     c.drawPath(answerPath, p);
+
                     p.setStyle(Paint.Style.FILL);
                     p.setStrokeWidth(1);
-                    p.setTextSize(70);
+                    p.setTextSize(70 * scale);
                     p.setTextAlign(Paint.Align.LEFT);
-                    c.drawText(correctStr.get(i), x * 2, giveOrigin.y + 25, p);
-                    p.setTextSize(50);
+                    c.drawText(correctStr.get(i), x * 2, giveOrigin.y + 25 * scale, p);
+                    p.setTextSize(50 * scale);
                     p.setTextAlign(Paint.Align.RIGHT);
-                    p.setColor(getResources().getColor(R.color.button_text));
+                    p.setColor(Color.WHITE);
                     if (pathTime[i] > -1) {
-                        c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2 - 5, giveOrigin.y + 20, p);
+                        c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, p);
                     }
                 }
             }
@@ -988,12 +993,13 @@ public class MyActivity extends Activity {
 
         float downX = 0, downY = 0;
         float memX = 0, memY = 0;
-        float lim = 20;
         boolean isReleased = false;
         boolean isFirstPress = true;
         boolean isOnButton = false;
         public boolean onTouchEvent(MotionEvent event) {
             String tag = "onTouchEvent";
+
+            float lim = 35 * scale;
             float upX, upY;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN: //タッチ
