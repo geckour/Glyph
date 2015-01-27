@@ -18,7 +18,6 @@ import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
@@ -131,6 +130,7 @@ public class MyActivity extends Activity {
         private final Handler handler = new Handler();
         boolean state = true;
         int gameMode;
+        int level;
         Paint p = new Paint();
         double cr = Math.PI / 3;
         double radius;
@@ -186,12 +186,12 @@ public class MyActivity extends Activity {
                 if (i == 2 || i == 3 || i == 6 || i == 8) {
                     giveQs++;
                 }
-                difficulty.add(i, new Difficulty(giveQs, giveTime));
+                difficulty.add(i, new Difficulty(giveQs, giveTime, 40 + i * 5));
             }
             gameMode = Integer.parseInt(sp.getString("gamemode", "0"));
             doVibrate = sp.getBoolean("doVibrate", false);
             showCountView = sp.getBoolean("showCountView", false);
-            int level = (int) (Math.random() * (max - min + 1) + min);
+            level = (int) (Math.random() * (max - min + 1) + min);
             //int level = 8;
             qTotal = difficulty.get(level).qs;
             Log.v(tag, "qTotal:" + qTotal);
@@ -397,10 +397,12 @@ public class MyActivity extends Activity {
         class Difficulty {
             int qs = 0;
             int time = 0;
+            int bonus = 0;
 
-            public Difficulty(int argQs, int argTime) {
+            public Difficulty(int argQs, int argTime, int argBonus) {
                 qs = argQs;
                 time = argTime;
+                bonus = argBonus;
             }
         }
 
@@ -609,9 +611,10 @@ public class MyActivity extends Activity {
         }
 
         long upTime = 0;
+        long leftTime = 0;
         public void showTime(long currentTime) {
             String tag = "showTime";
-            long leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 10;
+            leftTime = (defTime - ((isEndGame ? holdTime : currentTime) - initTime)) / 10;
 
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (int i = 0; i < qTotal; i++) {
@@ -832,10 +835,11 @@ public class MyActivity extends Activity {
 
                 int blue = Color.rgb(0x02, 0xff, 0xc5), red = Color.RED;
                 int drawColor;
+                int correctNum = 0;
                 for (int i = 0; i < qTotal; i++) {
                     Path answerPath = new Path();
                     float hexaRadius = offsetX / 8;
-                    float hexaMargin = 10;
+                    float hexaMargin = 10 * scale;
                     float totalMargin = hexaMargin * (qTotal - 1);
                     float height = (qTotal - 1) * (offsetX / 5);
                     float x = offsetX / 6;
@@ -843,6 +847,7 @@ public class MyActivity extends Activity {
                     PointF giveOrigin = new PointF(x, y);
                     if (judgeLocus(answerThroughList[i], throughList[i])) {
                         drawColor = blue;
+                        correctNum++;
                     } else {
                         drawColor = red;
                     }
@@ -862,7 +867,7 @@ public class MyActivity extends Activity {
                             answerPath.lineTo(x - hexaRadius + dots[answerThroughList[i].dots.get(j)].x / 8, y + (float)(dots[answerThroughList[i].dots.get(j)].y - offsetY * 1.2) / 8);
                         }
                     }
-                    p.setStrokeWidth(3);
+                    p.setStrokeWidth(3 * scale);
                     c.drawPath(answerPath, p);
 
                     p.setStyle(Paint.Style.FILL);
@@ -876,6 +881,19 @@ public class MyActivity extends Activity {
                     if (pathTime[i] > -1) {
                         c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, p);
                     }
+                }
+                p.setColor(getResources().getColor(R.color.button_text));
+                p.setTextSize(40 * scale);
+                p.setTextAlign(Paint.Align.CENTER);
+                c.drawText(getText(R.string.bonus_hack).toString(), offsetX, offsetY * 4 / 3, p);
+                c.drawText(getText(R.string.bonus_speed).toString(), offsetX, offsetY * 5 / 3, p);
+                p.setColor(Color.WHITE);
+                p.setTextSize(120 * scale);
+                c.drawText(difficulty.get(level).bonus * correctNum / qTotal + "%", offsetX, offsetY * 5 / 3 - 80 * scale, p);
+                if (correctNum == qTotal && leftTime >= defTime / 20) {
+                    c.drawText("66%", offsetX, offsetY * 2 - 80 * scale, p);
+                } else {
+                    c.drawText("0%", offsetX, offsetY * 2 - 80 * scale, p);
                 }
             }
         }
@@ -1005,8 +1023,7 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_DOWN: //タッチ
                     downX = event.getX();
                     downY = event.getY();
-                    isOnButton = isStartGame &&
-                            buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y;
+                    isOnButton = buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y;
                     if (!isOnButton && isStartGame && !isEndGame) {
                         if (isReleased) {
                             resetLocus();
@@ -1021,8 +1038,7 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_MOVE: //スワイプ
                     float currentX = event.getX();
                     float currentY = event.getY();
-                    isOnButton = isStartGame &&
-                            buttonPoint[0].x <= currentX && currentX <= buttonPoint[1].x && buttonPoint[0].y <= currentY && currentY <= buttonPoint[1].y;
+                    isOnButton = buttonPoint[0].x <= currentX && currentX <= buttonPoint[1].x && buttonPoint[0].y <= currentY && currentY <= buttonPoint[1].y;
                     if (!isOnButton && isStartGame && !isEndGame) {
                         if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
                             if (Locus.size() == 0) {
