@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -14,7 +16,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
-import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -134,6 +135,8 @@ public class MyActivity extends Activity {
         Paint p = new Paint();
         double cr = Math.PI / 3;
         double radius;
+        int dotDiam;
+        float grainR;
         PointF[] dots = new PointF[11];
         ArrayList<Particle> Locus = new ArrayList<>();
         Path locusPath = new Path();
@@ -145,6 +148,7 @@ public class MyActivity extends Activity {
         int qNum = 0;
         int defTime = 20000;
         long initTime;
+        //int showAnswerLength = 750;
         int showAnswerLength = 1500;
         long marginTime = 1200;
         long pressButtonTime = 0;
@@ -166,19 +170,21 @@ public class MyActivity extends Activity {
         SQLiteDatabase db;
         Cursor c1, c2;
         int previousDot = -1;
-        long pathTime[];
+        long passTime[];
         Canvas c;
+        Bitmap grainImg;
+        Bitmap dotTrue;
+        Bitmap dotFalse;
 
         public MyView(Context context) {
             super(context);
             String tag = "MyView";
             dbHelper = new DBHelper(context);
             db = dbHelper.getReadableDatabase();
-            c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null);
-            c2 = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null);
 
             int giveTime = 20000;
             int giveQs = 1;
+            int giveBonus = 40;
             for (int i = 0; i < 9; i++) {
                 if (i > 3) {
                     giveTime -= 1000;
@@ -186,41 +192,34 @@ public class MyActivity extends Activity {
                 if (i == 2 || i == 3 || i == 6 || i == 8) {
                     giveQs++;
                 }
-                difficulty.add(i, new Difficulty(giveQs, giveTime, 40 + i * 5));
+                if (i > 1) {
+                    giveBonus += 5;
+                }
+                difficulty.add(i, new Difficulty(giveQs, giveTime, giveBonus));
             }
             gameMode = Integer.parseInt(sp.getString("gamemode", "0"));
             doVibrate = sp.getBoolean("doVibrate", false);
             showCountView = sp.getBoolean("showCountView", false);
             level = (int) (Math.random() * (max - min + 1) + min);
-            //int level = 8;
+            //level = 8;
             qTotal = difficulty.get(level).qs;
             Log.v(tag, "qTotal:" + qTotal);
-            pathTime = new long[qTotal];
+            passTime = new long[qTotal];
             for (int i = 0; i < qTotal; i++) {
-                pathTime[i] = -1;
+                passTime[i] = -1;
             }
             defTime = difficulty.get(level).time;
             if (qTotal > 1) {
-                c2.moveToLast();
-                long max = c2.getLong(0);
-                int randomVal = (int) (Math.random() * max);
-                //int randomVal = viewCount - 1;
+                c2 = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null);
+
+                Cursor c3 = db.query(DBHelper.TABLE_NAME2, null, "level = " + qTotal, null, null, null, null);
+                c3.moveToFirst();
+                long min = c3.getLong(0);
+                c3.moveToLast();
+                long max = c3.getLong(0);
+                int randomVal = (int)(Math.random() * (max - min + 1) + min) - 1;
+                //int randomVal = 0;
                 c2.moveToPosition(randomVal);
-                while (c2.getInt(c2.getColumnIndex("level")) != qTotal) {
-                    randomVal = (int) (Math.random() * max);
-                    c2.moveToPosition(randomVal);
-                }
-                /*int tQ = c2.getInt(1);
-                if (tQ == 5) level = 8;
-                if (tQ == 4) level = 6;
-                if (tQ == 3) level = 3;
-                if (tQ == 2) level = 2;
-                qTotal = difficulty.get(level).qs;*/
-                pathTime = new long[qTotal];
-                for (int i = 0; i < qTotal; i++) {
-                    pathTime[i] = -1;
-                }
-                //defTime = difficulty.get(level).time;
                 Log.v(tag, "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
@@ -238,18 +237,19 @@ public class MyActivity extends Activity {
                 }
                 correctStr = getCorrectStrings(c2);
             } else {
+                c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null);
                 c1.moveToLast();
                 long max = c1.getLong(0);
-                int randomVal = (int) (Math.random() * max);
+                int randomVal = (int)(Math.random() * max);
+                //int randomVal = (int)max - 1;
                 Log.v(tag, "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
                 answerThroughList = new ThroughList[qTotal];
                 throughList[0] = new ThroughList();
-                Cursor c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where id = '" + randomVal + "';", null);
-                c.moveToFirst();
-                String[] dotsSplit = c.getString(c.getColumnIndex("path")).split(",", -1);
+                c1.moveToPosition(randomVal);
+                String[] dotsSplit = c1.getString(c1.getColumnIndex("path")).split(",", -1);
                 answerThroughList[0] = new ThroughList(dotsSplit);
-                correctStr = new ArrayList<>(Arrays.asList("" + c.getString(c.getColumnIndex("name"))));
+                correctStr = new ArrayList<>(Arrays.asList("" + c1.getString(c1.getColumnIndex("name"))));
             }
             p.setAntiAlias(true);
 
@@ -259,6 +259,8 @@ public class MyActivity extends Activity {
 
             typeface = Typeface.createFromAsset(getContext().getAssets(), "Coda-Regular.ttf");
             p.setTypeface(typeface);
+
+            grainImg = BitmapFactory.decodeResource(getResources(), R.drawable.particle);
 
             isEndLoad = true;
 
@@ -282,62 +284,48 @@ public class MyActivity extends Activity {
             this.c = c;
             c.drawColor(getResources().getColor(R.color.background));
 
-            if (isFirstDraw) {
-                initTime = now;
-                radius = offsetX * 0.8;
-                dots[0] = new PointF(offsetX, (float) (offsetY * 1.2));
-                for (int i = 1; i < 5; i++) {
-                    int j = i;
-                    if (i > 1) {
-                        j++;
-                        if (i > 3) {
-                            j++;
-                        }
-                    }
-                    dots[i] = new PointF((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2));
-                }
-                for (int i = 5; i < 11; i++) {
-                    dots[i] = new PointF((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2));
-                }
-
-                isFirstDraw = false;
-            }
-
             if (isEndLoad) {
+                if (isFirstDraw) {
+                    radius = offsetX * 0.8;
+                    dotDiam = (int)(radius / 4.5);
+                    grainR = 15 * scale;
+                    //scaledGrain = Bitmap.createScaledBitmap(grainImg, (int)(grainR * 2), (int)(grainR * 2), false);
+                    dotTrue = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.dot_t), dotDiam, dotDiam, false);
+                    dotFalse = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.dot_f), dotDiam, dotDiam, false);
+                    dots[0] = new PointF(offsetX, (float) (offsetY * 1.2));
+                    for (int i = 1; i < 5; i++) {
+                        int j = i;
+                        if (i > 1) {
+                            j++;
+                            if (i > 3) {
+                                j++;
+                            }
+                        }
+                        dots[i] = new PointF((float) (Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX), (float) (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2));
+                    }
+                    for (int i = 5; i < 11; i++) {
+                        dots[i] = new PointF((float) (Math.cos(cr * (i - 0.5)) * radius + offsetX), (float) (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2));
+                    }
+
+                    initTime = now;
+                    isFirstDraw = false;
+                }
+
                 if (showCountView) {
                     showCount();
                 }
 
                 if (!isStartGame) {
+                    setGrainAlpha();
                     showAnswer(initTime, now);
                 }
 
-                float dotRadius = (float) radius / 18;
                 if (doShow) {
                     for (int i = 0; i < 11; i++) {
-                        int alpha = 0;
-                        for (int j = 0; j < 36; j++) {
-                            if (j % 3 == 0) {
-                                alpha++;
-                            }
-                            if (j >= 16 && j % 2 == 0) {
-                                alpha++;
-                            }
-                            if (isThrough[i]) {
-                                p.setColor(Color.argb(alpha, 220, 175, 50));
-                            } else {
-                                p.setColor(Color.argb(alpha, 150, 120, 150));
-                            }
-                            p.setStyle(Paint.Style.FILL);
-                            c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4 + 36 - j, p);
-                        }
-                        p.setColor(getResources().getColor(R.color.dots));
-                        p.setStyle(Paint.Style.FILL);
-                        c.drawCircle(dots[i].x, dots[i].y, dotRadius + 4, p);
-                        if (!isThrough[i]) {
-                            p.setColor(getResources().getColor(R.color.background));
-                            p.setStyle(Paint.Style.FILL);
-                            c.drawCircle(dots[i].x, dots[i].y, dotRadius, p);
+                        if (isThrough[i]) {
+                            c.drawBitmap(dotTrue, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, p);
+                        } else {
+                            c.drawBitmap(dotFalse, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, p);
                         }
                     }
                     for (Particle particle : Locus) {
@@ -360,6 +348,7 @@ public class MyActivity extends Activity {
                 }
 
                 showButton();
+                showFPS();
 
                 if (isEndGame) {
                     if (now > holdTime + marginTime) {
@@ -406,13 +395,63 @@ public class MyActivity extends Activity {
             }
         }
 
+        Bitmap scaledGrain;
+        public void setGrainAlpha() {
+            scaledGrain = Bitmap.createScaledBitmap(grainImg, (int)grainR * 2, (int)grainR * 2, false);
+            int w = scaledGrain.getWidth();
+            int h = scaledGrain.getHeight();
+
+            int[] pixels = new int[w * h];
+            scaledGrain.getPixels(pixels, 0, w, 0, 0, w, h);
+
+            int subAlpha = calcSubAlpha();
+            if (subAlpha != 0) {
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        int a = pixels[x + y * w];
+                        int b = a;
+                        a = a >>> 24;
+
+                        if (a != 0) {
+                            a -= subAlpha;
+                            if (a < 0) {
+                                a = 0;
+                            }
+                        }
+                        a = a << 24;
+
+                        b = b & 0x00FFFFFF;
+
+                        pixels[x + y * w] = a + b;
+                    }
+                }
+            }
+            scaledGrain.setPixels(pixels, 0, w, 0, 0, w, h);
+        }
+
+        private int calcSubAlpha() {
+            int que = (int) (now - initTime - marginTime) / showAnswerLength;
+            int timeInPhase = (int) (now - initTime - marginTime - showAnswerLength * que);
+
+            if (!isFirstFlash) {
+                return 0;
+            } else {
+                if (timeInPhase < showAnswerLength * 0.2) {
+                    return (int) (255 - 255 * timeInPhase / (showAnswerLength * 0.2));
+                } else if (timeInPhase < showAnswerLength * 0.7) {
+                    return 0;
+                } else {
+                    return (int) (255 * (timeInPhase - timeInPhase * 0.7) / (showAnswerLength - showAnswerLength * 0.7));
+                }
+            }
+        }
+
         class Particle {
             float x0, y0;
             Grain grain[] = new Grain[3];
             int phase = 0;
             long moveFrames = 400;
             long initFrames = 0;
-            float grainR = 15;
             double v = 0.15;
 
             public Particle(float x0, float y0) {
@@ -429,52 +468,34 @@ public class MyActivity extends Activity {
                 if (diffFrames > moveFrames || isReleased || !isStartGame) phase = 1;
 
                 if (phase == 0) {
-                    grain[0].x = grain[0].step0[0] + grain[0].diff[0] * (moveFrames - diffFrames) / moveFrames;
-                    grain[0].y = grain[0].step0[1] + grain[0].diff[1] * (moveFrames - diffFrames) / moveFrames;
-                    grain[1].x = grain[1].step0[0] + grain[1].diff[0] * (moveFrames - diffFrames) / moveFrames;
-                    grain[1].y = grain[1].step0[1] + grain[1].diff[1] * (moveFrames - diffFrames) / moveFrames;
-                    grain[2].x = grain[2].step0[0] + grain[2].diff[0] * (moveFrames - diffFrames) / moveFrames;
-                    grain[2].y = grain[2].step0[1] + grain[2].diff[1] * (moveFrames - diffFrames) / moveFrames;
+                    float param = (moveFrames - diffFrames) / (moveFrames * 1.0f);
+                    grain[0].x = grain[0].step0[0] + grain[0].diff[0] * param;
+                    grain[0].y = grain[0].step0[1] + grain[0].diff[1] * param;
+                    grain[1].x = grain[1].step0[0] + grain[1].diff[0] * param;
+                    grain[1].y = grain[1].step0[1] + grain[1].diff[1] * param;
+                    grain[2].x = grain[2].step0[0] + grain[2].diff[0] * param;
+                    grain[2].y = grain[2].step0[1] + grain[2].diff[1] * param;
                 }
                 if (phase == 1) {
-                    grain[0].x += (float) (Math.cos(grain[0].a1) * grain[0].circleR * Math.cos(grain[0].a0));
-                    grain[0].y += (float) (Math.sin(grain[0].a1) * grain[0].circleR * Math.cos(grain[0].a0));
+                    double param = Math.cos(grain[0].a0);
+                    grain[0].x += (float) (Math.cos(grain[0].a1) * grain[0].circleR * param);
+                    grain[0].y += (float) (Math.sin(grain[0].a1) * grain[0].circleR * param);
                     grain[0].a0 += v;
-                    grain[1].x += (float) (Math.cos(grain[1].a1) * grain[1].circleR * Math.cos(grain[1].a0));
-                    grain[1].y += (float) (Math.sin(grain[1].a1) * grain[1].circleR * Math.cos(grain[1].a0));
+                    param = Math.cos(grain[1].a0);
+                    grain[1].x += (float) (Math.cos(grain[1].a1) * grain[1].circleR * param);
+                    grain[1].y += (float) (Math.sin(grain[1].a1) * grain[1].circleR * param);
                     grain[1].a0 += v;
-                    grain[2].x += (float) (Math.cos(grain[2].a1) * grain[2].circleR * Math.cos(grain[2].a0));
-                    grain[2].y += (float) (Math.sin(grain[2].a1) * grain[2].circleR * Math.cos(grain[2].a0));
+                    param = Math.cos(grain[2].a0);
+                    grain[2].x += (float) (Math.cos(grain[2].a1) * grain[2].circleR * param);
+                    grain[2].y += (float) (Math.sin(grain[2].a1) * grain[2].circleR * param);
                     grain[2].a0 += v;
                 }
                 draw();
             }
 
             private void draw() {
-                int colors[] = {Color.argb(255 - calcSubAlpha(), 225, 210, 190), Color.argb(127 - calcSubAlpha() / 2, 200, 180, 140), Color.argb(0, 40, 30, 0)};
-                float positions[] = {0f, 0.25f, 1f};
                 for (Grain gr : grain) {
-                    p.setShader(new RadialGradient(gr.x, gr.y, grainR, colors, positions, Shader.TileMode.CLAMP));
-                    p.setStyle(Paint.Style.FILL);
-                    c.drawCircle(gr.x, gr.y, grainR, p);
-                }
-                p.setShader(null);
-            }
-
-            private int calcSubAlpha() {
-                int que = (int) (now - initTime - marginTime) / showAnswerLength;
-                int timeInPhase = (int) (now - initTime - marginTime - showAnswerLength * que);
-
-                if (isStartGame) {
-                    return 0;
-                } else {
-                    if (timeInPhase < showAnswerLength * 0.2) {
-                        return (int) (255 - 255 * timeInPhase / (showAnswerLength * 0.2));
-                    } else if (timeInPhase < showAnswerLength * 0.7) {
-                        return 0;
-                    } else {
-                        return (int) (255 * (timeInPhase - timeInPhase * 0.7) / (showAnswerLength - showAnswerLength * 0.7));
-                    }
+                    c.drawBitmap(scaledGrain, gr.x - grainR, gr.y - grainR, p);
                 }
             }
         }
@@ -541,6 +562,18 @@ public class MyActivity extends Activity {
             }
         }
 
+        long lastTime = -1;
+        public void showFPS() {
+            if (lastTime == -1) {
+                lastTime = System.currentTimeMillis();
+            } else {
+                float fps = 1000f / (System.currentTimeMillis() - lastTime);
+                p.setTextSize(30 * scale);
+                p.setTextAlign(Paint.Align.LEFT);
+                c.drawText("FPS:" + String.format("%.2f", fps), 0, offsetY * 2, p);
+                lastTime = System.currentTimeMillis();
+            }
+        }
 
         public ArrayList<String> getCorrectStrings(Cursor c) {
             ArrayList<String> strings = new ArrayList<>(Arrays.asList(c.getString(c.getColumnIndex("sequence")).split(",", -1)));
@@ -590,8 +623,8 @@ public class MyActivity extends Activity {
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextSize(40);
             p.setTextAlign(Paint.Align.RIGHT);
-            float x = (float)(offsetX * 2.0 - 20.0);
-            float y = (float)(offsetY * 2.0 - 120.0);
+            float x = (float)(offsetX * 2.0 - 20.0 * scale);
+            float y = (float)(offsetY * 2.0 - 120.0 * scale);
 
             c.drawText("HACK:" + viewCount, x, y, p);
         }
@@ -762,13 +795,11 @@ public class MyActivity extends Activity {
             }
             if (que < qTotal) {
                 if (que >= 0) {
-                    for (int i = 0; i < answerThroughList[que / 2].dots.size(); i++) {
-                        if (gameMode == 0 || gameMode == 1) {
-                            p.setColor(Color.WHITE);
-                            p.setTextSize(80 * scale);
-                            p.setTextAlign(Paint.Align.CENTER);
-                            c.drawText(correctStr.get(que), offsetX, offsetY / 3, p);
-                        }
+                    if (gameMode == 0 || gameMode == 1) {
+                        p.setColor(Color.WHITE);
+                        p.setTextSize(80 * scale);
+                        p.setTextAlign(Paint.Align.CENTER);
+                        c.drawText(correctStr.get(que), offsetX, offsetY / 3, p);
                     }
                     if (preQue != que && (gameMode == 0 || gameMode == 2)) {
                         putParticles(answerThroughList[que]);
@@ -878,8 +909,8 @@ public class MyActivity extends Activity {
                     p.setTextSize(50 * scale);
                     p.setTextAlign(Paint.Align.RIGHT);
                     p.setColor(Color.WHITE);
-                    if (pathTime[i] > -1) {
-                        c.drawText(pathTime[i] / 100 + ":" + pathTime[i] % 100, offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, p);
+                    if (passTime[i] > -1) {
+                        c.drawText(passTime[i] / 100 + ":" + passTime[i] % 100, offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, p);
                     }
                 }
                 p.setColor(getResources().getColor(R.color.button_text));
@@ -951,7 +982,7 @@ public class MyActivity extends Activity {
 
         public void setCollision(float x0, float y0, float x1, float y1) {
             int collisionDot = -1;
-            float tol = 25;
+            float tol = 40 * scale;
             for (int i = 0; i < 11; i++) {
                 if (x0 == x1 && y0 == y1) {
                     //円の方程式にて当たり判定
@@ -1060,11 +1091,11 @@ public class MyActivity extends Activity {
 
                     if (!isOnButton && isStartGame && !isEndGame) {
                         isReleased = true;
-                        long tPathTime = (now - initTime) / 10;
+                        long tpassTime = (now - initTime) / 10;
                         for (int i = 0; i < qNum; i++) {
-                            tPathTime -= pathTime[i];
+                            tpassTime -= passTime[i];
                         }
-                        pathTime[qNum] = tPathTime;
+                        passTime[qNum] = tpassTime;
                         String list = "";
                         for (int throughDot : throughList[qNum].dots) {
                             list += throughDot + ",";

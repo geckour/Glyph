@@ -10,7 +10,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "shaper.db";
     public static final String TABLE_NAME1 = "shapers";
     public static final String TABLE_NAME2 = "sets";
-    public static final int DB_VERSION = 4;
+    public static final int DB_VERSION = 5;
 
     private String[][] SHAPERS = {
             {"ABANDON", "6,4,0,2,9,8"},
@@ -179,8 +179,8 @@ public class DBHelper extends SQLiteOpenHelper {
             {"5", "DISTANCE,I,AVOID,BEING,LIE", ",SELF,,HUMAN,"},
             {"5", "EASY,PAST,FUTURE,FOLLOW,SHAPERS", null},
             {"5", "ESCAPE,BODY,JOURNEY,DISTANCE,PRESENT", ",,,OUTSIDE,NOW"},
-            {"5", "FORGET,ATTACK,SEE,DISTANCE,HARMONY", ",,,OUTSIDE,"},
-            {"5", "FORGET,ATTACK,GAIN,DISTANCE,HARMONY", ",WAR,,OUTSIDE,"},
+            {"5", "FORGET,ATTACK,SEE,DISTANCE,HARMONY", ",WAR,,,"},
+            {"5", "FORGET,ATTACK,GAIN,DISTANCE,HARMONY", ",WAR,,,"},
             {"5", "FORGET,PAST,SEE,PRESENT,DANGER", null},
             {"5", "FORGET,ATTACK,SEE,DISTANCE,HARMONY", ",WAR,,,"},
             {"5", "GAIN,TRUTH,OPEN,BEING,SOUL", ",,,HUMAN,"},
@@ -357,8 +357,8 @@ public class DBHelper extends SQLiteOpenHelper {
             {"4", "STRONG,MIND,PURSUE,TRUTH", ",IDEA,,"},
             {"4", "STRONG,RESISTANCE_A,CAPTURE,OPENING", ",RESISTANCE,,PORTAL"},
             {"4", "STRONG,TOGETHER,AVOID,ATTACK", ",,,WAR"},
-            {"4", "AVOID,DEFEND,SHAPERS,DANGER", "STRUGGLE,,,"},
-            {"4", "AVOID,IMPROVE,BEING,SOUL", "STRUGGLE,,HUMAN,"},
+            {"4", "AVOID,DEFEND,SHAPERS,DANGER", null},
+            {"4", "AVOID,IMPROVE,BEING,SOUL", ",,HUMAN,"},
             {"4", "TOGETHER,DISCOVER,HARMONY,EQUAL", null},
             {"4", "TRUTH,MIND,DISCOVER,XM", ",IDEA,,"},
             {"4", "XM,DIE,CHAOS,BREATHE", ",,,LIVE"},
@@ -581,7 +581,6 @@ public class DBHelper extends SQLiteOpenHelper {
         } finally {
             db.endTransaction();
         }
-
     }
 
     @Override
