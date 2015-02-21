@@ -539,6 +539,7 @@ public class MyActivity extends Activity {
         }
 
         public void putParticles(ThroughList throughList) {
+            float interval = 25 * scale;
             float length[] = new float[throughList.dots.size() - 1];
             for (int i = 1; i < throughList.dots.size(); i++) {
                 PointF point1 = dots[throughList.dots.get(i)];
@@ -554,24 +555,40 @@ public class MyActivity extends Activity {
                 float sumLength[] = {0, 0};
                 while (sumLength[0] <= Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) && sumLength[1] <= Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y)) {
                     Locus.add(new Particle(x, y));
-                    x += unitV[0] * 35 * scale;
-                    y += unitV[1] * 35 * scale;
-                    sumLength[0] += Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) * 35 * scale / length[i];
-                    sumLength[1] += Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y) * 35 * scale / length[i];
+                    x += unitV[0] * interval;
+                    y += unitV[1] * interval;
+                    sumLength[0] += Math.abs(dots[throughList.dots.get(i + 1)].x - dots[throughList.dots.get(i)].x) * interval / length[i];
+                    sumLength[1] += Math.abs(dots[throughList.dots.get(i + 1)].y - dots[throughList.dots.get(i)].y) * interval / length[i];
                 }
             }
         }
 
         long lastTime = -1;
+        long interTime = -1;
+        int frames = 0;
+        int sumTimes = 0;
+        float fps = -1;
         public void showFPS() {
+            long nowTime = System.currentTimeMillis();
             if (lastTime == -1) {
-                lastTime = System.currentTimeMillis();
+                lastTime = nowTime;
+                interTime = lastTime;
             } else {
-                float fps = 1000f / (System.currentTimeMillis() - lastTime);
+                sumTimes += 1000f / (nowTime - lastTime);
+                lastTime = nowTime;
+                frames++;
+            }
+            if (nowTime - interTime > 200) {
+                fps = sumTimes / frames;
+
+                interTime = nowTime;
+                frames = 0;
+                sumTimes = 0;
+            }
+            if (fps > -1) {
                 p.setTextSize(30 * scale);
                 p.setTextAlign(Paint.Align.LEFT);
                 c.drawText("FPS:" + String.format("%.2f", fps), 0, offsetY * 2, p);
-                lastTime = System.currentTimeMillis();
             }
         }
 
@@ -1048,7 +1065,7 @@ public class MyActivity extends Activity {
         public boolean onTouchEvent(MotionEvent event) {
             String tag = "onTouchEvent";
 
-            float lim = 35 * scale;
+            float lim = 25 * scale;
             float upX, upY;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN: //タッチ
