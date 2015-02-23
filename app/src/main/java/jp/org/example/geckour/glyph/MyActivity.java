@@ -43,6 +43,8 @@ public class MyActivity extends Activity {
     int min = 0;
     int max = 8;
     int viewCount = 0;
+    int receivedLevel = -1;
+    int receivedValue = -1;
     MyView view;
     float offsetX;
     float offsetY;
@@ -77,6 +79,12 @@ public class MyActivity extends Activity {
             Log.v(tag, "max:" + max);
         } catch (Exception e) {
             Log.e(tag, "Can't translate maximum-level to int.");
+        }
+
+        Intent intent = getIntent();
+        if (intent.getBooleanExtra("isRetry", false)) {
+            receivedLevel = intent.getIntExtra("retryLevel", -1);
+            receivedValue = intent.getIntExtra("retryValue", -1);
         }
 
         view = new MyView(this);
@@ -122,7 +130,7 @@ public class MyActivity extends Activity {
         String tag = "onActivityResult";
         if (requestCode == 0){ //Pref.javaからの戻り値の場合
             if (resultCode == Activity.RESULT_OK) {
-                Log.v(tag, "level is changed.");
+                Log.v(tag, "setting is changed.");
             }
         }
     }
@@ -132,6 +140,7 @@ public class MyActivity extends Activity {
         boolean state = true;
         int gameMode;
         int level;
+        int randomVal;
         Paint p = new Paint();
         double cr = Math.PI / 3;
         double radius;
@@ -150,7 +159,7 @@ public class MyActivity extends Activity {
         long initTime;
         //int showAnswerLength = 750;
         int showAnswerLength = 1500;
-        long marginTime = 1200;
+        long marginTime = 1000;
         long pressButtonTime = 0;
         boolean isEndLoad = false;
         boolean isFirstDraw = true;
@@ -165,7 +174,8 @@ public class MyActivity extends Activity {
         Typeface typeface;
         ArrayList<String> correctStr;
         long holdTime;
-        Point[] buttonPoint = new Point[2];
+        Point[] nextButtonPoint = new Point[2];
+        Point[] retryButtonPoint = new Point[2];
         DBHelper dbHelper;
         SQLiteDatabase db;
         Cursor c1, c2;
@@ -200,7 +210,7 @@ public class MyActivity extends Activity {
             gameMode = Integer.parseInt(sp.getString("gamemode", "0"));
             doVibrate = sp.getBoolean("doVibrate", false);
             showCountView = sp.getBoolean("showCountView", false);
-            level = (int) (Math.random() * (max - min + 1) + min);
+            level = receivedLevel > -1 ? receivedLevel : (int)(Math.random() * (max - min + 1) + min);
             //level = 8;
             qTotal = difficulty.get(level).qs;
             Log.v(tag, "qTotal:" + qTotal);
@@ -217,7 +227,7 @@ public class MyActivity extends Activity {
                 long min = c3.getLong(0);
                 c3.moveToLast();
                 long max = c3.getLong(0);
-                int randomVal = (int)(Math.random() * (max - min + 1) + min) - 1;
+                randomVal = receivedValue > -1 ? receivedValue : (int)(Math.random() * (max - min + 1) + min) - 1;
                 //int randomVal = 0;
                 c2.moveToPosition(randomVal);
                 Log.v(tag, "randomVal:" + randomVal + ", level:" + level);
@@ -240,7 +250,7 @@ public class MyActivity extends Activity {
                 c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null);
                 c1.moveToLast();
                 long max = c1.getLong(0);
-                int randomVal = (int)(Math.random() * max);
+                randomVal = receivedValue > -1 ? receivedValue : (int)(Math.random() * max);
                 //int randomVal = (int)max - 1;
                 Log.v(tag, "randomVal:" + randomVal + ", level:" + level);
                 throughList = new ThroughList[qTotal];
@@ -318,6 +328,8 @@ public class MyActivity extends Activity {
                 if (!isStartGame) {
                     setGrainAlpha();
                     showAnswer(initTime, now);
+                } else if (!isEndGame) {
+                    setGrainAlpha(releaseTime);
                 }
 
                 if (doShow) {
@@ -348,7 +360,7 @@ public class MyActivity extends Activity {
                 }
 
                 showButton();
-                showFPS();
+                //showFPS();
 
                 if (isEndGame) {
                     if (now > holdTime + marginTime) {
@@ -425,8 +437,8 @@ public class MyActivity extends Activity {
                         pixels[x + y * w] = a + b;
                     }
                 }
+                scaledGrain.setPixels(pixels, 0, w, 0, 0, w, h);
             }
-            scaledGrain.setPixels(pixels, 0, w, 0, 0, w, h);
         }
 
         private int calcSubAlpha() {
@@ -444,6 +456,56 @@ public class MyActivity extends Activity {
                     return (int) (255 * (timeInPhase - timeInPhase * 0.7) / (showAnswerLength - showAnswerLength * 0.7));
                 }
             }
+        }
+
+        public void setGrainAlpha(long time) {
+            scaledGrain = Bitmap.createScaledBitmap(grainImg, (int)grainR * 2, (int)grainR * 2, false);
+            int w = scaledGrain.getWidth();
+            int h = scaledGrain.getHeight();
+
+            int[] pixels = new int[w * h];
+            scaledGrain.getPixels(pixels, 0, w, 0, 0, w, h);
+
+            int subAlpha = 0;
+            if (time > -1) {
+                subAlpha = calcSubAlpha(time);
+            }
+            if (subAlpha != 0) {
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        int a = pixels[x + y * w];
+                        int b = a;
+                        a = a >>> 24;
+
+                        if (a != 0) {
+                            a -= subAlpha;
+                            if (a < 0) {
+                                a = 0;
+                            }
+                        }
+                        a = a << 24;
+
+                        b = b & 0x00FFFFFF;
+
+                        pixels[x + y * w] = a + b;
+                    }
+                }
+                scaledGrain.setPixels(pixels, 0, w, 0, 0, w, h);
+            }
+        }
+
+        private int calcSubAlpha(long time) {
+            int tol = 500;
+                if (now - time > tol) {
+                    resetThrough();
+                    int result = (int) ((now - time - tol) / 2f);
+                    if (result > 255) {
+                        result = 255;
+                    }
+                    return result;
+                } else {
+                    return 0;
+                }
         }
 
         class Particle {
@@ -588,7 +650,7 @@ public class MyActivity extends Activity {
             if (fps > -1) {
                 p.setTextSize(30 * scale);
                 p.setTextAlign(Paint.Align.LEFT);
-                c.drawText("FPS:" + String.format("%.2f", fps), 0, offsetY * 2, p);
+                c.drawText("FPS:" + String.format("%.2f", fps), 0, offsetY * 2 - 120 * scale, p);
             }
         }
 
@@ -612,27 +674,41 @@ public class MyActivity extends Activity {
         }
 
         public void showButton() {
-            float buttonWidth = (isStartGame && doShow ? 200 : 150) * scale;
+            float nextButtonWidth = (isStartGame && doShow ? 200 : 150) * scale;
+            float retryButtonWidth = 170 * scale;
             float buttonHeight = 90 * scale;
             float margin = 20 * scale;
-            buttonPoint[0] = new Point((int)(offsetX * 2 - buttonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
-            buttonPoint[1] = new Point((int)(offsetX * 2 - margin), (int)(offsetY * 2 - margin));
+            nextButtonPoint[0] = new Point((int)(offsetX * 2 - nextButtonWidth - margin), (int)(offsetY * 2 - buttonHeight - margin));
+            nextButtonPoint[1] = new Point((int)(offsetX * 2 - margin), (int)(offsetY * 2 - margin));
+            retryButtonPoint[0] = new Point((int)(margin), (int)(offsetY * 2 - buttonHeight - margin));
+            retryButtonPoint[1] = new Point((int)(margin + retryButtonWidth), (int)(offsetY * 2 - margin));
 
             p.setColor(getResources().getColor(R.color.button_text));
             p.setTextAlign(Paint.Align.CENTER);
             p.setTextSize(40 * scale);
-            Drawable drawable;
-            if (isOnButton) {
-                drawable = getResources().getDrawable(R.drawable.button1);
+            Drawable dNext;
+            Drawable dRetry;
+            if (isOnNext) {
+                dNext = getResources().getDrawable(R.drawable.button1);
             } else {
-                drawable = getResources().getDrawable(R.drawable.button0);
+                dNext = getResources().getDrawable(R.drawable.button0);
             }
-            drawable.setBounds(buttonPoint[0].x, buttonPoint[0].y, buttonPoint[1].x, buttonPoint[1].y);
-            drawable.draw(c);
+            dNext.setBounds(nextButtonPoint[0].x, nextButtonPoint[0].y, nextButtonPoint[1].x, nextButtonPoint[1].y);
+            dNext.draw(c);
             if (isStartGame && doShow) {
-                c.drawText("BYPASS", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30 * scale, p);
+                c.drawText("BYPASS", nextButtonPoint[0].x + nextButtonWidth / 2, nextButtonPoint[1].y - 30 * scale, p);
             } else {
-                c.drawText("NEXT", buttonPoint[0].x + buttonWidth / 2, buttonPoint[1].y - 30 * scale, p);
+                c.drawText("NEXT", nextButtonPoint[0].x + nextButtonWidth / 2, nextButtonPoint[1].y - 30 * scale, p);
+            }
+            if (isEndGame) {
+                if (isOnRetry) {
+                    dRetry = getResources().getDrawable(R.drawable.button1);
+                } else {
+                    dRetry = getResources().getDrawable(R.drawable.button0);
+                }
+                dRetry.setBounds(retryButtonPoint[0].x, retryButtonPoint[0].y, retryButtonPoint[1].x, retryButtonPoint[1].y);
+                dRetry.draw(c);
+                c.drawText("RETRY", retryButtonPoint[0].x + retryButtonWidth / 2, retryButtonPoint[1].y - 30 * scale, p);
             }
         }
 
@@ -881,7 +957,8 @@ public class MyActivity extends Activity {
             if (currentTime > initTime + margin) {
                 showTime(now);
 
-                int blue = Color.rgb(0x02, 0xff, 0xc5), red = Color.RED;
+                int blue = Color.rgb(0x02, 0xff, 0xc5);
+                int red = Color.RED;
                 int drawColor;
                 int correctNum = 0;
                 for (int i = 0; i < qTotal; i++) {
@@ -1061,7 +1138,9 @@ public class MyActivity extends Activity {
         float memX = 0, memY = 0;
         boolean isReleased = false;
         boolean isFirstPress = true;
-        boolean isOnButton = false;
+        boolean isOnNext = false;
+        boolean isOnRetry = false;
+        long releaseTime = -1;
         public boolean onTouchEvent(MotionEvent event) {
             String tag = "onTouchEvent";
 
@@ -1071,8 +1150,10 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_DOWN: //タッチ
                     downX = event.getX();
                     downY = event.getY();
-                    isOnButton = buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y;
-                    if (!isOnButton && isStartGame && !isEndGame) {
+                    isOnNext = nextButtonPoint[0].x <= downX && downX <= nextButtonPoint[1].x && nextButtonPoint[0].y <= downY && downY <= nextButtonPoint[1].y;
+                    isOnRetry = isEndGame && retryButtonPoint[0].x <= downX && downX <= retryButtonPoint[1].x && retryButtonPoint[0].y <= downY && downY <= retryButtonPoint[1].y;
+                    releaseTime = -1;
+                    if (!isOnNext && isStartGame && !isEndGame) {
                         if (isReleased) {
                             resetLocus();
                             resetThrough();
@@ -1086,8 +1167,9 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_MOVE: //スワイプ
                     float currentX = event.getX();
                     float currentY = event.getY();
-                    isOnButton = buttonPoint[0].x <= currentX && currentX <= buttonPoint[1].x && buttonPoint[0].y <= currentY && currentY <= buttonPoint[1].y;
-                    if (!isOnButton && isStartGame && !isEndGame) {
+                    isOnNext = nextButtonPoint[0].x <= currentX && currentX <= nextButtonPoint[1].x && nextButtonPoint[0].y <= currentY && currentY <= nextButtonPoint[1].y;
+                    isOnRetry = isEndGame && retryButtonPoint[0].x <= currentX && currentX <= retryButtonPoint[1].x && retryButtonPoint[0].y <= currentY && currentY <= retryButtonPoint[1].y;
+                    if (!isOnNext && isStartGame && !isEndGame) {
                         if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
                             if (Locus.size() == 0) {
                                 setLocusStart(currentX, currentY, true);
@@ -1102,11 +1184,14 @@ public class MyActivity extends Activity {
                 case MotionEvent.ACTION_CANCEL: //リリース
                     upX = event.getX();
                     upY = event.getY();
-                    isOnButton =
-                            buttonPoint[0].x <= downX && downX <= buttonPoint[1].x && buttonPoint[0].y <= downY && downY <= buttonPoint[1].y &&
-                            buttonPoint[0].x <= upX && upX <= buttonPoint[1].x && buttonPoint[0].y <= upY && upY <= buttonPoint[1].y;
-
-                    if (!isOnButton && isStartGame && !isEndGame) {
+                    isOnNext =
+                            nextButtonPoint[0].x <= downX && downX <= nextButtonPoint[1].x && nextButtonPoint[0].y <= downY && downY <= nextButtonPoint[1].y &&
+                            nextButtonPoint[0].x <= upX && upX <= nextButtonPoint[1].x && nextButtonPoint[0].y <= upY && upY <= nextButtonPoint[1].y;
+                    isOnRetry = isEndGame &&
+                            retryButtonPoint[0].x <= downX && downX <= retryButtonPoint[1].x && retryButtonPoint[0].y <= downY && downY <= retryButtonPoint[1].y &&
+                            retryButtonPoint[0].x <= upX && upX <= retryButtonPoint[1].x && retryButtonPoint[0].y <= upY && upY <= retryButtonPoint[1].y;
+                    releaseTime = now;
+                    if (!isOnNext && !isOnRetry && isStartGame && !isEndGame) {
                         isReleased = true;
                         long tpassTime = (now - initTime) / 10;
                         for (int i = 0; i < qNum; i++) {
@@ -1134,7 +1219,7 @@ public class MyActivity extends Activity {
                             }
                         }
                     }
-                    if (isOnButton) {
+                    if (isOnNext) {
                         if (!isStartGame) {
                             startActivity(new Intent(MyActivity.this, MyActivity.class));
                         } else if (doShow) {
@@ -1150,7 +1235,15 @@ public class MyActivity extends Activity {
                             startActivity(new Intent(MyActivity.this, MyActivity.class));
                         }
                     }
-                    isOnButton = false;
+                    if (isOnRetry) {
+                        Intent intent = new Intent(MyActivity.this, MyActivity.class);
+                        intent.putExtra("isRetry", true);
+                        intent.putExtra("retryLevel", level);
+                        intent.putExtra("retryValue", randomVal);
+                        startActivity(intent);
+                    }
+                    isOnNext = false;
+                    isOnRetry = false;
                     break;
             }
             return true;
