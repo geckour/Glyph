@@ -16,7 +16,7 @@
         android:order="1" />
     <SwitchPreference
         android:key="showCountView"
-        android:title="Count Hack"
+        android:title="Count Hacks"
         android:switchTextOn="ON"
         android:switchTextOff="OFF"
         android:order="2" />
@@ -32,4 +32,13 @@
         android:summary="@string/max_level"
         android:dialogTitle="Maximum value:8"
         android:order="4" />
+    <!--<PreferenceScreen
+        android:key="show_scores_view"
+        android:title="Show Scores"
+        android:summary=""
+        android:order="5" >
+        <intent android:action="android.intent.action.VIEW"
+                android:targetPackage="jp.org.example.geckour.glyph"
+                android:targetClass="jp.org.example.geckour.glyph.Score" />
+    </PreferenceScreen>-->
 </PreferenceScreen>
