@@ -459,7 +459,7 @@ class DictActivity : Activity() {
             while (!cursor.isAfterLast) {
                 val dotsSplit = cursor.getString(cursor.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
                 val throughListInRow = ThroughList(dotsSplit)
-                if (judgeLocus(throughList, throughListInRow)) {
+                if (judgeLocus(throughListInRow, throughList)) {
                     searchResult.add(cursor.getInt(cursor.getColumnIndex("id")))
                 }
                 cursor.moveToNext()
@@ -512,6 +512,7 @@ class DictActivity : Activity() {
         }
 
         fun judgeLocus(answer: ThroughList, through: ThroughList): Boolean {
+            val tag = "DictView/judgeLocus"
             val answerPaths = ArrayList<IntArray>()
             var passedPaths = ArrayList<IntArray>()
 

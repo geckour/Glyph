@@ -1116,6 +1116,7 @@ class MyActivity : Activity() {
         }
 
         fun judgeLocus(answer: ThroughList, through: ThroughList): Boolean {
+            val tag = "MyView/judgeLocus"
             val answerPaths = ArrayList<IntArray>()
             var passedPaths = ArrayList<IntArray>()
 
