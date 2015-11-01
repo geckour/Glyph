@@ -6,27 +6,14 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.Point
-import android.graphics.PointF
-import android.graphics.Shader
-import android.graphics.Typeface
+import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Vibrator
 import android.preference.PreferenceManager
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.view.MotionEvent
-import android.view.View
+import android.view.*
 import android.widget.RelativeLayout
 
 import com.google.android.gms.analytics.HitBuilders
@@ -35,9 +22,6 @@ import com.google.android.gms.analytics.Tracker
 import java.util.ArrayList
 import java.util.Arrays
 
-import kotlin.concurrent.timer
-
-
 class MyActivity : Activity() {
     internal val version: Int = Build.VERSION.SDK_INT
     internal var min = 0
@@ -45,9 +29,9 @@ class MyActivity : Activity() {
     internal var viewCount = 0
     internal var receivedLevel = -1
     internal var receivedValue = -1
-    internal var offsetX: Float = 0.toFloat()
-    internal var offsetY: Float = 0.toFloat()
-    internal var scale: Float = 0.toFloat()
+    internal var offsetX: Float = 0f
+    internal var offsetY: Float = 0f
+    internal var scale: Float = 0f
     internal var sp: SharedPreferences? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,18 +68,14 @@ class MyActivity : Activity() {
             receivedLevel = intent.getIntExtra("retryLevel", -1)
             receivedValue = intent.getIntExtra("retryValue", -1)
         }
-
-        /*if (Build.VERSION_CODES.HONEYCOMB < Build.VERSION.SDK_INT && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            view.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        }*/
         setContentView(R.layout.activity_my)
-/*
+
         val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
         t?.setScreenName("MyActivity")
         t?.send(HitBuilders.AppViewBuilder().build())
-        */
     }
 
+    internal var view: MyView? = null
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         val tag = "onWindowFocusChanged"
@@ -107,8 +87,10 @@ class MyActivity : Activity() {
             scale = offsetY * 2 / 1280
         }
 
-        val view: MyView = MyView(this)
-        setContentView(view)
+        if (view == null) {
+            view = MyView(this)
+            setContentView(view)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -138,64 +120,82 @@ class MyActivity : Activity() {
         }
     }
 
-    public fun getViewSize(activity: Activity): Point {
-        var point: Point = Point()
-        activity.windowManager.defaultDisplay.getSize(point)
-        return point
-    }
-
-    internal inner class MyView(context: Context) : View(context) {
-        var state = true
-        var gameMode: Int = 0
-        var level: Int = 0
-        var randomVal: Int = 0
-        var p = Paint()
-        var cr = Math.PI / 3
-        var radius: Double = 0.toDouble()
-        var dotDiam: Int = 0
-        var grainR: Float = 0.toFloat()
-        var dots = arrayOfNulls<PointF>(11)
-        var Locus = ArrayList<Particle>()
-        var locusPath = Path()
-        var now: Long = 0
-        var isThrough = BooleanArray(11)
-        var throughList: Array<ThroughList?>
-        var answerThroughList: Array<ThroughList?>
-        var qTotal = 0
-        var qNum = 0
-        var defTime = 20000
-        var initTime: Long = 0
-        var showAnswerLength = 1500
-        var marginTime: Long = 1000
-        var pressButtonTime: Long = 0
-        var isFirstDraw = true
-        var isFirstTimeUp = true
-        var doVibrate = false
-        var showCountView = false
-        var difficulty = ArrayList<Difficulty>()
-        var isStartGame = false
-        var isEndGame = false
-        var doShow = true
-        var isPressedButton = false
-        var typeface: Typeface
-        var correctStr: ArrayList<String>
-        var holdTime: Long = 0
-        var nextButtonPoint = arrayOfNulls<Point>(2)
-        var retryButtonPoint = arrayOfNulls<Point>(2)
+    internal inner class MyView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
+        var thread: Thread? = null
+        var canvas: Canvas? = null
+        val paint: Paint = Paint()
+        var typeface: Typeface? = null
         var dbHelper: DBHelper
         var db: SQLiteDatabase
-        var previousDot = -1
-        var passTime: LongArray
         val grainImg: Bitmap
         var scaledGrain: Bitmap? = null
         var dotTrue: Bitmap? = null
         var dotFalse: Bitmap? = null
-        var c: Canvas? = null
+
+        var isAttached: Boolean = false
+        var state = true
+        var gameMode: Int = 0
+        var level: Int = 0
+        var randomVal: Int = 0
+        var cr = Math.PI / 3
+        var radius: Double = 0.toDouble()
+        var dotDiam: Int = 0
+        var grainR: Float = 0f
+        var isThrough = BooleanArray(11)
+        var qTotal = 0
+        var qNum = 0
+        var defTime = 20000
+        var initTime: Long = 0
+        var drawAnswerLength = 1400
+        var marginTime: Long = 800
+        var pressButtonTime: Long = 0
+        var isFirstTimeUp = true
+        var doVibrate = false
+        var drawCountView = false
+        var isStartGame = false
+        var isEndGame = false
+        var doShow = true
+        var isPressedButton = false
+
+        var dots = arrayOfNulls<PointF>(11)
+        var Locus = ArrayList<Particle>()
+        var locusPath = Path()
+        var now: Long = 0
+        var throughList: Array<ThroughList?>
+        var answerThroughList: Array<ThroughList?>
+        var difficulty = ArrayList<Difficulty>()
+        var correctStr: ArrayList<String>
+        var holdTime: Long = 0
+        var nextButtonPoint = arrayOfNulls<Point>(2)
+        var retryButtonPoint = arrayOfNulls<Point>(2)
+        var previousDot = -1
+        var passTime: LongArray
 
         init {
-            val tag = "MyView"
+            holder.addCallback(this)
+            val tag = "MyView/init"
             dbHelper = DBHelper(context)
             db = dbHelper.readableDatabase
+
+            radius = offsetX * 0.8
+            dotDiam = (radius / 4.5).toInt()
+            grainR = 20 * scale
+            dotTrue = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(resources, R.drawable.dot_t), dotDiam, dotDiam, false)
+            dotFalse = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(resources, R.drawable.dot_f), dotDiam, dotDiam, false)
+            dots[0] = PointF(offsetX, (offsetY * 1.2).toFloat())
+            for (i in 1..4) {
+                var j = i
+                if (i > 1) {
+                    j++
+                    if (i > 3) {
+                        j++
+                    }
+                }
+                dots[i] = PointF((Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX).toFloat(), (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2).toFloat())
+            }
+            for (i in 5..10) {
+                dots[i] = PointF((Math.cos(cr * (i - 0.5)) * radius + offsetX).toFloat(), (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2).toFloat())
+            }
 
             var giveTime = 20000
             var giveQs = 1
@@ -227,7 +227,7 @@ class MyActivity : Activity() {
             }
             gameMode = Integer.parseInt(sp?.getString("gamemode", "0") ?: "0")
             doVibrate = sp?.getBoolean("doVibrate", false) ?: false
-            showCountView = sp?.getBoolean("showCountView", false) ?: false
+            drawCountView = sp?.getBoolean("showCountView", false) ?: false
             level = if (receivedLevel > -1) receivedLevel else (Math.random() * (max - min + 1) + min).toInt()
             //level = 8;
             qTotal = difficulty[level].qs
@@ -237,31 +237,7 @@ class MyActivity : Activity() {
                 passTime[i] = -1
             }
             defTime = difficulty[level].time
-            /*
-            Cursor tempC = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null);
-            tempC.moveToLast();
-            long tempMax = tempC.getLong(0);
-            tempC.moveToFirst();
-            OutputStream out;
-            try {
-                out = openFileOutput("list.txt", MODE_APPEND);
-                PrintWriter writer = new PrintWriter(new OutputStreamWriter(out,"UTF-8"));
 
-                for (int i = 0; i < tempMax; i++) {
-                    ArrayList<String> tempStrings = getCorrectStrings(tempC);
-                    for (String s : tempStrings) {
-                        writer.append(s + ",");
-                    }
-                    writer.append("\n");
-                    if (i == tempMax - 1) {
-                        writer.close();
-                    }
-                    tempC.moveToNext();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            */
             var c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null)
             var c2 = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null)
             if (qTotal > 1) {
@@ -291,6 +267,7 @@ class MyActivity : Activity() {
                     c.close()
                 }
                 correctStr = getCorrectStrings(c2)
+                c3.close()
             } else {
                 c1.moveToLast()
                 val max = c1.getLong(0)
@@ -305,112 +282,114 @@ class MyActivity : Activity() {
                 answerThroughList[0] = ThroughList(dotsSplit)
                 correctStr = ArrayList(Arrays.asList("" + c1.getString(c1.getColumnIndex("name"))))
             }
-            p.isAntiAlias = true
+            c1.close()
+            c2.close()
 
-            for (i in 0..10) {
+            for (i in 0..isThrough.lastIndex) {
                 isThrough[i] = false
             }
-
-            typeface = Typeface.createFromAsset(getContext().assets, "Coda-Regular.ttf")
-            p.setTypeface(typeface)
 
             grainImg = BitmapFactory.decodeResource(resources, R.drawable.particle)
 
             now = System.currentTimeMillis()
-            timer(initialDelay = 100, period = 25) {
-                runOnUiThread {
-                    if (state) {
-                        invalidate() //再描画
-                    }
-                }
+            initTime = now
+        }
+
+        public override fun surfaceCreated(holder: SurfaceHolder) {
+            isAttached = true
+            thread = Thread(this)
+            thread?.start()
+        }
+        public override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+        public override fun surfaceDestroyed(holder: SurfaceHolder) {
+            val tag = "MyView/surfaceDestroyed"
+            isAttached = false
+        }
+
+        public override fun run() {
+            val tag = "MyView/run"
+            while (isAttached) {
+                draw()
             }
         }
 
-        public fun isEndLoad(): Boolean {
-            return scale != 0.toFloat()
+        public fun draw() {
+            val tag = "MyView/draw"
+            var canvas: Canvas? = null
+            while (canvas == null) {
+                try {
+                    canvas = holder.lockCanvas()
+                } catch (e: IllegalStateException) {
+                    canvas = null
+                    Log.e(tag, e.message)
+                }
+            }
+            this.canvas = canvas
+            onDraw(canvas)
+            holder.unlockCanvasAndPost(canvas)
         }
 
-        public override fun onDraw(c: Canvas) {
-            this.c = c
-            c.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
-            val tag = "onDraw"
+        public override fun onDraw(canvas: Canvas) {
+            val tag = "MyView/onDraw"
+            canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
+            paint.isAntiAlias = true
+            typeface = Typeface.createFromAsset(getContext().assets, "Coda-Regular.ttf")
+            paint.setTypeface(typeface)
 
-            if (isEndLoad()) {
-                if (isFirstDraw) {
-                    radius = offsetX * 0.8
-                    dotDiam = (radius / 4.5).toInt()
-                    grainR = 15 * scale
-                    dotTrue = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(resources, R.drawable.dot_t), dotDiam, dotDiam, false)
-                    dotFalse = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(resources, R.drawable.dot_f), dotDiam, dotDiam, false)
-                    dots[0] = PointF(offsetX, (offsetY * 1.2).toFloat())
-                    for (i in 1..4) {
-                        var j = i
-                        if (i > 1) {
-                            j++
-                            if (i > 3) {
-                                j++
-                            }
-                        }
-                        dots[i] = PointF((Math.cos(cr * (j - 0.5)) * (radius / 2) + offsetX).toFloat(), (Math.sin(cr * (j - 0.5)) * (radius / 2) + offsetY * 1.2).toFloat())
+            if (drawCountView) {
+                drawCount(canvas)
+            }
+
+            if (!isStartGame) {
+                setGrainAlpha()
+                drawAnswer(initTime, now, canvas)
+                paint.color = Color.WHITE
+            } else if (!isEndGame) {
+                setGrainAlpha(releaseTime)
+            }
+
+            if (doShow) {
+                for (i in 0..10) {
+                    if (isThrough[i]) {
+                        canvas.drawBitmap(dotTrue, dots[i]!!.x - dotDiam / 2, dots[i]!!.y - dotDiam / 2, paint)
+                    } else {
+                        canvas.drawBitmap(dotFalse, dots[i]!!.x - dotDiam / 2, dots[i]!!.y - dotDiam / 2, paint)
                     }
-                    for (i in 5..10) {
-                        dots[i] = PointF((Math.cos(cr * (i - 0.5)) * radius + offsetX).toFloat(), (Math.sin(cr * (i - 0.5)) * radius + offsetY * 1.2).toFloat())
-                    }
-
-                    initTime = now
-                    isFirstDraw = false
                 }
-
-                if (showCountView) {
-                    showCount()
-                }
-
-                if (!isStartGame) {
-                    setGrainAlpha()
-                    showAnswer(initTime, now)
-                } else if (!isEndGame) {
-                    setGrainAlpha(releaseTime)
-                }
-
-                if (doShow) {
-                    for (i in 0..10) {
-                        if (isThrough[i]) {
-                            c.drawBitmap(dotTrue, dots[i]!!.x - dotDiam / 2, dots[i]!!.y - dotDiam / 2, p)
-                        } else {
-                            c.drawBitmap(dotFalse, dots[i]!!.x - dotDiam / 2, dots[i]!!.y - dotDiam / 2, p)
-                        }
-                    }
+                synchronized(Locus) {
                     for (particle in Locus) {
                         particle.move()
                     }
-                    if (!isStartGame || isReleased) {
-                        p.color = Color.WHITE
-                        p.strokeWidth = 3f
-                        p.style = Paint.Style.STROKE
-                        c.drawPath(locusPath, p)
-                        p.strokeWidth = 0f
-                    }
                 }
-
-                if (isStartGame && doShow) {
-                    showTime(now)
-                    showQueNumber(now - initTime, 0, 2, 255, 197)
-                } else if (!isStartGame) {
-                    showQueNumber(now - initTime, marginTime, 240, 150, 40)
+                /*
+                if (!isStartGame || isReleased) {
+                    paint.color = Color.WHITE
+                    paint.strokeWidth = 3f
+                    paint.style = Paint.Style.STROKE
+                    canvas.drawPath(locusPath, paint)
+                    paint.strokeWidth = 0f
                 }
-
-                showButton()
-                //showFPS();
-
-                if (isEndGame) {
-                    if (now > holdTime + marginTime) {
-                        doShow = false
-                        showResult(marginTime, holdTime + marginTime, now)
-                    }
-                }
-
-                now = if (isPressedButton) System.currentTimeMillis() - pressButtonTime + holdTime else System.currentTimeMillis()
+                */
             }
+
+            if (isStartGame && doShow) {
+                drawTime(now, canvas)
+                drawQueNumber(now - initTime, 0, 2, 255, 197, canvas)
+            } else if (!isStartGame) {
+                drawQueNumber(now - initTime, marginTime, 240, 150, 40, canvas)
+            }
+
+            drawButton(canvas)
+            //drawFPS();
+
+            if (isEndGame) {
+                if (now > holdTime + marginTime) {
+                    doShow = false
+                    drawResult(marginTime, holdTime + marginTime, now, canvas)
+                }
+            }
+
+            now = if (isPressedButton) System.currentTimeMillis() - pressButtonTime + holdTime else System.currentTimeMillis()
         }
 
         internal inner class ThroughList {
@@ -484,18 +463,18 @@ class MyActivity : Activity() {
         }
 
         private fun calcSubAlpha(): Int {
-            val que = (now - initTime - marginTime).toInt() / showAnswerLength
-            val timeInPhase = (now - initTime - marginTime - (showAnswerLength * que).toLong()).toInt()
+            val cue = (now - initTime - marginTime).toInt() / drawAnswerLength
+            val timeInPhase = (now - initTime - marginTime - (drawAnswerLength * cue).toLong()).toInt()
 
             if (!isFirstFlash) {
                 return 0
             } else {
-                if (timeInPhase < showAnswerLength * 0.2) {
-                    return (255 - 255 * timeInPhase / (showAnswerLength * 0.2)).toInt()
-                } else if (timeInPhase < showAnswerLength * 0.7) {
+                if (timeInPhase < drawAnswerLength * 0.2) {
+                    return (255 - 255 * timeInPhase / (drawAnswerLength * 0.2)).toInt()
+                } else if (timeInPhase < drawAnswerLength * 0.7) {
                     return 0
                 } else {
-                    return (255 * (timeInPhase - timeInPhase * 0.7) / (showAnswerLength - showAnswerLength * 0.7)).toInt()
+                    return (255 * timeInPhase / drawAnswerLength).toInt()
                 }
             }
         }
@@ -550,32 +529,32 @@ class MyActivity : Activity() {
             }
         }
 
-        internal inner class Particle(var x0: Float, var y0: Float) {
+        internal inner class Particle(var x0: Float, var y0: Float, val canvas: Canvas) {
             var grain = ArrayList<Grain>()
             var phase = 0
             var moveFrames: Long = 400
-            var initFrames: Long = 0
+            var initFrame: Long = 0
             var v = 0.15
 
             init {
-                initFrames = System.currentTimeMillis()
+                initFrame = System.currentTimeMillis()
                 grain.add(Grain(x0, y0))
                 grain.add(Grain(x0, y0))
                 grain.add(Grain(x0, y0))
             }
 
             fun move() {
-                val diffFrames = System.currentTimeMillis() - initFrames
+                val diffFrames = System.currentTimeMillis() - initFrame
                 if (diffFrames > moveFrames || isReleased || !isStartGame) phase = 1
 
                 if (phase == 0) {
                     val param = (moveFrames - diffFrames) / (moveFrames * 1.0f)
-                    grain[0].x = grain[0].step0[0] + grain[0].diff[0] * param
-                    grain[0].y = grain[0].step0[1] + grain[0].diff[1] * param
-                    grain[1].x = grain[1].step0[0] + grain[1].diff[0] * param
-                    grain[1].y = grain[1].step0[1] + grain[1].diff[1] * param
-                    grain[2].x = grain[2].step0[0] + grain[2].diff[0] * param
-                    grain[2].y = grain[2].step0[1] + grain[2].diff[1] * param
+                    grain[0].x = grain[0].step0.x + grain[0].diff.x * param
+                    grain[0].y = grain[0].step0.y + grain[0].diff.y * param
+                    grain[1].x = grain[1].step0.x + grain[1].diff.x * param
+                    grain[1].y = grain[1].step0.y + grain[1].diff.y * param
+                    grain[2].x = grain[2].step0.x + grain[2].diff.x * param
+                    grain[2].y = grain[2].step0.y + grain[2].diff.y * param
                 }
                 if (phase == 1) {
                     var param = Math.cos(grain[0].a0)
@@ -594,63 +573,70 @@ class MyActivity : Activity() {
                 draw()
             }
 
+            internal inner class Grain(x: Float, y: Float) {
+                var x: Float = 0f
+                var y: Float = 0f
+                var origin: PointF = PointF()
+                var step0: PointF = PointF()
+                var step1: PointF = PointF()
+                var diff: PointF = PointF()
+                var a0 = Math.random() * Math.PI * 2.0
+                var a1 = Math.random() * Math.PI * 2.0
+                var circleR = Math.random() * 0.5 + 0.7
+
+                init {
+                    origin.x = x
+                    origin.y = y
+
+                    var blurR = Math.random() * offsetX * 0.05
+                    var blurA = Math.random() * Math.PI * 2.0
+                    step0.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
+                    step0.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+
+
+                    blurR = offsetX * 0.4 + Math.random() * offsetX * 0.05
+                    blurA = Math.random() * Math.PI * 2.0
+                    step1.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
+                    step1.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+
+                    diff.x = step1.x - step0.x
+                    diff.y = step1.y - step0.y
+
+                    if (isReleased || !isStartGame) {
+                        this.x = step0.x
+                        this.y = step0.y
+                    } else {
+                        this.x = step1.x
+                        this.y = step1.y
+                    }
+                }
+            }
+
             private fun draw() {
+                paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.ADD))
                 for (gr in grain) {
-                    c?.drawBitmap(scaledGrain, gr.x - grainR, gr.y - grainR, p)
+                    canvas.drawBitmap(scaledGrain, gr.x - grainR, gr.y - grainR, paint)
                 }
+                paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
             }
         }
 
-        internal inner class Grain(x: Float, y: Float) {
-            var x: Float = 0.toFloat()
-            var y: Float = 0.toFloat()
-            var origin = FloatArray(2)
-            var step0 = FloatArray(2)
-            var step1 = FloatArray(2)
-            var diff = FloatArray(2)
-            var a0 = Math.random() * Math.PI * 2.0
-            var a1 = Math.random() * Math.PI * 2.0
-            var circleR = Math.random() * 0.5 + 0.7
-
-            init {
-                origin[0] = x
-                origin[1] = y
-
-                var blurR = Math.random() * offsetX.toDouble() * 0.05
-                var blurA = Math.random() * Math.PI * 2.0
-                step0[0] = origin[0] + (blurR * Math.cos(blurA)).toFloat()
-                step0[1] = origin[1] + (blurR * Math.sin(blurA)).toFloat()
 
 
-                blurR = offsetX * 0.2 + Math.random() * offsetX.toDouble() * 0.05
-                blurA = Math.random() * Math.PI * 2.0
-                step1[0] = origin[0] + (blurR * Math.cos(blurA)).toFloat()
-                step1[1] = origin[1] + (blurR * Math.sin(blurA)).toFloat()
-
-                diff[0] = step1[0] - step0[0]
-                diff[1] = step1[1] - step0[1]
-
-                if (isReleased || !isStartGame) {
-                    this.x = step0[0]
-                    this.y = step0[1]
-                } else {
-                    this.x = step1[0]
-                    this.y = step1[1]
-                }
-            }
-        }
-
-        fun putParticles(throughList: ThroughList) {
+        fun putParticles(throughList: ThroughList, canvas: Canvas) {
+            val tag = "MyView/putParticles"
             val interval = 25 * scale
-            val length = FloatArray(throughList.dots.size - 1)
-            for (i in 1..throughList.dots.size - 1) {
+            val length = FloatArray(throughList.dots.lastIndex)
+            for (i in 1..throughList.dots.lastIndex) {
                 val dotI0 = dots[throughList.dots[i]]
                 val dotI1 = dots[throughList.dots[i - 1]]
                 if (dotI0 != null && dotI1 != null) {
                     length[i - 1] = Math.sqrt(Math.pow((dotI1.x - dotI0.x).toDouble(), 2.0) + Math.pow((dotI1.y - dotI0.y).toDouble(), 2.0)).toFloat()
                 }
             }
-            Locus.clear()
+            synchronized(Locus) {
+                Locus.clear()
+            }
             for (i in length.indices) {
                 val dotI0 = dots[throughList.dots[i]]
                 val dotI1 = dots[throughList.dots[i + 1]]
@@ -660,12 +646,20 @@ class MyActivity : Activity() {
                     var y = dotI0.y
 
                     val sumLength = floatArrayOf(0f, 0f)
-                    while (sumLength[0] <= Math.abs(dotI1.x - dotI0.x) && sumLength[1] <= Math.abs(dotI1.y - dotI0.y)) {
-                        Locus.add(Particle(x, y))
-                        x += unitV[0] * interval
-                        y += unitV[1] * interval
-                        sumLength[0] += Math.abs(dotI1.x - dotI0.x) * interval / length[i]
-                        sumLength[1] += Math.abs(dotI1.y - dotI0.y) * interval / length[i]
+                    synchronized(Locus) {
+                        val absX = Math.abs(dotI1.x - dotI0.x)
+                        val absY = Math.abs(dotI1.y - dotI0.y)
+                        val dX = unitV[0] * interval
+                        val dY = unitV[1] * interval
+                        val dXa = absX * interval / length[i]
+                        val dYa = absY * interval / length[i]
+                        while (sumLength[0] <= absX && sumLength[1] <= absY) {
+                            Locus.add(Particle(x, y, canvas))
+                            x += dX
+                            y += dY
+                            sumLength[0] += dXa
+                            sumLength[1] += dYa
+                        }
                     }
                 }
             }
@@ -676,7 +670,7 @@ class MyActivity : Activity() {
         var frames = 0
         var sumTimes = 0
         var fps = -1f
-        fun showFPS() {
+        fun drawFPS(canvas: Canvas) {
             val nowTime = System.currentTimeMillis()
             if (lastTime == -1.toLong()) {
                 lastTime = nowTime
@@ -694,9 +688,9 @@ class MyActivity : Activity() {
                 sumTimes = 0
             }
             if (fps > -1) {
-                p.textSize = 30 * scale
-                p.textAlign = Paint.Align.LEFT
-                c?.drawText("FPS:" + "%.2f".format(fps), 0f, offsetY * 2 - 120 * scale, p)
+                paint.textSize = 30 * scale
+                paint.textAlign = Paint.Align.LEFT
+                canvas.drawText("FPS:" + "%.2f".format(fps), 0f, offsetY * 2 - 120 * scale, paint)
             }
         }
 
@@ -719,7 +713,7 @@ class MyActivity : Activity() {
             }
         }
 
-        fun showButton() {
+        fun drawButton(canvas: Canvas) {
             val nextButtonWidth = (if (isStartGame && doShow) 200 else 150) * scale
             val retryButtonWidth = 170 * scale
             val buttonHeight = 90 * scale
@@ -729,9 +723,10 @@ class MyActivity : Activity() {
             retryButtonPoint[0] = Point((margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
             retryButtonPoint[1] = Point((margin + retryButtonWidth).toInt(), (offsetY * 2 - margin).toInt())
 
-            p.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
-            p.textAlign = Paint.Align.CENTER
-            p.textSize = 40 * scale
+            paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
+            paint.textAlign = Paint.Align.CENTER
+            paint.textSize = 40 * scale
+            paint.style = Paint.Style.FILL
             val dNext: Drawable
             val dRetry: Drawable
             if (isOnNext) {
@@ -740,11 +735,11 @@ class MyActivity : Activity() {
                 dNext = if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
             }
             dNext.setBounds(nextButtonPoint[0]?.x ?: 0, nextButtonPoint[0]?.y ?: 0, nextButtonPoint[1]?.x ?: 0, nextButtonPoint[1]?.y ?: 0)
-            dNext.draw(c)
+            dNext.draw(canvas)
             if (isStartGame && doShow) {
-                c?.drawText("BYPASS", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, p)
+                canvas.drawText("BYPASS", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
             } else {
-                c?.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, p)
+                canvas.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
             }
             if (isEndGame) {
                 if (isOnRetry) {
@@ -753,19 +748,19 @@ class MyActivity : Activity() {
                     dRetry = if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
                 }
                 dRetry.setBounds(retryButtonPoint[0]?.x ?: 0, retryButtonPoint[0]?.y ?: 0, retryButtonPoint[1]?.x ?: 0, retryButtonPoint[1]?.y ?: 0)
-                dRetry.draw(c)
-                c?.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - 30 * scale, p)
+                dRetry.draw(canvas)
+                canvas.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
             }
         }
 
-        fun showCount() {
-            p.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
-            p.textSize = 40f
-            p.textAlign = Paint.Align.RIGHT
+        fun drawCount(canvas: Canvas) {
+            paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
+            paint.textSize = 40f
+            paint.textAlign = Paint.Align.RIGHT
             val x = (offsetX * 2.0 - 20.0 * scale).toFloat()
             val y = (offsetY * 2.0 - 120.0 * scale).toFloat()
 
-            c?.drawText("HACK:" + viewCount, x, y, p)
+            canvas.drawText("HACK:" + viewCount, x, y, paint)
         }
 
         fun makeHexagon(origin: PointF, r: Float): Path {
@@ -784,8 +779,8 @@ class MyActivity : Activity() {
 
         var upTime: Long = 0
         var leftTime: Long = 0
-        fun showTime(currentTime: Long) {
-            val tag = "showTime"
+        fun drawTime(currentTime: Long, canvas: Canvas) {
+            val tag = "drawTime"
             leftTime = (defTime - ((if (isEndGame) holdTime else currentTime) - initTime)) / 10
 
             if (leftTime <= 0 && isFirstTimeUp) {
@@ -797,34 +792,35 @@ class MyActivity : Activity() {
                 isFirstTimeUp = false
             }
 
+            paint.style = Paint.Style.FILL
             if (doShow) {
-                p.textSize = 60 * scale
-                p.color = Color.rgb(220, 190, 50)
+                paint.textSize = 60 * scale
+                paint.color = Color.rgb(220, 190, 50)
                 val dispTime = if (isEndGame) upTime else leftTime
 
-                p.textAlign = Paint.Align.RIGHT
-                c?.drawText("%02d".format(dispTime / 100), offsetX - 3, offsetY / 3, p)
-                p.textAlign = Paint.Align.CENTER
-                c?.drawText(":", offsetX, offsetY / 3, p)
-                p.textAlign = Paint.Align.LEFT
-                c?.drawText("%02d".format(dispTime % 100), offsetX + 3, offsetY / 3, p)
+                paint.textAlign = Paint.Align.RIGHT
+                canvas.drawText("%02d".format(dispTime / 100), offsetX - 3, offsetY / 3, paint)
+                paint.textAlign = Paint.Align.CENTER
+                canvas.drawText(":", offsetX, offsetY / 3, paint)
+                paint.textAlign = Paint.Align.LEFT
+                canvas.drawText("%02d".format(dispTime % 100), offsetX + 3, offsetY / 3, paint)
 
                 val barWidth = (offsetX * 0.7 / defTime).toFloat() * leftTime.toFloat() * 10f
-                p.style = Paint.Style.FILL
-                c?.drawRect(offsetX - barWidth, (offsetY / 2.7).toFloat(), offsetX + barWidth, (offsetY / 2.55).toFloat(), p)
+                paint.style = Paint.Style.FILL
+                canvas.drawRect(offsetX - barWidth, (offsetY / 2.7).toFloat(), offsetX + barWidth, (offsetY / 2.55).toFloat(), paint)
             } else {
-                p.textSize = 70 * scale
-                p.color = Color.WHITE
-                p.textAlign = Paint.Align.RIGHT
-                c?.drawText("%02d".format(upTime / 100), offsetX - 5, offsetY / 9, p)
-                p.textAlign = Paint.Align.CENTER
-                c?.drawText(":", offsetX, offsetY / 9, p)
-                p.textAlign = Paint.Align.LEFT
-                c?.drawText("%02d".format(upTime % 100), offsetX + 5, offsetY / 9, p)
+                paint.textSize = 70 * scale
+                paint.color = Color.WHITE
+                paint.textAlign = Paint.Align.RIGHT
+                canvas.drawText("%02d".format(upTime / 100), offsetX - 5, offsetY / 9, paint)
+                paint.textAlign = Paint.Align.CENTER
+                canvas.drawText(":", offsetX, offsetY / 9, paint)
+                paint.textAlign = Paint.Align.LEFT
+                canvas.drawText("%02d".format(upTime % 100), offsetX + 5, offsetY / 9, paint)
             }
         }
 
-        fun showQueNumber(currentTime: Long, marginTime: Long, r: Int, g: Int, b: Int) {
+        fun drawQueNumber(currentTime: Long, marginTime: Long, r: Int, g: Int, b: Int, canvas: Canvas) {
             val hexRadius = offsetX / 10
             val hexMargin = 5f
             val totalMargin = hexMargin * (qTotal - 1)
@@ -842,173 +838,179 @@ class MyActivity : Activity() {
                 val lgNormal = LinearGradient(x, y - hexRadius, x, y + hexRadius, arrayNormal, positions, Shader.TileMode.CLAMP)
                 val lgStrong = LinearGradient(x, y - hexRadius, x, y + hexRadius, arrayStrong, positions, Shader.TileMode.CLAMP)
 
-                p.color = Color.BLACK
+                paint.color = Color.BLACK
                 if (isStartGame) {
                     when (i) {
                         in 0..qNum - 1 -> {
-                            p.setShader(lgNormal)
-                            p.style = Paint.Style.FILL
-                            c?.drawPath(makeHexagon(origin, hexRadius), p)
-                            p.setShader(null)
+                            paint.setShader(lgNormal)
+                            paint.style = Paint.Style.FILL
+                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            paint.setShader(null)
 
-                            p.strokeJoin = Paint.Join.BEVEL
-                            p.color = Color.argb(140, r, g, b)
-                            p.strokeWidth = 2f
-                            p.style = Paint.Style.STROKE
-                            c?.drawPath(makeHexagon(origin, hexRadius), p)
-                            p.strokeWidth = 0f
+                            paint.strokeJoin = Paint.Join.BEVEL
+                            paint.color = Color.argb(140, r, g, b)
+                            paint.strokeWidth = 2f
+                            paint.style = Paint.Style.STROKE
+                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            paint.strokeWidth = 0f
                         }
                         qNum -> {
                             if ((isReleased && throughList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
-                                p.setShader(lgNormal)
-                                p.style = Paint.Style.FILL
-                                c?.drawPath(makeHexagon(origin, hexRadius), p)
-                                p.setShader(null)
+                                paint.setShader(lgNormal)
+                                paint.style = Paint.Style.FILL
+                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                paint.setShader(null)
 
-                                p.strokeJoin = Paint.Join.BEVEL
-                                p.color = Color.argb(140, r, g, b)
-                                p.strokeWidth = 2f
-                                p.style = Paint.Style.STROKE
-                                c?.drawPath(makeHexagon(origin, hexRadius), p)
-                                p.strokeWidth = 0f
+                                paint.strokeJoin = Paint.Join.BEVEL
+                                paint.color = Color.argb(140, r, g, b)
+                                paint.strokeWidth = 2f
+                                paint.style = Paint.Style.STROKE
+                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                paint.strokeWidth = 0f
                             } else {
-                                p.setShader(lgStrong)
-                                p.style = Paint.Style.FILL
-                                c?.drawPath(makeHexagon(origin, hexRadius), p)
-                                p.setShader(null)
+                                paint.setShader(lgStrong)
+                                paint.style = Paint.Style.FILL
+                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                paint.setShader(null)
 
-                                p.strokeJoin = Paint.Join.BEVEL
-                                p.color = Color.rgb(r, g, b)
-                                p.strokeWidth = 2f
-                                p.style = Paint.Style.STROKE
-                                c?.drawPath(makeHexagon(origin, hexRadius), p)
-                                p.strokeWidth = 0f
+                                paint.strokeJoin = Paint.Join.BEVEL
+                                paint.color = Color.rgb(r, g, b)
+                                paint.strokeWidth = 2f
+                                paint.style = Paint.Style.STROKE
+                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                paint.strokeWidth = 0f
                             }
                         }
                         else -> {
-                            p.color = Color.BLACK
-                            p.style = Paint.Style.FILL
-                            c?.drawPath(makeHexagon(origin, hexRadius), p)
+                            paint.color = Color.BLACK
+                            paint.style = Paint.Style.FILL
+                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
 
-                            p.strokeJoin = Paint.Join.BEVEL
-                            p.color = Color.argb(80, r, g, b)
-                            p.strokeWidth = 2f
-                            p.style = Paint.Style.STROKE
-                            c?.drawPath(makeHexagon(origin, hexRadius), p)
-                            p.strokeWidth = 0f
+                            paint.strokeJoin = Paint.Join.BEVEL
+                            paint.color = Color.argb(80, r, g, b)
+                            paint.strokeWidth = 2f
+                            paint.style = Paint.Style.STROKE
+                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            paint.strokeWidth = 0f
                         }
                     }
                 } else {
-                    if (i.toLong() == (currentTime - marginTime) / showAnswerLength && currentTime > marginTime) {
-                        p.setShader(lgStrong)
-                        p.style = Paint.Style.FILL
-                        c?.drawPath(makeHexagon(origin, hexRadius), p)
-                        p.setShader(null)
+                    if (i.toLong() == (currentTime - marginTime) / drawAnswerLength && currentTime > marginTime) {
+                        paint.setShader(lgStrong)
+                        paint.style = Paint.Style.FILL
+                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        paint.setShader(null)
 
-                        p.strokeJoin = Paint.Join.BEVEL
-                        p.color = Color.rgb(r, g, b)
-                        p.strokeWidth = 2f
-                        p.style = Paint.Style.STROKE
-                        c?.drawPath(makeHexagon(origin, hexRadius), p)
-                        p.strokeWidth = 0f
+                        paint.strokeJoin = Paint.Join.BEVEL
+                        paint.color = Color.rgb(r, g, b)
+                        paint.strokeWidth = 2f
+                        paint.style = Paint.Style.STROKE
+                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        paint.strokeWidth = 0f
                     } else {
-                        p.color = Color.BLACK
-                        p.style = Paint.Style.FILL
-                        c?.drawPath(makeHexagon(origin, hexRadius), p)
+                        paint.color = Color.BLACK
+                        paint.style = Paint.Style.FILL
+                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
 
-                        p.strokeJoin = Paint.Join.BEVEL
-                        p.color = Color.argb(140, r, g, b)
-                        p.strokeWidth = 2f
-                        p.style = Paint.Style.STROKE
-                        c?.drawPath(makeHexagon(origin, hexRadius), p)
-                        p.strokeWidth = 0f
+                        paint.strokeJoin = Paint.Join.BEVEL
+                        paint.color = Color.argb(140, r, g, b)
+                        paint.strokeWidth = 2f
+                        paint.style = Paint.Style.STROKE
+                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        paint.strokeWidth = 0f
                     }
                 }
             }
         }
 
-        var preQue = -1
-        var initFlashTime: Long = 0
-        var isFirstFlash = true
-        fun showAnswer(initTime: Long, currentTime: Long) {
-            var que = -1
+        var preCue = -1
+        fun drawAnswer(initTime: Long, currentTime: Long, canvas: Canvas) {
+            var cue: Int = -1
             val diffTIme = currentTime - initTime - marginTime
 
+            fun drawAnswerText() {
+                paint.color = Color.argb(255 - calcSubAlpha(), 255, 255, 255)
+                paint.textSize = 80 * scale
+                paint.textAlign = Paint.Align.CENTER
+                canvas.drawText(correctStr[cue], offsetX, offsetY / 3, paint)
+            }
+
             if (diffTIme >= 0) {
-                que = diffTIme.toInt() / showAnswerLength
+                cue = (diffTIme / drawAnswerLength).toInt()
             }
-            if (que < qTotal) {
-                if (que >= 0) {
+            if (-1 < cue) {
+                if (cue < qTotal) {
+                    if (preCue != cue && (gameMode == 0 || gameMode == 2)) {
+                        putParticles(answerThroughList[cue]!!, canvas)
+                    }
                     if (gameMode == 0 || gameMode == 1) {
-                        p.color = Color.WHITE
-                        p.textSize = 80 * scale
-                        p.textAlign = Paint.Align.CENTER
-                        c?.drawText(correctStr[que], offsetX, offsetY / 3, p)
+                        drawAnswerText()
                     }
-                    if (preQue != que && (gameMode == 0 || gameMode == 2)) {
-                        putParticles(answerThroughList[que]!!)
-                    }
+                } else {
+                    drawFlash(currentTime, canvas)
                 }
-            } else {
-                if (isFirstFlash) {
-                    resetLocus()
-                    initFlashTime = System.currentTimeMillis()
-                    isFirstFlash = false
-                }
-                showFlash(initFlashTime, currentTime)
             }
-            preQue = que
+
+            preCue = cue
         }
 
-        fun showFlash(initTime: Long, currentTime: Long) {
-            var que: Int
-            val interval = 1000
-            val margin = interval / 800
-            val diffTime = (currentTime - initTime).toInt()
+        var initTimeFlash: Long = 0
+        var isFirstFlash = true
+        fun drawFlash(currentTime: Long, canvas: Canvas) {
+            var cue: Int
+            val interval = 800
+            val margin = 10
+            val dT = (currentTime - initTimeFlash).toInt()
             var alpha = 255
 
-            que = diffTime / interval
-            if (diffTime > interval * 2.5) {
-                que++
+            if (isFirstFlash) {
+                resetLocus()
+                initTimeFlash = System.currentTimeMillis()
+                isFirstFlash = false
             }
 
-            if (que == 0) {
-                if (diffTime < margin) {
-                    alpha = 150 * diffTime / margin
+            cue = dT / interval
+            if (dT > interval * 2.5) {
+                cue++
+            }
+
+            if (cue == 0) {
+                if (dT < margin) {
+                    alpha = 150 * dT / margin
                 } else {
-                    alpha = 150 - 150 * diffTime / interval
+                    alpha = 150 - 150 * (dT - margin) / (interval - margin)
                 }
             }
-            if (que == 1) {
-                if (diffTime < margin) {
-                    alpha = 200 * diffTime / margin
+            if (cue == 1) {
+                if (dT < margin) {
+                    alpha = 200 * dT / cue / margin
                 } else {
-                    alpha = 200 - 200 * diffTime / interval
+                    alpha = 200 - 200 * (dT - margin) / cue / (interval - margin)
                 }
             }
-            p.color = Color.argb(alpha, 220, 175, 50)
-            if (que == 2) {
-                if (diffTime < margin) {
-                    alpha = 255 * diffTime / margin
+            paint.color = Color.argb(alpha, 220, 175, 50)
+            if (cue == 2) {
+                if (dT < margin) {
+                    alpha = 255 * dT / cue / margin
                 } else {
                     alpha = 255
                 }
-                p.color = Color.argb(alpha, 255, 255, 255)
+                paint.color = Color.argb(alpha, 255, 255, 255)
             }
-            p.style = Paint.Style.FILL
-            c?.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, p)
-            if (que > 2) {
-                this.initTime = System.currentTimeMillis()
+            paint.style = Paint.Style.FILL
+            canvas.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, paint)
+            if (cue > 2) {
+                initTime = System.currentTimeMillis()
                 isStartGame = true
             }
         }
 
         //var isFirstShowResult = true
-        fun showResult(margin: Long, initTime: Long, currentTime: Long) {
-            val tag = "showResult"
+        fun drawResult(margin: Long, initTime: Long, currentTime: Long, canvas: Canvas) {
+            val tag = "drawResult"
 
             if (currentTime > initTime + margin) {
-                showTime(now)
+                drawTime(now, canvas)
 
                 val blue = Color.rgb(2, 255, 197)
                 val red = Color.RED
@@ -1030,13 +1032,13 @@ class MyActivity : Activity() {
                         drawColor = red
                     }
 
-                    p.color = Color.argb(80, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor))
-                    p.style = Paint.Style.FILL
-                    c?.drawPath(makeHexagon(giveOrigin, hexaRadius), p)
+                    paint.color = Color.argb(80, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor))
+                    paint.style = Paint.Style.FILL
+                    canvas.drawPath(makeHexagon(giveOrigin, hexaRadius), paint)
 
-                    p.color = Color.argb(255, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor))
-                    p.style = Paint.Style.STROKE
-                    c?.drawPath(makeHexagon(giveOrigin, hexaRadius), p)
+                    paint.color = Color.argb(255, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor))
+                    paint.style = Paint.Style.STROKE
+                    canvas.drawPath(makeHexagon(giveOrigin, hexaRadius), paint)
 
                     for (j in answerThroughList[i]!!.dots.indices) {
                         if (j == 0) {
@@ -1045,19 +1047,19 @@ class MyActivity : Activity() {
                             answerPath.lineTo(x - hexaRadius + dots[answerThroughList[i]!!.dots[j]]!!.x / 8, y + (dots[answerThroughList[i]!!.dots[j]]!!.y - offsetY * 1.2).toFloat() / 8)
                         }
                     }
-                    p.strokeWidth = 3 * scale
-                    c?.drawPath(answerPath, p)
+                    paint.strokeWidth = 3 * scale
+                    canvas.drawPath(answerPath, paint)
 
-                    p.style = Paint.Style.FILL
-                    p.strokeWidth = 1f
-                    p.textSize = 70 * scale
-                    p.textAlign = Paint.Align.LEFT
-                    c?.drawText(correctStr[i], x * 2, giveOrigin.y + 25 * scale, p)
-                    p.textSize = 50 * scale
-                    p.textAlign = Paint.Align.RIGHT
-                    p.color = Color.WHITE
+                    paint.style = Paint.Style.FILL
+                    paint.strokeWidth = 1f
+                    paint.textSize = 70 * scale
+                    paint.textAlign = Paint.Align.LEFT
+                    canvas.drawText(correctStr[i], x * 2, giveOrigin.y + 25 * scale, paint)
+                    paint.textSize = 50 * scale
+                    paint.textAlign = Paint.Align.RIGHT
+                    paint.color = Color.WHITE
                     if (passTime[i] > -1) {
-                        c?.drawText("${passTime[i] / 100}:${passTime[i] % 100}", offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, p)
+                        canvas.drawText("${passTime[i] / 100}:${passTime[i] % 100}", offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, paint)
                     }
                 }
                 /*if (isFirstShowResult) {
@@ -1077,18 +1079,18 @@ class MyActivity : Activity() {
                     isFirstShowResult = false;
                 }*/
 
-                p.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
-                p.textSize = 40 * scale
-                p.textAlign = Paint.Align.CENTER
-                c?.drawText(getText(R.string.bonus_hack).toString(), offsetX, offsetY * 4 / 3, p)
-                c?.drawText(getText(R.string.bonus_speed).toString(), offsetX, offsetY * 5 / 3, p)
-                p.color = Color.WHITE
-                p.textSize = 120 * scale
-                c?.drawText("${Math.round((difficulty[level].bonus).toDouble() * correctNum / qTotal)}%", offsetX, offsetY * 5 / 3 - 80 * scale, p)
+                paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
+                paint.textSize = 40 * scale
+                paint.textAlign = Paint.Align.CENTER
+                canvas.drawText(getText(R.string.bonus_hack).toString(), offsetX, offsetY * 4 / 3, paint)
+                canvas.drawText(getText(R.string.bonus_speed).toString(), offsetX, offsetY * 5 / 3, paint)
+                paint.color = Color.WHITE
+                paint.textSize = 120 * scale
+                canvas.drawText("${Math.round((difficulty[level].bonus).toDouble() * correctNum / qTotal)}%", offsetX, offsetY * 5 / 3 - 80 * scale, paint)
                 if (correctNum == qTotal) {
-                    c?.drawText("${Math.round((upTime * 1000).toDouble() / defTime)}%", offsetX, offsetY * 2 - 80 * scale, p)
+                    canvas.drawText("${Math.round((upTime * 1000).toDouble() / defTime)}%", offsetX, offsetY * 2 - 80 * scale, paint)
                 } else {
-                    c?.drawText("0%", offsetX, offsetY * 2 - 80 * scale, p)
+                    canvas.drawText("0%", offsetX, offsetY * 2 - 80 * scale, paint)
                 }
             }
         }
@@ -1149,22 +1151,26 @@ class MyActivity : Activity() {
             }
         }
 
-        fun setLocusStart(x: Float, y: Float, doCD: Boolean) {
-            Locus.add(Particle(x, y))
+        fun setLocusStart(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
+            synchronized(Locus) {
+                Locus.add(Particle(x, y, canvas))
 
-            if (doCD) {
-                setCollision(x, y, x, y)
+                if (doCD) {
+                    setCollision(x, y, x, y)
+                }
+                locusPath.moveTo(x, y)
             }
-            locusPath.moveTo(x, y)
         }
 
-        fun setLocus(x: Float, y: Float, doCD: Boolean) {
-            Locus.add(Particle(x, y))
+        fun setLocus(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
+            synchronized(Locus) {
+                Locus.add(Particle(x, y, canvas))
 
-            if (doCD) {
-                setCollision(x, y, Locus[Locus.size - 2].x0, Locus[Locus.size - 2].y0)
+                if (doCD) {
+                    setCollision(x, y, Locus[Locus.size - 2].x0, Locus[Locus.size - 2].y0)
+                }
+                locusPath.lineTo(x, y)
             }
-            locusPath.lineTo(x, y)
         }
 
         fun setCollision(x0: Float, y0: Float, x1: Float, y1: Float) {
@@ -1222,7 +1228,9 @@ class MyActivity : Activity() {
 
         fun resetLocus() {
             locusPath.reset()
-            Locus.clear()
+            synchronized(Locus) {
+                Locus.clear()
+            }
         }
 
         fun resetThrough() {
@@ -1236,14 +1244,13 @@ class MyActivity : Activity() {
         var memX = 0f
         var memY = 0f
         var isReleased = false
-        var isFirstPress = true
         var isOnNext = false
         var isOnRetry = false
         var releaseTime: Long = -1
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val tag = "onTouchEvent"
 
-            val lim = 25 * scale
+            val lim = 15 * scale
             val upX: Float
             val upY: Float
             when (event.action) {
@@ -1251,16 +1258,16 @@ class MyActivity : Activity() {
                 -> {
                     downX = event.x
                     downY = event.y
-                    isOnNext = nextButtonPoint[0]!!.x <= downX && downX <= nextButtonPoint[1]!!.x && nextButtonPoint[0]!!.y <= downY && downY <= nextButtonPoint[1]!!.y
-                    isOnRetry = isEndGame && retryButtonPoint[0]!!.x <= downX && downX <= retryButtonPoint[1]!!.x && retryButtonPoint[0]!!.y <= downY && downY <= retryButtonPoint[1]!!.y
-                    releaseTime = -1
+                    isOnNext = nextButtonPoint[0]?.x ?: -1 <= downX && downX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= downY && downY <= nextButtonPoint[1]?.y ?: -1
+                    isOnRetry = isEndGame && retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1
+                    if (!isEndGame) releaseTime = -1
                     if (!isOnNext && isStartGame && !isEndGame) {
                         if (isReleased) {
                             resetLocus()
                             resetThrough()
                             isReleased = false
                         }
-                        setLocusStart(downX, downY, true)
+                        setLocusStart(downX, downY, true, canvas!!)
                         memX = downX
                         memY = downY
                     }
@@ -1269,14 +1276,15 @@ class MyActivity : Activity() {
                 -> {
                     val currentX = event.x
                     val currentY = event.y
-                    isOnNext = nextButtonPoint[0]!!.x <= currentX && currentX <= nextButtonPoint[1]!!.x && nextButtonPoint[0]!!.y <= currentY && currentY <= nextButtonPoint[1]!!.y
-                    isOnRetry = isEndGame && retryButtonPoint[0]!!.x <= currentX && currentX <= retryButtonPoint[1]!!.x && retryButtonPoint[0]!!.y <= currentY && currentY <= retryButtonPoint[1]!!.y
+                    isOnNext = nextButtonPoint[0]?.x ?: -1 <= currentX && currentX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= currentY && currentY <= nextButtonPoint[1]?.y ?: -1
+                    isOnRetry = isEndGame && retryButtonPoint[0]?.x ?: -1 <= currentX && currentX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= currentY && currentY <= retryButtonPoint[1]?.y ?: -1
                     if (!isOnNext && isStartGame && !isEndGame) {
                         if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
                             if (Locus.size == 0) {
-                                setLocusStart(currentX, currentY, true)
+                                setLocusStart(currentX, currentY, true, canvas!!)
+                            } else {
+                                setLocus(currentX, currentY, true, canvas!!)
                             }
-                            setLocus(currentX, currentY, true)
                             memX = currentX
                             memY = currentY
                         }
@@ -1286,14 +1294,14 @@ class MyActivity : Activity() {
                 -> {
                     upX = event.x
                     upY = event.y
-                    isOnNext = nextButtonPoint[0]!!.x <= downX && downX <= nextButtonPoint[1]!!.x && nextButtonPoint[0]!!.y <= downY && downY <= nextButtonPoint[1]!!.y &&
-                            nextButtonPoint[0]!!.x <= upX && upX <= nextButtonPoint[1]!!.x && nextButtonPoint[0]!!.y <= upY && upY <= nextButtonPoint[1]!!.y
+                    isOnNext = nextButtonPoint[0]?.x ?: -1 <= downX && downX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= downY && downY <= nextButtonPoint[1]?.y ?: -1 &&
+                            nextButtonPoint[0]?.x ?: -1 <= upX && upX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= upY && upY <= nextButtonPoint[1]?.y ?: -1
                     isOnRetry = isEndGame &&
-                            retryButtonPoint[0]!!.x <= downX && downX <= retryButtonPoint[1]!!.x && retryButtonPoint[0]!!.y <= downY && downY <= retryButtonPoint[1]!!.y &&
-                            retryButtonPoint[0]!!.x <= upX && upX <= retryButtonPoint[1]!!.x && retryButtonPoint[0]!!.y <= upY && upY <= retryButtonPoint[1]!!.y
-                    releaseTime = now
+                            retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1 &&
+                            retryButtonPoint[0]?.x ?: -1 <= upX && upX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= upY && upY <= retryButtonPoint[1]?.y ?: -1
                     if (!isOnNext && !isOnRetry && isStartGame && !isEndGame) {
                         isReleased = true
+                        releaseTime = now
                         var tpassTime = (now - initTime) / 10
                         for (i in 0..qNum - 1) {
                             tpassTime -= passTime[i]
@@ -1306,7 +1314,7 @@ class MyActivity : Activity() {
                         Log.v(tag, "throughList:$list")
                         resetLocus()
                         if (throughList[qNum]?.dots?.size ?: 0 > 0) {
-                            putParticles(throughList[qNum]!!)
+                            putParticles(throughList[qNum]!!, canvas!!)
                         }
 
                         if (qTotal - 1 > qNum) {
@@ -1324,14 +1332,11 @@ class MyActivity : Activity() {
                         if (!isStartGame) {
                             startActivity(Intent(this@MyActivity, MyActivity::class.java))
                         } else if (doShow) {
-                            if (isFirstPress) {
-                                now = initTime + defTime
-                                holdTime = now
-                                pressButtonTime = System.currentTimeMillis()
-                                upTime = (defTime - (pressButtonTime - initTime)) / 10
-                                isPressedButton = true
-                                isFirstPress = false
-                            }
+                            now = initTime + defTime
+                            holdTime = now
+                            pressButtonTime = System.currentTimeMillis()
+                            upTime = (defTime - (pressButtonTime - initTime)) / 10
+                            isPressedButton = true
                         } else {
                             startActivity(Intent(this@MyActivity, MyActivity::class.java))
                         }

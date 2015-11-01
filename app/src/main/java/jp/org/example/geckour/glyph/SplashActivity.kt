@@ -25,10 +25,10 @@ class SplashActivity : Activity() {
         t?.setScreenName("SplashActivity")
         t?.send(HitBuilders.AppViewBuilder().build())
 
-        if (sp?.getString("min_level", "null") == "null") {
+        if (sp?.getString("min_level", null) == null) {
             sp?.edit()?.putString("min_level", "0")?.apply()
         }
-        if (sp?.getString("max_level", "null") == "null") {
+        if (sp?.getString("max_level", null) == null) {
             sp?.edit()?.putString("max_level", "8")?.apply()
         }
         if (sp?.getInt("countView", -1) != -1) {
@@ -40,9 +40,11 @@ class SplashActivity : Activity() {
 
         val button1 = findViewById(R.id.button1) as Button
         val button2 = findViewById(R.id.button2) as Button
+        val button3 = findViewById(R.id.button3) as Button
         val typeface = Typeface.createFromAsset(assets, "Coda-Regular.ttf")
         button1.typeface = typeface
         button2.typeface = typeface
+        button3.typeface = typeface
     }
 
     override fun onResume() {
@@ -58,7 +60,11 @@ class SplashActivity : Activity() {
         startActivityForResult(Intent(this@SplashActivity, Pref::class.java), 0)
     }
 
-    public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent) {
+    fun onClickDictionary(v: View) {
+        startActivity(Intent(this@SplashActivity, DictActivity::class.java))
+    }
+
+    public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         val tag = "SplashActivity.onActivityResult"
         //Pref.javaからの戻り値の場合
         if (requestCode == 0) {

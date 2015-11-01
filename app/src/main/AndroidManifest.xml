@@ -40,6 +40,12 @@
             android:label="@string/app_name" />
 
         <activity
+            android:name=".DictActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/app_name"
+            android:noHistory="true" />
+
+        <activity
             android:name=".Score"
             android:screenOrientation="portrait"
             android:label="@string/app_name" />

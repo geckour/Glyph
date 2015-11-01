@@ -25,12 +25,16 @@
         android:title="Minimum Portal level"
         android:summary="@string/min_level"
         android:dialogTitle="Minimum value:0"
+        android:inputType="number"
+        android:digits="012345678"
         android:order="3" />
     <EditTextPreference
         android:key="max_level"
         android:title="Maximum Portal level"
         android:summary="@string/max_level"
         android:dialogTitle="Maximum value:8"
+        android:inputType="number"
+        android:digits="012345678"
         android:order="4" />
     <!--<PreferenceScreen
         android:key="show_scores_view"

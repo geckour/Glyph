@@ -1,37 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
     android:gravity="center">
 
-    <Button
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SETTING"
-        android:id="@+id/button1"
-        android:layout_marginRight="20sp"
-        android:background="@drawable/button"
-        android:textSize="20sp"
-        android:textColor="@color/button_text"
-        android:onClick="onClickSetting"
-        android:fontFamily="\@"
-        android:paddingLeft="15sp"
-        android:paddingRight="15sp"/>
+        android:id="@+id/buttons_base">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SETTING"
+            android:id="@+id/button1"
+            android:layout_marginEnd="20sp"
+            android:background="@drawable/button"
+            android:textSize="20sp"
+            android:textColor="@color/button_text"
+            android:onClick="onClickSetting"
+            android:fontFamily="\@"
+            android:paddingLeft="15sp"
+            android:paddingRight="15sp"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HACK"
+            android:id="@+id/button2"
+            android:layout_marginStart="20sp"
+            android:background="@drawable/button"
+            android:textSize="20sp"
+            android:textColor="@color/button_text"
+            android:onClick="onClickStart"
+            android:fontFamily="\@"
+            android:paddingLeft="15sp"
+            android:paddingRight="15sp"/>
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="HACK"
-        android:id="@+id/button2"
-        android:layout_marginLeft="20sp"
-        android:background="@drawable/button"
-        android:textSize="20sp"
-        android:textColor="@color/button_text"
-        android:onClick="onClickStart"
+        android:text="DICTIONARY"
+        android:id="@+id/button3"
+        android:layout_below="@+id/buttons_base"
+        android:layout_alignEnd="@+id/buttons_base"
+        android:layout_marginTop="25sp"
         android:fontFamily="\@"
-        android:paddingLeft="15sp"
-        android:paddingRight="15sp"/>
+        android:background="@drawable/button"
+        android:textColor="@color/button_text"
+        android:onClick="onClickDictionary"/>
 
-</LinearLayout>
+</RelativeLayout>
