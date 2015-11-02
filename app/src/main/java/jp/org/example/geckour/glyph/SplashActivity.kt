@@ -64,6 +64,12 @@ class SplashActivity : Activity() {
         startActivity(Intent(this@SplashActivity, DictActivity::class.java))
     }
 
+    fun onClickWeakness(v: View) {
+        val intent = Intent(this@SplashActivity, MyActivity::class.java)
+        intent.putExtra("isWeaknessMode", true)
+        startActivity(intent)
+    }
+
     public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         val tag = "SplashActivity.onActivityResult"
         //Pref.javaからの戻り値の場合

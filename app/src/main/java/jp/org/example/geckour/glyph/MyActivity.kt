@@ -1,6 +1,7 @@
 package jp.org.example.geckour.glyph
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -29,6 +30,7 @@ class MyActivity : Activity() {
     internal var viewCount = 0
     internal var receivedLevel = -1
     internal var receivedValue = -1
+    internal var isWeaknessMode = false
     internal var offsetX: Float = 0f
     internal var offsetY: Float = 0f
     internal var scale: Float = 0f
@@ -67,6 +69,9 @@ class MyActivity : Activity() {
         if (intent.getBooleanExtra("isRetry", false)) {
             receivedLevel = intent.getIntExtra("retryLevel", -1)
             receivedValue = intent.getIntExtra("retryValue", -1)
+        }
+        if (intent.getBooleanExtra("isWeaknessMode", false)) {
+            isWeaknessMode = true
         }
         setContentView(R.layout.activity_my)
 
@@ -164,7 +169,7 @@ class MyActivity : Activity() {
         var throughList: Array<ThroughList?>
         var answerThroughList: Array<ThroughList?>
         var difficulty = ArrayList<Difficulty>()
-        var correctStr: ArrayList<String>
+        var correctStr = ArrayList<String>()
         var holdTime: Long = 0
         var nextButtonPoint = arrayOfNulls<Point>(2)
         var retryButtonPoint = arrayOfNulls<Point>(2)
@@ -238,52 +243,9 @@ class MyActivity : Activity() {
             }
             defTime = difficulty[level].time
 
-            var c1 = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null)
-            var c2 = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null)
-            if (qTotal > 1) {
-
-                val c3 = db.query(DBHelper.TABLE_NAME2, null, "level = " + qTotal, null, null, null, null)
-                c3.moveToFirst()
-                val min = c3.getLong(0)
-                c3.moveToLast()
-                val max = c3.getLong(0)
-                randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
-                //int randomVal = 0;
-                c2.moveToPosition(randomVal)
-                Log.v(tag, "randomVal:$randomVal, level:$level")
-                throughList = arrayOfNulls<ThroughList>(qTotal)
-                answerThroughList = arrayOfNulls<ThroughList>(qTotal)
-                val shapesSplit = c2.getString(2).split(",".toRegex()).toTypedArray()
-                for (s in shapesSplit) {
-                    Log.v(tag, "shapesSplit: " + s)
-                }
-                for (i in 0..qTotal - 1) {
-                    throughList[i] = ThroughList()
-                    val c = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null)
-                    c.moveToFirst()
-                    //Log.v(tag, "shaper name: " + c.getString(1));
-                    val dotsSplit = c.getString(c.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
-                    answerThroughList[i] = ThroughList(dotsSplit)
-                    c.close()
-                }
-                correctStr = getCorrectStrings(c2)
-                c3.close()
-            } else {
-                c1.moveToLast()
-                val max = c1.getLong(0)
-                randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
-                //int randomVal = (int)max - 1;
-                Log.v(tag, "randomVal:$randomVal, level:$level")
-                throughList = arrayOfNulls<ThroughList>(qTotal)
-                answerThroughList = arrayOfNulls<ThroughList>(qTotal)
-                throughList[0] = ThroughList()
-                c1.moveToPosition(randomVal)
-                val dotsSplit = c1.getString(c1.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
-                answerThroughList[0] = ThroughList(dotsSplit)
-                correctStr = ArrayList(Arrays.asList("" + c1.getString(c1.getColumnIndex("name"))))
-            }
-            c1.close()
-            c2.close()
+            throughList = arrayOfNulls<ThroughList>(qTotal)
+            answerThroughList = arrayOfNulls<ThroughList>(qTotal)
+            getSequence()
 
             for (i in 0..isThrough.lastIndex) {
                 isThrough[i] = false
@@ -426,6 +388,107 @@ class MyActivity : Activity() {
                 qs = argQs
                 time = argTime
                 bonus = argBonus
+            }
+        }
+
+        fun getSequence() {
+            val tag = "MyView/getSequence"
+
+            if (qTotal > 1) {
+                val l = 12
+                var shapesSplit: Array<String>
+                val cursor = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null)
+
+                if (isWeaknessMode) {
+                    val cursorForWeakness = db.query(DBHelper.TABLE_NAME4, null, "level = $qTotal and total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "$l")
+
+                    val n = cursorForWeakness.count
+                    Log.v(tag, "n: $n")
+                    if (n > 0) {
+                        val r = (Math.random() * n).toInt()
+                        cursorForWeakness.moveToPosition(r)
+                        randomVal = cursorForWeakness.getInt(cursorForWeakness.getColumnIndex("id")) - 1
+                    } else {
+                        val cursorInLevel = db.query(DBHelper.TABLE_NAME2, null, "level = $qTotal", null, null, null, null)
+
+                        cursorInLevel.moveToFirst()
+                        val min = cursorInLevel.getLong(0)
+                        cursorInLevel.moveToLast()
+                        val max = cursorInLevel.getLong(0)
+                        randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
+                        //int randomVal = 0;
+
+                        cursorInLevel.close()
+                    }
+
+                    cursorForWeakness.close()
+                } else {
+                    val cursorInLevel = db.query(DBHelper.TABLE_NAME2, null, "level = $qTotal", null, null, null, null)
+
+                    cursorInLevel.moveToFirst()
+                    val min = cursorInLevel.getLong(0)
+                    cursorInLevel.moveToLast()
+                    val max = cursorInLevel.getLong(0)
+                    randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
+                    //int randomVal = 0;
+
+                    cursorInLevel.close()
+                }
+                cursor.moveToPosition(randomVal)
+                shapesSplit = cursor.getString(2).split(",".toRegex()).toTypedArray()
+                Log.v(tag, "randomVal:$randomVal, level:$level")
+                for (s in shapesSplit) {
+                    Log.v(tag, "shapesSplit: " + s)
+                }
+                correctStr = getCorrectStrings(cursor)
+
+                cursor.close()
+
+                for (i in 0..qTotal - 1) {
+                    throughList[i] = ThroughList()
+                    val cursorInMane = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null)
+                    cursorInMane.moveToFirst()
+                    //Log.v(tag, "shaper name: " + c.getString(1));
+                    val dotsSplit = cursorInMane.getString(cursorInMane.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
+                    answerThroughList[i] = ThroughList(dotsSplit)
+                    cursorInMane.close()
+                }
+            } else {
+                val cursor = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null)
+
+                if (isWeaknessMode) {
+                    val cursorForWeakness = db.query(DBHelper.TABLE_NAME3, null, "total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "5")
+
+                    val n = cursorForWeakness.count
+                    Log.v(tag, "n: $n")
+                    if (n > 0) {
+                        val r = (Math.random() * n).toInt()
+                        cursorForWeakness.moveToPosition(r)
+                        randomVal = cursorForWeakness.getInt(cursorForWeakness.getColumnIndex("id")) - 1
+                    } else {
+                        cursor.moveToLast()
+                        val max = cursor.getLong(0)
+                        randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
+                        //int randomVal = (int)max - 1;
+                        Log.v(tag, "randomVal:$randomVal, level:$level")
+                        throughList[0] = ThroughList()
+                    }
+
+                    cursorForWeakness.close()
+                } else {
+                    cursor.moveToLast()
+                    val max = cursor.getLong(0)
+                    randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
+                    //randomVal = 0
+                    Log.v(tag, "randomVal:$randomVal, level:$level")
+                    throughList[0] = ThroughList()
+                }
+                cursor.moveToPosition(randomVal)
+                val dotsSplit = cursor.getString(cursor.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
+                answerThroughList[0] = ThroughList(dotsSplit)
+                correctStr.add(cursor.getString(cursor.getColumnIndex("name")))
+
+                cursor.close()
             }
         }
 
@@ -785,7 +848,7 @@ class MyActivity : Activity() {
 
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (i in 0..qTotal - 1) {
-                    Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i]!!))
+                    Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i] ?: ThroughList()))
                 }
                 holdTime = now
                 isEndGame = true
@@ -1005,7 +1068,66 @@ class MyActivity : Activity() {
             }
         }
 
-        //var isFirstShowResult = true
+        fun recordResult() {
+            val tag = "MyView/recordResult"
+
+            var correctNum = 0
+            val isCorrect = Array(qTotal, { i -> false })
+            for (i in 0..qTotal - 1) {
+                if (judgeLocus(answerThroughList[i]!!, throughList[i]!!)) {
+                    isCorrect[i] = true
+                    correctNum++
+                }
+            }
+
+            var cursor: Cursor
+            if (qTotal > 1) {
+                cursor = db.query(DBHelper.TABLE_NAME4, null, "id = ${randomVal + 1}", null, null, null, null, null)
+            } else {
+                cursor = db.query(DBHelper.TABLE_NAME3, null, "id = ${randomVal + 1}", null, null, null, null, null)
+            }
+            cursor.moveToFirst()
+
+            var totalNumber = cursor.getInt(cursor.getColumnIndex("total_number"))
+            val contentValues = ContentValues()
+            if (correctNum == qTotal) {
+                contentValues.put("correct_number", if (totalNumber > 0) cursor.getInt(cursor.getColumnIndex("correct_number")) + 1 else 1)
+            } else {
+                contentValues.put("correct_number", if (totalNumber > 0) cursor.getInt(cursor.getColumnIndex("correct_number")) else 0)
+            }
+            contentValues.put("total_number", if (totalNumber > 0) totalNumber + 1 else 1)
+            if (qTotal > 1) {
+                val c = db.query(DBHelper.TABLE_NAME2, arrayOf("sequence"), "id = ${randomVal + 1}", null, null, null, null, null)
+                c.moveToFirst()
+                val shapesSplit = c.getString(0).split(",".toRegex()).toTypedArray()
+                c.close()
+                db.update(DBHelper.TABLE_NAME4, contentValues, "id = ${randomVal + 1}", null)
+                for (i in 0..answerThroughList.lastIndex) {
+                    //TODO: Fix no such column: PERFECTION (code 1): , while compiling: SELECT id FROM shapers WHERE name = PERFECTION
+                    val cursorOnShaper = db.query(DBHelper.TABLE_NAME1, arrayOf("id"), "name = \"${shapesSplit[i]}\"", null, null, null, null)
+                    cursorOnShaper.moveToFirst()
+                    cursor = db.query(DBHelper.TABLE_NAME3, null, "id = ${cursorOnShaper.getInt(0)}", null, null, null, null, null)
+                    cursor.moveToFirst()
+
+                    totalNumber = cursor.getInt(cursor.getColumnIndex("total_number"))
+                    val cv = ContentValues()
+                    if (isCorrect[i]) {
+                        cv.put("correct_number", if (totalNumber > 0) cursor.getInt(cursor.getColumnIndex("correct_number")) + 1 else 1)
+                        Log.v(tag, "correct: ${shapesSplit[i]}")
+                    } else {
+                        cv.put("correct_number", if (totalNumber > 0) cursor.getInt(cursor.getColumnIndex("correct_number")) else 0)
+                        Log.v(tag, "fault: ${shapesSplit[i]}")
+                    }
+                    cv.put("total_number", if (totalNumber > 0) totalNumber + 1 else 1)
+                    db.update(DBHelper.TABLE_NAME3, cv, "id = ${cursor.getInt(0)}", null)
+                    cursorOnShaper.close()
+                }
+            } else {
+                db.update(DBHelper.TABLE_NAME3, contentValues, "id = ${randomVal + 1}", null)
+            }
+            cursor.close()
+        }
+
         fun drawResult(margin: Long, initTime: Long, currentTime: Long, canvas: Canvas) {
             val tag = "drawResult"
 
@@ -1025,7 +1147,7 @@ class MyActivity : Activity() {
                     val x = offsetX / 6
                     val y = offsetY * 2 / 3 - (height / 2 + totalMargin) + i.toFloat() * (hexaRadius + hexaMargin) * 2f
                     val giveOrigin = PointF(x, y)
-                    if (judgeLocus(answerThroughList[i]!!, throughList[i]!!)) {
+                    if (judgeLocus(answerThroughList[i]!!, throughList[i] ?: ThroughList())) {
                         drawColor = blue
                         correctNum++
                     } else {
@@ -1327,6 +1449,7 @@ class MyActivity : Activity() {
                             for (i in 0..qTotal - 1) {
                                 Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i]!!))
                             }
+                            recordResult()
                         }
                     }
                     if (isOnNext) {

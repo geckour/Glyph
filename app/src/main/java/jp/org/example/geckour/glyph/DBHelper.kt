@@ -543,7 +543,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("create table $TABLE_NAME1(id integer primary key autoincrement,name text not null,path text not null);")
         db.execSQL("create table $TABLE_NAME2(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text);")
-        db.execSQL("create table $TABLE_NAME3(id integer primary key autoincrement,sequence text not null,correct_times integer,total_times integer);")
+        db.execSQL("create table $TABLE_NAME3(id integer primary key autoincrement,correct_number integer,total_number integer);")
+        db.execSQL("create table $TABLE_NAME4(id integer primary key autoincrement,level integer not null,correct_number integer,total_number integer);")
 
         db.beginTransaction()
         try {
@@ -570,16 +571,27 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         } finally {
             db.endTransaction()
         }
-        val c: Cursor = db.query(TABLE_NAME2, null, null, null, null, null, null)
+        var c: Cursor = db.query(TABLE_NAME1, null, null, null, null, null, null)
         c.moveToLast()
-        val l = c.getLong(0)
+        var l = c.getLong(0)
         c.moveToFirst()
         for (i in 0..l - 1) {
             val contentValues = ContentValues()
-            contentValues.put("sequence", c.getString(c.getColumnIndex("sequence")))
-            contentValues.put("correct_times", 1)
-            contentValues.put("total_times", -1)
+            contentValues.put("correct_number", 0)
+            contentValues.put("total_number", -1)
             db.insert(TABLE_NAME3, null, contentValues)
+            c.moveToNext()
+        }
+        c = db.query(TABLE_NAME2, null, null, null, null, null, null)
+        c.moveToLast()
+        l = c.getLong(0)
+        c.moveToFirst()
+        for (i in 0..l - 1) {
+            val contentValues = ContentValues()
+            contentValues.put("level", c.getString(c.getColumnIndex("level")))
+            contentValues.put("correct_number", 0)
+            contentValues.put("total_number", -1)
+            db.insert(TABLE_NAME4, null, contentValues)
             c.moveToNext()
         }
     }
@@ -588,6 +600,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME1;")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME2;")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME3;")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME4;")
         onCreate(db)
     }
 
@@ -595,7 +608,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         val DB_NAME = "shaper.db"
         val TABLE_NAME1 = "shapers"
         val TABLE_NAME2 = "sets"
-        val TABLE_NAME3 = "scores"
+        val TABLE_NAME3 = "weakShapers"
+        val TABLE_NAME4 = "weakSets"
         val DB_VERSION = 9
     }
 }
