@@ -416,7 +416,7 @@ class MyActivity : Activity() {
                         cursorInLevel.moveToLast()
                         val max = cursorInLevel.getLong(0)
                         randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
-                        //int randomVal = 0;
+                        //randomVal = 0
 
                         cursorInLevel.close()
                     }
@@ -430,7 +430,7 @@ class MyActivity : Activity() {
                     cursorInLevel.moveToLast()
                     val max = cursorInLevel.getLong(0)
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
-                    //int randomVal = 0;
+                    //randomVal = 24
 
                     cursorInLevel.close()
                 }
@@ -1103,8 +1103,7 @@ class MyActivity : Activity() {
                 c.close()
                 db.update(DBHelper.TABLE_NAME4, contentValues, "id = ${randomVal + 1}", null)
                 for (i in 0..answerThroughList.lastIndex) {
-                    //TODO: Fix no such column: PERFECTION (code 1): , while compiling: SELECT id FROM shapers WHERE name = PERFECTION
-                    val cursorOnShaper = db.query(DBHelper.TABLE_NAME1, arrayOf("id"), "name = \"${shapesSplit[i]}\"", null, null, null, null)
+                    val cursorOnShaper = db.rawQuery("select id from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i]}';", null)
                     cursorOnShaper.moveToFirst()
                     cursor = db.query(DBHelper.TABLE_NAME3, null, "id = ${cursorOnShaper.getInt(0)}", null, null, null, null, null)
                     cursor.moveToFirst()
@@ -1297,6 +1296,8 @@ class MyActivity : Activity() {
         }
 
         fun setCollision(x0: Float, y0: Float, x1: Float, y1: Float) {
+            val tag = "MiView/setCollision"
+
             var collisionDot = -1
             val tol = 35 * scale
             for (i in 0..10) {
@@ -1344,6 +1345,7 @@ class MyActivity : Activity() {
                 if (doVibrate) {
                     val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                     vibrator.vibrate(30)
+                    //Log.v(tag, "vibrate")
                 }
                 previousDot = collisionDot
             }
