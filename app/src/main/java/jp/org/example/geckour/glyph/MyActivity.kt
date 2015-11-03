@@ -323,15 +323,6 @@ class MyActivity : Activity() {
                         particle.move()
                     }
                 }
-                /*
-                if (!isStartGame || isReleased) {
-                    paint.color = Color.WHITE
-                    paint.strokeWidth = 3f
-                    paint.style = Paint.Style.STROKE
-                    canvas.drawPath(locusPath, paint)
-                    paint.strokeWidth = 0f
-                }
-                */
             }
 
             if (isStartGame && doShow) {
@@ -1345,7 +1336,6 @@ class MyActivity : Activity() {
                 if (doVibrate) {
                     val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                     vibrator.vibrate(30)
-                    //Log.v(tag, "vibrate")
                 }
                 previousDot = collisionDot
             }

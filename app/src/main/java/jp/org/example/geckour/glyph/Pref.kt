@@ -128,6 +128,7 @@ class Pref : android.preference.PreferenceActivity() {
         }
 
         fun isMinLevelChanged(preference: Preference, newValue: Any): Boolean {
+            val editTextPreference = preference as EditTextPreference
             val level: Int
             var isException = false
             try {
@@ -143,8 +144,10 @@ class Pref : android.preference.PreferenceActivity() {
             if (-1 < level && level < 9) {
                 if (level > maxLevel) {
                     sp?.edit()?.putString("min_level", maxLevel.toString())?.apply()
+                    editTextPreference.text = maxLevel.toString()
                     preference.summary = maxLevel.toString()
                     sp?.edit()?.putString("max_level", level.toString())?.apply()
+                    maxLevelPref?.text = level.toString()
                     maxLevelPref?.summary = level.toString()
                     return false
                 } else {
@@ -169,6 +172,7 @@ class Pref : android.preference.PreferenceActivity() {
         }
 
         fun isMaxLevelChanged(preference: Preference, newValue: Any): Boolean {
+            val editTextPreference = preference as EditTextPreference
             val level: Int
             var isException = false
             try {
@@ -184,8 +188,10 @@ class Pref : android.preference.PreferenceActivity() {
             if (-1 < level && level < 9) {
                 if (level < minLevel) {
                     sp?.edit()?.putString("min_level", level.toString())?.apply()
+                    minLevelPref?.text = level.toString()
                     minLevelPref?.summary = level.toString()
                     sp?.edit()?.putString("max_level", minLevel.toString())?.apply()
+                    editTextPreference.text = minLevel.toString()
                     preference.summary = minLevel.toString()
                     return false
                 } else {
