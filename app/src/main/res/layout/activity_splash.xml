@@ -14,21 +14,6 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:text="SETTING"
-            android:id="@+id/button1"
-            android:background="@drawable/button"
-            android:textSize="20sp"
-            android:textColor="@color/button_text"
-            android:onClick="onClickSetting"
-            android:fontFamily="\@"
-            android:layout_marginStart="@dimen/splash_side_margin"
-            android:paddingLeft="@dimen/button_padding"
-            android:paddingRight="@dimen/button_padding"/>
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:text="HACK"
             android:id="@+id/button2"
@@ -37,7 +22,7 @@
             android:textColor="@color/button_text"
             android:onClick="onClickStart"
             android:fontFamily="\@"
-            android:layout_marginEnd="@dimen/splash_side_margin"
+            android:layout_marginEnd="@dimen/splash_horizontal_margin"
             android:paddingLeft="@dimen/button_padding"
             android:paddingRight="@dimen/button_padding"/>
 
@@ -61,12 +46,29 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:text="OPT"
+        android:id="@+id/button1"
+        android:background="@drawable/button"
+        android:textSize="20sp"
+        android:textColor="@color/button_text"
+        android:onClick="onClickSetting"
+        android:fontFamily="\@"
+        android:layout_marginStart="@dimen/splash_horizontal_margin"
+        android:layout_marginBottom="@dimen/splash_vertical_margin"
+        android:paddingLeft="@dimen/button_padding"
+        android:paddingRight="@dimen/button_padding"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="DICTIONARY"
         android:id="@+id/button3"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginEnd="@dimen/splash_side_margin"
-        android:layout_marginBottom="@dimen/splash_side_margin"
+        android:layout_marginEnd="@dimen/splash_horizontal_margin"
+        android:layout_marginBottom="@dimen/splash_vertical_margin"
         android:paddingLeft="@dimen/button_padding"
         android:paddingRight="@dimen/button_padding"
         android:fontFamily="\@"
