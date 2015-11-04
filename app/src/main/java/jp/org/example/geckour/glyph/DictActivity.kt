@@ -38,7 +38,7 @@ class DictActivity : Activity() {
 
         val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
         t?.setScreenName("DictActivity")
-        t?.send(HitBuilders.AppViewBuilder().build())
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     internal var view: DictView? = null
@@ -97,7 +97,6 @@ class DictActivity : Activity() {
         var initTime: Long = 0
         var pressButtonTime: Long = 0
         var doVibrate = false
-        var isEndInput = false
         var isPressedButton = false
         var resultId = ArrayList<Int>()
 
@@ -107,7 +106,6 @@ class DictActivity : Activity() {
         var now: Long = 0
         var throughList: ThroughList = ThroughList()
         var holdTime: Long = 0
-        var nextButtonPoint = arrayOfNulls<Point>(2)
         var previousDot = -1
 
         init {
@@ -185,7 +183,7 @@ class DictActivity : Activity() {
             val tag = "DictView/onDraw"
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
-            typeface = Typeface.createFromAsset(getContext().assets, "Coda-Regular.ttf")
+            typeface = Typeface.createFromAsset(context.assets, "Coda-Regular.ttf")
             paint.setTypeface(typeface)
 
             setGrainAlpha(releaseTime)
@@ -418,35 +416,6 @@ class DictActivity : Activity() {
                         }
                     }
                 }
-            }
-        }
-
-        var lastTime: Long = -1
-        var interTime: Long = -1
-        var frames = 0
-        var sumTimes = 0
-        var fps = -1f
-        fun drawFPS(canvas: Canvas) {
-            val nowTime = System.currentTimeMillis()
-            if (lastTime == -1.toLong()) {
-                lastTime = nowTime
-                interTime = lastTime
-            } else {
-                sumTimes += (1000f / (nowTime - lastTime)).toInt()
-                lastTime = nowTime
-                frames++
-            }
-            if (nowTime - interTime > 200) {
-                fps = (sumTimes / frames).toFloat()
-
-                interTime = nowTime
-                frames = 0
-                sumTimes = 0
-            }
-            if (fps > -1) {
-                paint.textSize = 30 * scale
-                paint.textAlign = Paint.Align.LEFT
-                canvas.drawText("FPS:" + "%.2f".format(fps), 0f, offsetY * 2 - 120 * scale, paint)
             }
         }
 

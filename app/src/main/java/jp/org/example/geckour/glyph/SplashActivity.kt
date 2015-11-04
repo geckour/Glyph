@@ -23,7 +23,7 @@ class SplashActivity : Activity() {
 
         val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
         t?.setScreenName("SplashActivity")
-        t?.send(HitBuilders.AppViewBuilder().build())
+        t?.send(HitBuilders.ScreenViewBuilder().build())
 
         if (sp?.getString("min_level", null) == null) {
             sp?.edit()?.putString("min_level", "0")?.apply()

@@ -37,7 +37,7 @@ class Pref : android.preference.PreferenceActivity() {
 
         val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
         t?.setScreenName("PreferenceActivity")
-        t?.send(HitBuilders.AppViewBuilder().build())
+        t?.send(HitBuilders.ScreenViewBuilder().build())
 
     }
 

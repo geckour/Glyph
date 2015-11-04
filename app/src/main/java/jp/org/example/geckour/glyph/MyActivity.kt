@@ -77,7 +77,7 @@ class MyActivity : Activity() {
 
         val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
         t?.setScreenName("MyActivity")
-        t?.send(HitBuilders.AppViewBuilder().build())
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     internal var view: MyView? = null
@@ -146,7 +146,7 @@ class MyActivity : Activity() {
         var radius: Double = 0.toDouble()
         var dotDiam: Int = 0
         var grainR: Float = 0f
-        var isThrough = BooleanArray(11)
+        var isThrough = Array(11, { i -> false })
         var qTotal = 0
         var qNum = 0
         var defTime = 20000
@@ -174,7 +174,7 @@ class MyActivity : Activity() {
         var nextButtonPoint = arrayOfNulls<Point>(2)
         var retryButtonPoint = arrayOfNulls<Point>(2)
         var previousDot = -1
-        var passTime: LongArray
+        var passTime: Array<Long>
 
         init {
             holder.addCallback(this)
@@ -204,8 +204,7 @@ class MyActivity : Activity() {
 
             var giveTime = 20000
             var giveQs = 1
-            //int giveBonus = 40;
-            var giveBonus = 38
+            var giveBonus: Int
             for (i in 0..8) {
                 if (i > 3) {
                     giveTime -= 1000
@@ -213,20 +212,13 @@ class MyActivity : Activity() {
                 if (i == 2 || i == 3 || i == 6 || i == 8) {
                     giveQs++
                 }
-                /*if (i > 1) {
-                    giveBonus += 5;
-                }*/
-                if (i == 2) {
-                    giveBonus = 60
-                }
-                if (i == 3) {
-                    giveBonus = 85
-                }
-                if (i == 6) {
-                    giveBonus = 120
-                }
-                if (i == 8) {
-                    giveBonus = 162
+                when(i) {
+                    in 0..1 -> giveBonus = 38
+                    2 -> giveBonus = 60
+                    in 3..5 -> giveBonus = 85
+                    in 6..7 -> giveBonus = 120
+                    8 -> giveBonus = 162
+                    else -> giveBonus = 0
                 }
                 difficulty.add(i, Difficulty(giveQs, giveTime, giveBonus))
             }
@@ -236,20 +228,13 @@ class MyActivity : Activity() {
             level = if (receivedLevel > -1) receivedLevel else (Math.random() * (max - min + 1) + min).toInt()
             //level = 8;
             qTotal = difficulty[level].qs
+            passTime = Array(qTotal, { i -> -1L })
             Log.v(tag, "qTotal:" + qTotal)
-            passTime = LongArray(qTotal)
-            for (i in 0..qTotal - 1) {
-                passTime[i] = -1
-            }
             defTime = difficulty[level].time
 
             throughList = arrayOfNulls<ThroughList>(qTotal)
             answerThroughList = arrayOfNulls<ThroughList>(qTotal)
             getSequence()
-
-            for (i in 0..isThrough.lastIndex) {
-                isThrough[i] = false
-            }
 
             grainImg = BitmapFactory.decodeResource(resources, R.drawable.particle)
 
@@ -295,7 +280,7 @@ class MyActivity : Activity() {
             val tag = "MyView/onDraw"
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
-            typeface = Typeface.createFromAsset(getContext().assets, "Coda-Regular.ttf")
+            typeface = Typeface.createFromAsset(context.assets, "Coda-Regular.ttf")
             paint.setTypeface(typeface)
 
             if (drawCountView) {
@@ -718,7 +703,7 @@ class MyActivity : Activity() {
                 }
             }
         }
-
+        /*
         var lastTime: Long = -1
         var interTime: Long = -1
         var frames = 0
@@ -747,7 +732,7 @@ class MyActivity : Activity() {
                 canvas.drawText("FPS:" + "%.2f".format(fps), 0f, offsetY * 2 - 120 * scale, paint)
             }
         }
-
+        */
         fun getCorrectStrings(c: Cursor): ArrayList<String> {
             val strings = ArrayList(Arrays.asList(*c.getString(c.getColumnIndex("sequence")).split(",".toRegex()).toTypedArray()))
             val correctStrings = if (c.isNull(c.getColumnIndex("correctSeq"))) null else ArrayList(Arrays.asList(*c.getString(c.getColumnIndex("correctSeq")).split(",".toRegex()).toTypedArray()))
@@ -817,7 +802,7 @@ class MyActivity : Activity() {
             canvas.drawText("HACK:" + viewCount, x, y, paint)
         }
 
-        fun makeHexagon(origin: PointF, r: Float): Path {
+        fun hexagonPath(origin: PointF, r: Float): Path {
             val path = Path()
 
             for (i in 0..6) {
@@ -898,53 +883,53 @@ class MyActivity : Activity() {
                         in 0..qNum - 1 -> {
                             paint.setShader(lgNormal)
                             paint.style = Paint.Style.FILL
-                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                             paint.setShader(null)
 
                             paint.strokeJoin = Paint.Join.BEVEL
                             paint.color = Color.argb(140, r, g, b)
                             paint.strokeWidth = 2f
                             paint.style = Paint.Style.STROKE
-                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                             paint.strokeWidth = 0f
                         }
                         qNum -> {
                             if ((isReleased && throughList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
                                 paint.setShader(lgNormal)
                                 paint.style = Paint.Style.FILL
-                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                                 paint.setShader(null)
 
                                 paint.strokeJoin = Paint.Join.BEVEL
                                 paint.color = Color.argb(140, r, g, b)
                                 paint.strokeWidth = 2f
                                 paint.style = Paint.Style.STROKE
-                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                                 paint.strokeWidth = 0f
                             } else {
                                 paint.setShader(lgStrong)
                                 paint.style = Paint.Style.FILL
-                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                                 paint.setShader(null)
 
                                 paint.strokeJoin = Paint.Join.BEVEL
                                 paint.color = Color.rgb(r, g, b)
                                 paint.strokeWidth = 2f
                                 paint.style = Paint.Style.STROKE
-                                canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                                 paint.strokeWidth = 0f
                             }
                         }
                         else -> {
                             paint.color = Color.BLACK
                             paint.style = Paint.Style.FILL
-                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            canvas.drawPath(hexagonPath(origin, hexRadius), paint)
 
                             paint.strokeJoin = Paint.Join.BEVEL
                             paint.color = Color.argb(80, r, g, b)
                             paint.strokeWidth = 2f
                             paint.style = Paint.Style.STROKE
-                            canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                            canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                             paint.strokeWidth = 0f
                         }
                     }
@@ -952,25 +937,25 @@ class MyActivity : Activity() {
                     if (i.toLong() == (currentTime - marginTime) / drawAnswerLength && currentTime > marginTime) {
                         paint.setShader(lgStrong)
                         paint.style = Paint.Style.FILL
-                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                         paint.setShader(null)
 
                         paint.strokeJoin = Paint.Join.BEVEL
                         paint.color = Color.rgb(r, g, b)
                         paint.strokeWidth = 2f
                         paint.style = Paint.Style.STROKE
-                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                         paint.strokeWidth = 0f
                     } else {
                         paint.color = Color.BLACK
                         paint.style = Paint.Style.FILL
-                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        canvas.drawPath(hexagonPath(origin, hexRadius), paint)
 
                         paint.strokeJoin = Paint.Join.BEVEL
                         paint.color = Color.argb(140, r, g, b)
                         paint.strokeWidth = 2f
                         paint.style = Paint.Style.STROKE
-                        canvas.drawPath(makeHexagon(origin, hexRadius), paint)
+                        canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                         paint.strokeWidth = 0f
                     }
                 }
@@ -1093,7 +1078,7 @@ class MyActivity : Activity() {
                 val shapesSplit = c.getString(0).split(",".toRegex()).toTypedArray()
                 c.close()
                 db.update(DBHelper.TABLE_NAME4, contentValues, "id = ${randomVal + 1}", null)
-                for (i in 0..answerThroughList.lastIndex) {
+                for (i in answerThroughList.indices) {
                     val cursorOnShaper = db.rawQuery("select id from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i]}';", null)
                     cursorOnShaper.moveToFirst()
                     cursor = db.query(DBHelper.TABLE_NAME3, null, "id = ${cursorOnShaper.getInt(0)}", null, null, null, null, null)
@@ -1146,11 +1131,11 @@ class MyActivity : Activity() {
 
                     paint.color = Color.argb(80, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor))
                     paint.style = Paint.Style.FILL
-                    canvas.drawPath(makeHexagon(giveOrigin, hexaRadius), paint)
+                    canvas.drawPath(hexagonPath(giveOrigin, hexaRadius), paint)
 
                     paint.color = Color.argb(255, Color.red(drawColor), Color.green(drawColor), Color.blue(drawColor))
                     paint.style = Paint.Style.STROKE
-                    canvas.drawPath(makeHexagon(giveOrigin, hexaRadius), paint)
+                    canvas.drawPath(hexagonPath(giveOrigin, hexaRadius), paint)
 
                     for (j in answerThroughList[i]!!.dots.indices) {
                         if (j == 0) {
@@ -1232,11 +1217,11 @@ class MyActivity : Activity() {
             val answerPaths = ArrayList<IntArray>()
             var passedPaths = ArrayList<IntArray>()
 
-            for (i in 0..answer.dots.size - 1 - 1) {
+            for (i in 0..answer.dots.lastIndex - 1) {
                 val path = intArrayOf(answer.dots[i], answer.dots[i + 1])
                 answerPaths.add(path)
             }
-            for (i in 0..through.dots.size - 1 - 1) {
+            for (i in 0..through.dots.lastIndex - 1) {
                 val path = intArrayOf(through.dots[i], through.dots[i + 1])
                 passedPaths.add(path)
             }
