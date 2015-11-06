@@ -212,15 +212,7 @@ class MyActivity : Activity() {
                 if (i == 2 || i == 3 || i == 6 || i == 8) {
                     giveQs++
                 }
-                when(i) {
-                    in 0..1 -> giveBonus = 38
-                    2 -> giveBonus = 60
-                    in 3..5 -> giveBonus = 85
-                    in 6..7 -> giveBonus = 120
-                    8 -> giveBonus = 162
-                    else -> giveBonus = 0
-                }
-                difficulty.add(i, Difficulty(giveQs, giveTime, giveBonus))
+                difficulty.add(i, Difficulty(giveQs, giveTime))
             }
             gameMode = Integer.parseInt(sp?.getString("gamemode", "0") ?: "0")
             doVibrate = sp?.getBoolean("doVibrate", false) ?: false
@@ -355,15 +347,13 @@ class MyActivity : Activity() {
             }
         }
 
-        internal inner class Difficulty(argQs: Int, argTime: Int, argBonus: Int) {
+        internal inner class Difficulty(argQs: Int, argTime: Int) {
             var qs = 0
             var time = 0
-            var bonus = 0
 
             init {
                 qs = argQs
                 time = argTime
-                bonus = argBonus
             }
         }
 
@@ -462,6 +452,7 @@ class MyActivity : Activity() {
                 cursor.moveToPosition(randomVal)
                 val dotsSplit = cursor.getString(cursor.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
                 answerThroughList[0] = ThroughList(dotsSplit)
+                throughList[0] = ThroughList()
                 correctStr.add(cursor.getString(cursor.getColumnIndex("name")))
 
                 cursor.close()
@@ -1159,22 +1150,6 @@ class MyActivity : Activity() {
                         canvas.drawText("${passTime[i] / 100}:${passTime[i] % 100}", offsetX * 2 - 5 * scale, giveOrigin.y + 20 * scale, paint)
                     }
                 }
-                /*if (isFirstShowResult) {
-                    Cursor cursor = db.query(DBHelper.TABLE_NAME3, null, "id = " + (randomVal + 1), null, null, null, null, null);
-                    cursor.moveToFirst();
-                    int totalTimes = cursor.getInt(cursor.getColumnIndex("total_times"));
-                    ContentValues contentValues = new ContentValues();
-                    if (correctNum == qTotal) {
-                        contentValues.put("correct_times", totalTimes > -1 ? cursor.getInt(cursor.getColumnIndex("correct_times")) + 1 : 1);
-                        contentValues.put("total_times", totalTimes > -1 ? totalTimes + 1 : 1);
-                    } else {
-                        contentValues.put("correct_times", totalTimes > -1 ? cursor.getInt(cursor.getColumnIndex("correct_times")) : 0);
-                        contentValues.put("total_times", totalTimes > -1 ? totalTimes + 1 : 1);
-                    }
-                    cursor.close();
-                    db.update(DBHelper.TABLE_NAME3, contentValues, "id = " + (randomVal + 1), null);
-                    isFirstShowResult = false;
-                }*/
 
                 paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
                 paint.textSize = 40 * scale
@@ -1183,13 +1158,35 @@ class MyActivity : Activity() {
                 canvas.drawText(getText(R.string.bonus_speed).toString(), offsetX, offsetY * 5 / 3, paint)
                 paint.color = Color.WHITE
                 paint.textSize = 120 * scale
-                canvas.drawText("${Math.round((difficulty[level].bonus).toDouble() * correctNum / qTotal)}%", offsetX, offsetY * 5 / 3 - 80 * scale, paint)
-                if (correctNum == qTotal) {
-                    canvas.drawText("${Math.round((upTime * 1000).toDouble() / defTime)}%", offsetX, offsetY * 2 - 80 * scale, paint)
-                } else {
-                    canvas.drawText("0%", offsetX, offsetY * 2 - 80 * scale, paint)
-                }
+                canvas.drawText(calcBonus(level, false, correctNum.toLong(), null) + "%", offsetX, offsetY * 5 / 3 - 80 * scale, paint)
+                canvas.drawText(calcBonus(level, true, correctNum.toLong(), upTime) + "%", offsetX, offsetY * 2 - 80 * scale, paint)
             }
+        }
+
+        fun calcBonus(level: Int, isSpeed: Boolean, correctNum: Long, time: Long?): String {
+            var bonus: Long
+            val total = difficulty[level].qs.toLong()
+            val isClearAll = total == correctNum
+            if (isSpeed) {
+                if (isClearAll) {
+                    bonus = Math.round((time ?: 0) * 1000.0 / difficulty[level].time)
+                } else {
+                    bonus = 0L
+                }
+            } else if (isClearAll) {
+                when (level) {
+                    in 0..1 -> bonus = 38
+                    2 -> bonus = 60
+                    in 3..5 -> bonus = 85
+                    in 6..7 -> bonus = 120
+                    8 -> bonus = 162
+                    else -> bonus = 0
+                }
+                bonus = Math.round(bonus.toDouble() * correctNum / difficulty[level].qs)
+            } else {
+                bonus = correctNum * 10;
+            }
+            return "$bonus";
         }
 
         fun normalizePaths(paths: ArrayList<IntArray>): ArrayList<IntArray> {

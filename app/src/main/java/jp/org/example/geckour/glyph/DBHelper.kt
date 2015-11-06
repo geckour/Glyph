@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.database.sqlite.SQLiteStatement
+import android.util.Log
 
 class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, null, DBHelper.DB_VERSION) {
 
@@ -541,10 +542,10 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
     )
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("create table $TABLE_NAME1(id integer primary key autoincrement,name text not null,path text not null);")
-        db.execSQL("create table $TABLE_NAME2(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text);")
-        db.execSQL("create table $TABLE_NAME3(id integer primary key autoincrement,correct_number integer,total_number integer);")
-        db.execSQL("create table $TABLE_NAME4(id integer primary key autoincrement,level integer not null,correct_number integer,total_number integer);")
+        db.execSQL("create table if not exists $TABLE_NAME1(id integer primary key autoincrement,name text not null,path text not null);")
+        db.execSQL("create table if not exists $TABLE_NAME2(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text);")
+        db.execSQL("create table if not exists $TABLE_NAME3(id integer primary key autoincrement,name text not null,correct_number integer,total_number integer);")
+        db.execSQL("create table if not exists $TABLE_NAME4(id integer primary key autoincrement,level integer not null,sequence text not null,correct_number integer,total_number integer);")
 
         db.beginTransaction()
         try {
@@ -572,23 +573,21 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
             db.endTransaction()
         }
         var c: Cursor = db.query(TABLE_NAME1, null, null, null, null, null, null)
-        c.moveToLast()
-        var l = c.getLong(0)
         c.moveToFirst()
-        for (i in 0..l - 1) {
+        while (!c.isAfterLast) {
             val contentValues = ContentValues()
+            contentValues.put("name", c.getString(c.getColumnIndex("name")))
             contentValues.put("correct_number", 0)
             contentValues.put("total_number", -1)
             db.insert(TABLE_NAME3, null, contentValues)
             c.moveToNext()
         }
         c = db.query(TABLE_NAME2, null, null, null, null, null, null)
-        c.moveToLast()
-        l = c.getLong(0)
         c.moveToFirst()
-        for (i in 0..l - 1) {
+        while (!c.isAfterLast) {
             val contentValues = ContentValues()
             contentValues.put("level", c.getString(c.getColumnIndex("level")))
+            contentValues.put("sequence", c.getString(c.getColumnIndex("sequence")))
             contentValues.put("correct_number", 0)
             contentValues.put("total_number", -1)
             db.insert(TABLE_NAME4, null, contentValues)
@@ -597,11 +596,54 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVer: Int, newVer: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME1;")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME2;")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME3;")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME4;")
+        val tag = "DBHelper.onUpgrade"
+        db.execSQL("drop table if exists $TABLE_NAME1;")
+        db.execSQL("drop table if exists $TABLE_NAME2;")
         onCreate(db)
+        //TODO: TABLE_NAME3とTABLE_NAME4への変更箇所修正処理
+        val cursorTable3 = db.rawQuery("select $TABLE_NAME1.id, $TABLE_NAME1.name, correct_number, total_number from $TABLE_NAME1 left outer join $TABLE_NAME3 on $TABLE_NAME1.name", null)
+        cursorTable3.moveToFirst()
+        val cursorTable4 = db.rawQuery("select $TABLE_NAME2.id, $TABLE_NAME2.level, $TABLE_NAME2.sequence, correct_number, total_number from $TABLE_NAME2 left outer join $TABLE_NAME4 on $TABLE_NAME2.sequence", null)
+        cursorTable4.moveToFirst()
+        db.execSQL("drop table if exists $TABLE_NAME3;")
+        db.execSQL("drop table if exists $TABLE_NAME4;")
+        onCreate(db)
+        while (!cursorTable3.isAfterLast) {
+            val name = cursorTable3.getInt(cursorTable3.getColumnIndex("name"))
+            val correct_number: Int
+            try {
+                correct_number = cursorTable3.getInt(cursorTable3.getColumnIndex("correct_number"))
+            } catch(e: Exception) {
+                correct_number = 0
+            }
+            val total_number: Int
+            try {
+                total_number = cursorTable3.getInt(cursorTable3.getColumnIndex("total_number"))
+            } catch(e: Exception) {
+                total_number = -1
+            }
+            db.execSQL("insert into $TABLE_NAME3(name, correct_number, total_number) values($name, $correct_number, $total_number)")
+            cursorTable3.moveToNext()
+        }
+        while (!cursorTable4.isAfterLast) {
+            val level = cursorTable4.getInt(cursorTable4.getColumnIndex("level"))
+            val sequence = cursorTable4.getInt(cursorTable4.getColumnIndex("sequence"))
+            val correct_number: Int
+            try {
+                correct_number = cursorTable4.getInt(cursorTable4.getColumnIndex("correct_number"))
+            } catch(e: Exception) {
+                correct_number = 0
+            }
+            val total_number: Int
+            try {
+                total_number = cursorTable4.getInt(cursorTable4.getColumnIndex("total_number"))
+            } catch(e: Exception) {
+                total_number = -1
+            }
+            db.execSQL("insert into $TABLE_NAME4(level, sequence, correct_number, total_number) values($level, $sequence, $correct_number, $total_number)")
+            cursorTable4.moveToNext()
+        }
+        Log.v(tag, "done")
     }
 
     companion object {
@@ -613,5 +655,3 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         val DB_VERSION = 9
     }
 }
-
-

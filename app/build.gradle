@@ -8,8 +8,8 @@ android {
         applicationId "jp.org.example.geckour.glyph"
         minSdkVersion 17
         targetSdkVersion 23
-        versionCode 24
-        versionName "2.0.1"
+        versionCode 26
+        versionName "2.0.3"
     }
     buildTypes {
         release {
