@@ -151,8 +151,8 @@ class MyActivity : Activity() {
         var qNum = 0
         var defTime = 20000
         var initTime: Long = 0
-        var drawAnswerLength = 1400
-        var marginTime: Long = 800
+        var drawAnswerLength = 1300
+        var marginTime: Long = 700
         var pressButtonTime: Long = 0
         var isFirstTimeUp = true
         var doVibrate = false
@@ -557,9 +557,10 @@ class MyActivity : Activity() {
         }
 
         internal inner class Particle(var x0: Float, var y0: Float, val canvas: Canvas) {
+            val tag = "MyActivity.Particle"
             var grain = ArrayList<Grain>()
             var phase = 0
-            var moveFrames: Long = 400
+            var moveFrames: Long = 300
             var initFrame: Long = 0
             var v = 0.15
 
@@ -574,67 +575,66 @@ class MyActivity : Activity() {
                 val diffFrames = System.currentTimeMillis() - initFrame
                 if (diffFrames > moveFrames || isReleased || !isStartGame) phase = 1
 
-                if (phase == 0) {
-                    val param = (moveFrames - diffFrames) / (moveFrames * 1.0f)
-                    grain[0].x = grain[0].step0.x + grain[0].diff.x * param
-                    grain[0].y = grain[0].step0.y + grain[0].diff.y * param
-                    grain[1].x = grain[1].step0.x + grain[1].diff.x * param
-                    grain[1].y = grain[1].step0.y + grain[1].diff.y * param
-                    grain[2].x = grain[2].step0.x + grain[2].diff.x * param
-                    grain[2].y = grain[2].step0.y + grain[2].diff.y * param
-                }
-                if (phase == 1) {
-                    var param = Math.cos(grain[0].a0)
-                    grain[0].x += (Math.cos(grain[0].a1) * grain[0].circleR * param).toFloat()
-                    grain[0].y += (Math.sin(grain[0].a1) * grain[0].circleR * param).toFloat()
-                    grain[0].a0 += v
-                    param = Math.cos(grain[1].a0)
-                    grain[1].x += (Math.cos(grain[1].a1) * grain[1].circleR * param).toFloat()
-                    grain[1].y += (Math.sin(grain[1].a1) * grain[1].circleR * param).toFloat()
-                    grain[1].a0 += v
-                    param = Math.cos(grain[2].a0)
-                    grain[2].x += (Math.cos(grain[2].a1) * grain[2].circleR * param).toFloat()
-                    grain[2].y += (Math.sin(grain[2].a1) * grain[2].circleR * param).toFloat()
-                    grain[2].a0 += v
+                when (phase) {
+                    0 -> {
+                        val param = (moveFrames - diffFrames) / (moveFrames.toFloat())
+                        for (i in grain.indices) {
+                            grain[i].x = grain[i].step1.x + grain[i].diff.x * param
+                            grain[i].y = grain[i].step1.y + grain[i].diff.y * param
+                        }
+                    }
+                    1 -> {
+                        for (i in grain.indices) {
+                            val param = Math.cos(grain[i].a0)
+                            grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
+                            grain[i].y += (Math.sin(grain[i].a1) * grain[i].circleR * param).toFloat()
+                            grain[i].a0 += v
+                        }
+                    }
                 }
                 draw()
             }
 
             internal inner class Grain(x: Float, y: Float) {
-                var x: Float = 0f
-                var y: Float = 0f
+                var x: Float
+                var y: Float
                 var origin: PointF = PointF()
-                var step0: PointF = PointF()
                 var step1: PointF = PointF()
                 var diff: PointF = PointF()
-                var a0 = Math.random() * Math.PI * 2.0
-                var a1 = Math.random() * Math.PI * 2.0
+                val pi2 = Math.PI * 2.0
+                var a0 = Math.random() * pi2
+                val a1 = Math.random() * pi2
                 var circleR = Math.random() * 0.5 + 0.7
 
                 init {
+                    //タッチした点
                     origin.x = x
                     origin.y = y
+                    val margin = Math.random() * offsetX * 0.05
 
-                    var blurR = Math.random() * offsetX * 0.05
-                    var blurA = Math.random() * Math.PI * 2.0
+                    //収束への出発点
+                    var blurR = offsetX * 0.4 * Math.random() + margin
+                    var blurA = Math.random() * pi2
+                    var step0: PointF = PointF()
                     step0.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
                     step0.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
 
-
-                    blurR = offsetX * 0.4 + Math.random() * offsetX * 0.05
-                    blurA = Math.random() * Math.PI * 2.0
+                    //収束点
+                    blurR = margin
+                    blurA = Math.random() * pi2
                     step1.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
                     step1.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
 
-                    diff.x = step1.x - step0.x
-                    diff.y = step1.y - step0.y
+                    //収束までの距離
+                    diff.x = step0.x - step1.x
+                    diff.y = step0.y - step1.y
 
                     if (isReleased || !isStartGame) {
-                        this.x = step0.x
-                        this.y = step0.y
-                    } else {
                         this.x = step1.x
                         this.y = step1.y
+                    } else {
+                        this.x = step0.x
+                        this.y = step0.y
                     }
                 }
             }

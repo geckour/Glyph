@@ -6,4 +6,6 @@
 /build
 *.hprof
 /Screenshot*.png
+/ScreenRecord*.mp4
 /device*.png
+/device*.mp4
