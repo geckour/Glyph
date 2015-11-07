@@ -5,3 +5,5 @@
 .DS_Store
 /build
 *.hprof
+/Screenshot*.png
+/device*.png

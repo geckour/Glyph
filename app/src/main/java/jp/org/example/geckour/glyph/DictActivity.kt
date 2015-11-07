@@ -166,17 +166,15 @@ class DictActivity : Activity() {
         public fun draw() {
             val tag = "DictView/draw"
             var canvas: Canvas? = null
-            while (canvas == null) {
-                try {
-                    canvas = holder.lockCanvas()
-                } catch (e: IllegalStateException) {
-                    canvas = null
-                    Log.e(tag, e.message)
-                }
+            try {
+                canvas = holder.lockCanvas()
+                this.canvas = canvas
+                onDraw(canvas)
+            } catch (e: IllegalStateException) {
+                Log.e(tag, e.message)
+            } finally {
+                if (canvas != null) holder.unlockCanvasAndPost(canvas)
             }
-            this.canvas = canvas
-            onDraw(canvas)
-            holder.unlockCanvasAndPost(canvas)
         }
 
         public override fun onDraw(canvas: Canvas) {
@@ -645,7 +643,7 @@ class DictActivity : Activity() {
                         memY = currentY
                     }
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL //リリース
+                MotionEvent.ACTION_UP //リリース
                 -> {
                     isReleased = true
                     var list = ""
@@ -661,6 +659,8 @@ class DictActivity : Activity() {
                         resultId = searchIdFromDB()
                     }
                 }
+                MotionEvent.ACTION_CANCEL
+                -> {}
             }
             return true
         }

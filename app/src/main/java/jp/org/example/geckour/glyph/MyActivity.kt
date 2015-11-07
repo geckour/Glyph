@@ -204,7 +204,6 @@ class MyActivity : Activity() {
 
             var giveTime = 20000
             var giveQs = 1
-            var giveBonus: Int
             for (i in 0..8) {
                 if (i > 3) {
                     giveTime -= 1000
@@ -255,17 +254,15 @@ class MyActivity : Activity() {
         public fun draw() {
             val tag = "MyView/draw"
             var canvas: Canvas? = null
-            while (canvas == null) {
-                try {
-                    canvas = holder.lockCanvas()
-                } catch (e: IllegalStateException) {
-                    canvas = null
-                    Log.e(tag, e.message)
-                }
+            try {
+                canvas = holder.lockCanvas()
+                this.canvas = canvas
+                onDraw(canvas)
+            } catch (e: IllegalStateException) {
+                Log.e(tag, e.message)
+            } finally {
+                if (canvas != null) holder.unlockCanvasAndPost(canvas)
             }
-            this.canvas = canvas
-            onDraw(canvas)
-            holder.unlockCanvasAndPost(canvas)
         }
 
         public override fun onDraw(canvas: Canvas) {
@@ -1387,7 +1384,7 @@ class MyActivity : Activity() {
                         }
                     }
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL //リリース
+                MotionEvent.ACTION_UP //リリース
                 -> {
                     upX = event.x
                     upY = event.y
@@ -1449,6 +1446,8 @@ class MyActivity : Activity() {
                     isOnNext = false
                     isOnRetry = false
                 }
+                MotionEvent.ACTION_CANCEL
+                -> {}
             }
             return true
         }

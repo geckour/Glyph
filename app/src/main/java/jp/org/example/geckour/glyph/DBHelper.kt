@@ -600,7 +600,6 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         db.execSQL("drop table if exists $TABLE_NAME1;")
         db.execSQL("drop table if exists $TABLE_NAME2;")
         onCreate(db)
-        //TODO: TABLE_NAME3とTABLE_NAME4への変更箇所修正処理
         val cursorTable3 = db.rawQuery("select $TABLE_NAME1.id, $TABLE_NAME1.name, correct_number, total_number from $TABLE_NAME1 left outer join $TABLE_NAME3 on $TABLE_NAME1.name", null)
         cursorTable3.moveToFirst()
         val cursorTable4 = db.rawQuery("select $TABLE_NAME2.id, $TABLE_NAME2.level, $TABLE_NAME2.sequence, correct_number, total_number from $TABLE_NAME2 left outer join $TABLE_NAME4 on $TABLE_NAME2.sequence", null)
