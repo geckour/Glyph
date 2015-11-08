@@ -138,8 +138,8 @@ class MyActivity : Activity() {
         var qNum = 0
         var defTime = 20000
         var initTime: Long = 0
-        var drawAnswerLength = 1300
-        var marginTime: Long = 700
+        var drawAnswerLength = 1150
+        var marginTime: Long = 900
         var pressButtonTime: Long = 0
         var isFirstTimeUp = true
         var doVibrate = false
@@ -533,7 +533,7 @@ class MyActivity : Activity() {
             val tol = 500
             if (now - time > tol) {
                 resetThrough()
-                var result = ((now - time - tol.toLong()) / 2f).toInt()
+                var result = ((now - time - tol) / 2f).toInt()
                 if (result > 255) {
                     result = 255
                 }
@@ -971,52 +971,56 @@ class MyActivity : Activity() {
         var initTimeFlash: Long = 0
         var isFirstFlash = true
         fun drawFlash(currentTime: Long, canvas: Canvas) {
-            var cue: Int
-            val interval = 800
-            val margin = 10
-            val dT = (currentTime - initTimeFlash).toInt()
-            var alpha = 255
-
+            val tag ="MyView/drawFlash"
             if (isFirstFlash) {
                 resetLocus()
                 initTimeFlash = System.currentTimeMillis()
                 isFirstFlash = false
             }
 
+            var cue: Int
+            val interval = 680
+            val margin = 10
+            val dT = (currentTime - initTimeFlash).toInt()
+            var alpha: Int
+
             cue = dT / interval
             if (dT > interval * 2.5) {
                 cue++
             }
 
-            if (cue == 0) {
-                if (dT < margin) {
-                    alpha = 150 * dT / margin
-                } else {
-                    alpha = 150 - 150 * (dT - margin) / (interval - margin)
+            when (cue) {
+                0 -> {
+                    if (dT < margin) {
+                        alpha = 150 * dT / margin
+                    } else {
+                        alpha = 150 - 150 * (dT - margin) / (interval - margin)
+                    }
+                    paint.color = Color.argb(alpha, 220, 175, 50)
                 }
-            }
-            if (cue == 1) {
-                if (dT < margin) {
-                    alpha = 200 * dT / cue / margin
-                } else {
-                    alpha = 200 - 200 * (dT - margin) / cue / (interval - margin)
+                1 -> {
+                    if (dT < margin) {
+                        alpha = 200 * dT / cue / margin
+                    } else {
+                        alpha = 200 - 200 * (dT - margin) / cue / (interval - margin)
+                    }
+                    paint.color = Color.argb(alpha, 220, 175, 50)
                 }
-            }
-            paint.color = Color.argb(alpha, 220, 175, 50)
-            if (cue == 2) {
-                if (dT < margin) {
-                    alpha = 255 * dT / cue / margin
-                } else {
-                    alpha = 255
+                2 -> {
+                    if (dT < margin) {
+                        alpha = 255 * dT / cue / margin
+                    } else {
+                        alpha = 255
+                    }
+                    paint.color = Color.argb(alpha, 255, 255, 255)
                 }
-                paint.color = Color.argb(alpha, 255, 255, 255)
+                else -> {
+                    initTime = System.currentTimeMillis()
+                    isStartGame = true
+                }
             }
             paint.style = Paint.Style.FILL
             canvas.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, paint)
-            if (cue > 2) {
-                initTime = System.currentTimeMillis()
-                isStartGame = true
-            }
         }
 
         fun recordResult() {

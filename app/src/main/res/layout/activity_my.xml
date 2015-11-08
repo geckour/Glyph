@@ -5,6 +5,4 @@
     tools:context=".MyActivity"
     android:background="@color/background"
     android:clickable="false"
-    android:id="@+id/root"
-    >
-</RelativeLayout>
+    android:id="@+id/root" />
