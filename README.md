@@ -1,6 +1,6 @@
 Glyph
 =====
-note: Ingress is copylight 2014 Niantic Labs. This App is not affiliated with Niantic Labs nor Google.  
+note: Ingress is copylight 2015 Niantic Labs. This App is not affiliated with Niantic Labs nor Google.  
   
   
 This is the Android app to practice Glyph Hack, which is mini game from Ingress.  
