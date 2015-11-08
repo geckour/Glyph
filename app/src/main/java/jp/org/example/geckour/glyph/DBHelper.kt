@@ -600,6 +600,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         db.execSQL("drop table if exists $TABLE_NAME1;")
         db.execSQL("drop table if exists $TABLE_NAME2;")
         onCreate(db)
+
         val cursorTable3 = db.rawQuery("select $TABLE_NAME1.id, $TABLE_NAME1.name, correct_number, total_number from $TABLE_NAME1 left outer join $TABLE_NAME3 on $TABLE_NAME1.name", null)
         cursorTable3.moveToFirst()
         val cursorTable4 = db.rawQuery("select $TABLE_NAME2.id, $TABLE_NAME2.level, $TABLE_NAME2.sequence, correct_number, total_number from $TABLE_NAME2 left outer join $TABLE_NAME4 on $TABLE_NAME2.sequence", null)
@@ -607,6 +608,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         db.execSQL("drop table if exists $TABLE_NAME3;")
         db.execSQL("drop table if exists $TABLE_NAME4;")
         onCreate(db)
+
         while (!cursorTable3.isAfterLast) {
             val name = cursorTable3.getInt(cursorTable3.getColumnIndex("name"))
             val correct_number: Int
@@ -624,6 +626,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
             db.execSQL("insert into $TABLE_NAME3(name, correct_number, total_number) values($name, $correct_number, $total_number)")
             cursorTable3.moveToNext()
         }
+
         while (!cursorTable4.isAfterLast) {
             val level = cursorTable4.getInt(cursorTable4.getColumnIndex("level"))
             val sequence = cursorTable4.getInt(cursorTable4.getColumnIndex("sequence"))
@@ -642,7 +645,6 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
             db.execSQL("insert into $TABLE_NAME4(level, sequence, correct_number, total_number) values($level, $sequence, $correct_number, $total_number)")
             cursorTable4.moveToNext()
         }
-        Log.v(tag, "done")
     }
 
     companion object {

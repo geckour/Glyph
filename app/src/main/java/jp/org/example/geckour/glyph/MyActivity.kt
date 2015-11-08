@@ -109,20 +109,7 @@ class MyActivity : Activity() {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         val id = item.itemId
-        if (id == R.id.action_settings) {
-            return true
-        }
         return super.onOptionsItemSelected(item)
-    }
-
-    public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent) {
-        val tag = "onActivityResult"
-        if (requestCode == 0) {
-            //Pref.javaからの戻り値の場合
-            if (resultCode == Activity.RESULT_OK) {
-                Log.v(tag, "setting is changed.")
-            }
-        }
     }
 
     internal inner class MyView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
