@@ -287,9 +287,18 @@ class DictActivity : Activity() {
 
             init {
                 initFrame = System.currentTimeMillis()
-                grain.add(Grain(x0, y0))
-                grain.add(Grain(x0, y0))
-                grain.add(Grain(x0, y0))
+                grain.add(Grain(x0, y0, true, null))
+                grain.add(Grain(x0, y0, true, null))
+                grain.add(Grain(x0, y0, true, null))
+                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
+                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
+                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
+                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
+                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
+                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
+                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
+                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
+                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
             }
 
             fun move() {
@@ -305,6 +314,11 @@ class DictActivity : Activity() {
                         }
                     }
                     1 -> {
+                        for (i in grain.lastIndex downTo 0) {
+                            if (!grain[i].isOrigin) {
+                                grain.removeAt(i)
+                            }
+                        }
                         for (i in grain.indices) {
                             val param = Math.cos(grain[i].a0)
                             grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
@@ -316,12 +330,14 @@ class DictActivity : Activity() {
                 draw()
             }
 
-            internal inner class Grain(x: Float, y: Float) {
+            internal inner class Grain(x: Float, y: Float, isOrigin: Boolean, start: PointF?) {
                 var x: Float
                 var y: Float
-                var origin: PointF = PointF()
-                var step1: PointF = PointF()
-                var diff: PointF = PointF()
+                val isOrigin = isOrigin
+                var origin = PointF()
+                var step0 = PointF()
+                var step1 = PointF()
+                var diff = PointF()
                 val pi2 = Math.PI * 2.0
                 var a0 = Math.random() * pi2
                 val a1 = Math.random() * pi2
@@ -331,20 +347,33 @@ class DictActivity : Activity() {
                     //タッチした点
                     origin.x = x
                     origin.y = y
+
                     val margin = Math.random() * offsetX * 0.05
 
                     //収束への出発点
-                    var blurR = offsetX * 0.4 * Math.random() + margin
-                    var blurA = Math.random() * pi2
-                    var step0: PointF = PointF()
-                    step0.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
-                    step0.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    var blurR: Double
+                    var blurA: Double
+                    blurA = Math.random() * pi2
+                    if (isOrigin) {
+                        blurR = offsetX * 0.4 * Math.random() + margin
+                        step0.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
+                        step0.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    } else if (start != null) {
+                        blurR = offsetX * 0.2 * Math.random()
+                        step0.x = start.x + (blurR * Math.cos(blurA)).toFloat()
+                        step0.y = start.y + (blurR * Math.sin(blurA)).toFloat()
+                    }
 
                     //収束点
-                    blurR = margin
-                    blurA = Math.random() * pi2
-                    step1.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
-                    step1.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    if (isOrigin) {
+                        blurR = margin
+                        blurA = Math.random() * pi2
+                        step1.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
+                        step1.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    } else  {
+                        step1.x = x
+                        step1.y = y
+                    }
 
                     //収束までの距離
                     diff.x = step0.x - step1.x

@@ -479,14 +479,13 @@ class MyActivity : Activity() {
         private fun calcSubAlpha(): Int {
             val tag = "MyView/calcSubAlpha"
             val cue = (now - initTime - marginTime).toInt() / drawAnswerLength
-            val timeInPhase = (now - initTime - marginTime - drawAnswerLength * cue).toInt()
+            val timeInCue = (now - initTime - marginTime - drawAnswerLength * cue).toInt()
+            val phase = doubleArrayOf(drawAnswerLength * 0.2, drawAnswerLength * 0.7)
 
-            if (timeInPhase < drawAnswerLength * 0.2) {
-                return (255 - 255 * timeInPhase / (drawAnswerLength * 0.2)).toInt()
-            } else if (timeInPhase < drawAnswerLength * 0.7) {
-                return 0
-            } else {
-                return (255 * (timeInPhase - drawAnswerLength * 0.7) / (drawAnswerLength * 0.3)).toInt()
+            when (timeInCue) {
+                in 0..phase[0].toInt() -> return (255 - 255 * timeInCue / phase[0]).toInt()
+                in phase[0].toInt()..phase[1].toInt() -> return 0
+                else -> return (255 * (timeInCue - phase[1]) / (drawAnswerLength - phase[1])).toInt()
             }
         }
 
@@ -544,15 +543,24 @@ class MyActivity : Activity() {
             val tag = "MyActivity.Particle"
             var grain = ArrayList<Grain>()
             var phase = 0
-            var moveFrames: Long = 300
+            var moveFrames: Long = 350
             var initFrame: Long = 0
             var v = 0.15
 
             init {
                 initFrame = System.currentTimeMillis()
-                grain.add(Grain(x0, y0))
-                grain.add(Grain(x0, y0))
-                grain.add(Grain(x0, y0))
+                grain.add(Grain(x0, y0, true, null))
+                grain.add(Grain(x0, y0, true, null))
+                grain.add(Grain(x0, y0, true, null))
+                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
+                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
+                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
+                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
+                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
+                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
+                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
+                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
+                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
             }
 
             fun move() {
@@ -568,6 +576,11 @@ class MyActivity : Activity() {
                         }
                     }
                     1 -> {
+                        for (i in grain.lastIndex downTo 0) {
+                            if (!grain[i].isOrigin) {
+                                grain.removeAt(i)
+                            }
+                        }
                         for (i in grain.indices) {
                             val param = Math.cos(grain[i].a0)
                             grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
@@ -579,12 +592,14 @@ class MyActivity : Activity() {
                 draw()
             }
 
-            internal inner class Grain(x: Float, y: Float) {
+            internal inner class Grain(x: Float, y: Float, isOrigin: Boolean, start: PointF?) {
                 var x: Float
                 var y: Float
-                var origin: PointF = PointF()
-                var step1: PointF = PointF()
-                var diff: PointF = PointF()
+                val isOrigin = isOrigin
+                var origin = PointF()
+                var step0 = PointF()
+                var step1 = PointF()
+                var diff = PointF()
                 val pi2 = Math.PI * 2.0
                 var a0 = Math.random() * pi2
                 val a1 = Math.random() * pi2
@@ -594,20 +609,33 @@ class MyActivity : Activity() {
                     //タッチした点
                     origin.x = x
                     origin.y = y
+
                     val margin = Math.random() * offsetX * 0.05
 
                     //収束への出発点
-                    var blurR = offsetX * 0.4 * Math.random() + margin
-                    var blurA = Math.random() * pi2
-                    var step0: PointF = PointF()
-                    step0.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
-                    step0.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    var blurR: Double
+                    var blurA: Double
+                    blurA = Math.random() * pi2
+                    if (isOrigin) {
+                        blurR = offsetX * 0.4 * Math.random() + margin
+                        step0.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
+                        step0.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    } else if (start != null) {
+                        blurR = offsetX * 0.2 * Math.random()
+                        step0.x = start.x + (blurR * Math.cos(blurA)).toFloat()
+                        step0.y = start.y + (blurR * Math.sin(blurA)).toFloat()
+                    }
 
                     //収束点
-                    blurR = margin
-                    blurA = Math.random() * pi2
-                    step1.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
-                    step1.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    if (isOrigin) {
+                        blurR = margin
+                        blurA = Math.random() * pi2
+                        step1.x = origin.x + (blurR * Math.cos(blurA)).toFloat()
+                        step1.y = origin.y + (blurR * Math.sin(blurA)).toFloat()
+                    } else  {
+                        step1.x = x
+                        step1.y = y
+                    }
 
                     //収束までの距離
                     diff.x = step0.x - step1.x
@@ -858,12 +886,7 @@ class MyActivity : Activity() {
                             canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                             paint.setShader(null)
 
-                            paint.strokeJoin = Paint.Join.BEVEL
                             paint.color = Color.argb(140, r, g, b)
-                            paint.strokeWidth = 2f
-                            paint.style = Paint.Style.STROKE
-                            canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                            paint.strokeWidth = 0f
                         }
                         qNum -> {
                             if ((isReleased && throughList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
@@ -872,24 +895,14 @@ class MyActivity : Activity() {
                                 canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                                 paint.setShader(null)
 
-                                paint.strokeJoin = Paint.Join.BEVEL
                                 paint.color = Color.argb(140, r, g, b)
-                                paint.strokeWidth = 2f
-                                paint.style = Paint.Style.STROKE
-                                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                                paint.strokeWidth = 0f
                             } else {
                                 paint.setShader(lgStrong)
                                 paint.style = Paint.Style.FILL
                                 canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                                 paint.setShader(null)
 
-                                paint.strokeJoin = Paint.Join.BEVEL
                                 paint.color = Color.rgb(r, g, b)
-                                paint.strokeWidth = 2f
-                                paint.style = Paint.Style.STROKE
-                                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                                paint.strokeWidth = 0f
                             }
                         }
                         else -> {
@@ -897,12 +910,7 @@ class MyActivity : Activity() {
                             paint.style = Paint.Style.FILL
                             canvas.drawPath(hexagonPath(origin, hexRadius), paint)
 
-                            paint.strokeJoin = Paint.Join.BEVEL
                             paint.color = Color.argb(80, r, g, b)
-                            paint.strokeWidth = 2f
-                            paint.style = Paint.Style.STROKE
-                            canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                            paint.strokeWidth = 0f
                         }
                     }
                 } else {
@@ -912,25 +920,20 @@ class MyActivity : Activity() {
                         canvas.drawPath(hexagonPath(origin, hexRadius), paint)
                         paint.setShader(null)
 
-                        paint.strokeJoin = Paint.Join.BEVEL
                         paint.color = Color.rgb(r, g, b)
-                        paint.strokeWidth = 2f
-                        paint.style = Paint.Style.STROKE
-                        canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                        paint.strokeWidth = 0f
                     } else {
                         paint.color = Color.BLACK
                         paint.style = Paint.Style.FILL
                         canvas.drawPath(hexagonPath(origin, hexRadius), paint)
 
-                        paint.strokeJoin = Paint.Join.BEVEL
                         paint.color = Color.argb(140, r, g, b)
-                        paint.strokeWidth = 2f
-                        paint.style = Paint.Style.STROKE
-                        canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                        paint.strokeWidth = 0f
                     }
                 }
+                paint.strokeJoin = Paint.Join.BEVEL
+                paint.strokeWidth = 2f
+                paint.style = Paint.Style.STROKE
+                canvas.drawPath(hexagonPath(origin, hexRadius), paint)
+                paint.strokeWidth = 0f
             }
         }
 
