@@ -477,19 +477,16 @@ class MyActivity : Activity() {
         }
 
         private fun calcSubAlpha(): Int {
+            val tag = "MyView/calcSubAlpha"
             val cue = (now - initTime - marginTime).toInt() / drawAnswerLength
-            val timeInPhase = (now - initTime - marginTime - (drawAnswerLength * cue).toLong()).toInt()
+            val timeInPhase = (now - initTime - marginTime - drawAnswerLength * cue).toInt()
 
-            if (!isFirstFlash) {
+            if (timeInPhase < drawAnswerLength * 0.2) {
+                return (255 - 255 * timeInPhase / (drawAnswerLength * 0.2)).toInt()
+            } else if (timeInPhase < drawAnswerLength * 0.7) {
                 return 0
             } else {
-                if (timeInPhase < drawAnswerLength * 0.2) {
-                    return (255 - 255 * timeInPhase / (drawAnswerLength * 0.2)).toInt()
-                } else if (timeInPhase < drawAnswerLength * 0.7) {
-                    return 0
-                } else {
-                    return (255 * timeInPhase / drawAnswerLength).toInt()
-                }
+                return (255 * (timeInPhase - drawAnswerLength * 0.7) / (drawAnswerLength * 0.3)).toInt()
             }
         }
 
