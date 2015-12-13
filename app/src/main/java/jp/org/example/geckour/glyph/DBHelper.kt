@@ -73,6 +73,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("IMPROVE", "6,4,0,1"),
         arrayOf("IMPURE", "8,0,3,2,0"),
         arrayOf("INDIVIDUAL", "9,8,7"),
+        arrayOf("INTELLIGENCE", "9,2,3,0,4,6"),
         arrayOf("INSIDE", "3,4,1"),
         arrayOf("JOURNEY", "6,4,0,3,10,9,8"),
         arrayOf("KNOWLEDGE", "8,3,0,4,8"),
@@ -130,10 +131,12 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("STRONG", "2,3,4,1,2"),
         arrayOf("STRUGGLE", "4,3,5,0,8,2"),
         arrayOf("SUCCESS", "5,0,3,2"),
+        arrayOf("TECHNOLOGY","6,4,0,2,3,0,1,7"),
         arrayOf("THEM", "5,2,1"),
         arrayOf("THOUGHT", "2,9,10,3,0,1,7,6,4"),
         arrayOf("TOGETHER", "9,2,0,4,3,0"),
         arrayOf("TRUTH", "3,0,1,4,0,2,3"),
+        arrayOf("UNBOUNDED", "0,4,3,2,1,6,5,10,9,8,7"),
         arrayOf("US", "3,4,8"),
         arrayOf("USE", "0,1,6"),
         arrayOf("WANT", "9,2,8,1"),
@@ -168,6 +171,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "CONTEMPLATE,RESTRAINT,DISCOVER,MORE,COURAGE", null),
         arrayOf("5", "COURAGE,ATTACK,SHAPERS,PORTAL,TOGETHER", null),
         arrayOf("5", "COURAGE,DESTROY,SHAPERS,PORTAL,TOGETHER", null),
+        arrayOf("5", "CREATE,OLD,FUTURE,SEE,ALL", null),
         arrayOf("5", "CREATE,PURE,FUTURE,HUMAN,CIVILIZATION", null),
         arrayOf("5", "CREATE,PURE,FUTURE,NOT,WAR", null),
         arrayOf("5", "CREATE,SEPARATE,PATH,END,JOURNEY", null),
@@ -188,6 +192,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "FORGET,PAST,SEE,PRESENT,DANGER", null),
         arrayOf("5", "FORGET,WAR,SEE,DISTANCE,HARMONY", null),
         arrayOf("5", "GAIN,TRUTH,OPEN,HUMAN,SOUL", null),
+        arrayOf("5", "GROW,UNBOUNDED,CREATE,NEW,FUTURE", null),
         arrayOf("5", "HARM,PROGRESS,PURSUE,MORE,WAR", null),
         arrayOf("5", "HELP,ENLIGHTENMENT,CAPTURE,ALL,PORTAL", null),
         arrayOf("5", "HELP,HUMAN,CIVILIZATION,PURSUE,DESTINY", null),
@@ -241,6 +246,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "SIMPLE,TRUTH,SHAPERS,DESTROY,CIVILIZATION", null),
         arrayOf("5", "STAY,STRONG,TOGETHER,DEFEND,RESISTANCE", null),
         arrayOf("5", "STRONG,TOGETHER,ATTACK,TOGETHER,DESTINY", null),
+        arrayOf("5", "TECHNOLOGY,INTELLIGENCE,SEE,ALL,UNBOUNDED", null),
         arrayOf("5", "USE,MIND,USE,COURAGE,CHANGE", null),
         arrayOf("5", "USE,RESTRAINT,FOLLOW,EASY,PATH", null),
         arrayOf("5", "WANT,TRUTH,PURSUE,DIFFICULT,PATH", null),
@@ -296,6 +302,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "HUMAN,HAVE,IMPURE,CIVILIZATION", null),
         arrayOf("4", "HUMAN,PAST,PRESENT,FUTURE", null),
         arrayOf("4", "HUMAN,SOUL,STRONG,PURE", null),
+        arrayOf("4", "HUMAN,UNBOUNDED,ESCAPE,ALL", null),
         arrayOf("4", "IGNORE,HUMAN,CHAOS,LIE", null),
         arrayOf("4", "IMPROVE,BODY,MIND,SOUL", null),
         arrayOf("4", "IMPROVE,BODY,PURSUE,JOURNEY", null),
@@ -362,6 +369,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "STRONG,TOGETHER,AVOID,WAR", null),
         arrayOf("4", "AVOID,DEFEND,SHAPERS,DANGER", null),
         arrayOf("4", "AVOID,IMPROVE,HUMAN,SOUL", null),
+        arrayOf("4", "TECHNOLOGY,INTELLIGENCE,SEE,ALL", null),
+        arrayOf("4", "TECHNOLOGY,INTELLIGENCE,GROW,UNBOUNDED", null),
         arrayOf("4", "TOGETHER,DISCOVER,HARMONY,EQUAL", null),
         arrayOf("4", "TRUTH,IDEA,DISCOVER,XM", null),
         arrayOf("4", "XM,DIE,CHAOS,LIVE", null),
@@ -434,7 +443,10 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("3", "HARMONY,STABILITY,FUTURE", null),
         arrayOf("3", "HIDE,JOURNEY,TRUTH", null),
         arrayOf("3", "HIDE,PATH,FUTURE", null),
+        arrayOf("3", "HUMAN,FAILURE,UNBOUNDED", null),
         arrayOf("3", "HUMAN,GAIN,SAFETY", null),
+        arrayOf("3", "HUMAN,SOUL,UNBOUNDED", null),
+        arrayOf("3", "HUMAN,SUCCESS,UNBOUNDED", null),
         arrayOf("3", "IMPROVE,ADVANCE,PRESENT", null),
         arrayOf("3", "IMPROVE,FUTURE,TOGETHER", null),
         arrayOf("3", "IMPROVE,HUMAN,SHAPERS", null),
@@ -653,6 +665,6 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         val TABLE_NAME2 = "sets"
         val TABLE_NAME3 = "weakShapers"
         val TABLE_NAME4 = "weakSets"
-        val DB_VERSION = 9
+        val DB_VERSION = 10
     }
 }

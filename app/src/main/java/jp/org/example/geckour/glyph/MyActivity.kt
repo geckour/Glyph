@@ -380,7 +380,7 @@ class MyActivity : Activity() {
                     cursorInLevel.moveToLast()
                     val max = cursorInLevel.getLong(0)
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
-                    //randomVal = 24
+                    //randomVal = 297
 
                     cursorInLevel.close()
                 }
@@ -755,8 +755,9 @@ class MyActivity : Activity() {
         fun drawButton(canvas: Canvas) {
             val nextButtonWidth = (if (isStartGame && doShow) 200 else 150) * scale
             val retryButtonWidth = 170 * scale
-            val buttonHeight = 90 * scale
-            val margin = 20 * scale
+            val buttonHeight = 100 * scale
+            val margin = 40 * scale
+            val buttonBaseline = 35;
             nextButtonPoint[0] = Point((offsetX * 2 - nextButtonWidth - margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
             nextButtonPoint[1] = Point((offsetX * 2 - margin).toInt(), (offsetY * 2 - margin).toInt())
             retryButtonPoint[0] = Point((margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
@@ -764,7 +765,7 @@ class MyActivity : Activity() {
 
             paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
             paint.textAlign = Paint.Align.CENTER
-            paint.textSize = 40 * scale
+            paint.textSize = 45 * scale
             paint.style = Paint.Style.FILL
             val dNext: Drawable
             val dRetry: Drawable
@@ -776,9 +777,9 @@ class MyActivity : Activity() {
             dNext.setBounds(nextButtonPoint[0]?.x ?: 0, nextButtonPoint[0]?.y ?: 0, nextButtonPoint[1]?.x ?: 0, nextButtonPoint[1]?.y ?: 0)
             dNext.draw(canvas)
             if (isStartGame && doShow) {
-                canvas.drawText("BYPASS", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
+                canvas.drawText("BYPASS", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             } else {
-                canvas.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
+                canvas.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             }
             if (isEndGame) {
                 if (isOnRetry) {
@@ -788,7 +789,7 @@ class MyActivity : Activity() {
                 }
                 dRetry.setBounds(retryButtonPoint[0]?.x ?: 0, retryButtonPoint[0]?.y ?: 0, retryButtonPoint[1]?.x ?: 0, retryButtonPoint[1]?.y ?: 0)
                 dRetry.draw(canvas)
-                canvas.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
+                canvas.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             }
         }
 
