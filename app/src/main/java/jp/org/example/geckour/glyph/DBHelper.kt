@@ -663,6 +663,6 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         val DB_NAME = "shaper.db"
         val TABLE_NAME1 = "shapers"
         val TABLE_NAME2 = "sets"
-        val DB_VERSION = 11
+        val DB_VERSION = 12
     }
 }
