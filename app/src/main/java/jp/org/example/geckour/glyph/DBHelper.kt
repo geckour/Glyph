@@ -610,50 +610,52 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
             db.execSQL("drop table if exists sets;")
             db.execSQL("drop table if exists weakShapers;")
             db.execSQL("drop table if exists weakSets;")
-        }
 
-        val cursorTable1 = db.rawQuery("select * from $TABLE_NAME1;", null)
-        cursorTable1.moveToFirst()
-        db.execSQL("drop table if exists $TABLE_NAME1;")
+            onCreate(db)
+        } else {
+            val cursorTable1 = db.rawQuery("select * from $TABLE_NAME1;", null)
+            cursorTable1.moveToFirst()
+            db.execSQL("drop table if exists $TABLE_NAME1;")
 
-        val cursorTable2 = db.rawQuery("select * from $TABLE_NAME2;", null)
-        cursorTable2.moveToFirst()
-        db.execSQL("drop table if exists $TABLE_NAME2;")
+            val cursorTable2 = db.rawQuery("select * from $TABLE_NAME2;", null)
+            cursorTable2.moveToFirst()
+            db.execSQL("drop table if exists $TABLE_NAME2;")
 
-        onCreate(db)
+            onCreate(db)
 
-        while (!cursorTable1.isAfterLast) {
-            val name = "\"" + cursorTable1.getString(cursorTable1.getColumnIndex("name")) + "\""
-            val contentValues = ContentValues()
-            try {
-                contentValues.put("correct_number", cursorTable1.getInt(cursorTable1.getColumnIndex("correct_number")))
-            } catch(e: Exception) {
-                Log.e(tag, e.message)
+            while (!cursorTable1.isAfterLast) {
+                val name = "\"" + cursorTable1.getString(cursorTable1.getColumnIndex("name")) + "\""
+                val contentValues = ContentValues()
+                try {
+                    contentValues.put("correct_number", cursorTable1.getInt(cursorTable1.getColumnIndex("correct_number")))
+                } catch(e: Exception) {
+                    Log.e(tag, e.message)
+                }
+                try {
+                    contentValues.put("total_number", cursorTable1.getInt(cursorTable1.getColumnIndex("total_number")))
+                } catch(e: Exception) {
+                    Log.e(tag, e.message)
+                }
+                db.update(TABLE_NAME1, contentValues, "name=$name", null)
+                cursorTable1.moveToNext()
             }
-            try {
-                contentValues.put("total_number", cursorTable1.getInt(cursorTable1.getColumnIndex("total_number")))
-            } catch(e: Exception) {
-                Log.e(tag, e.message)
-            }
-            db.update(TABLE_NAME1, contentValues, "name=$name", null)
-            cursorTable1.moveToNext()
-        }
 
-        while (!cursorTable2.isAfterLast) {
-            val sequence = "\"" + cursorTable2.getInt(cursorTable2.getColumnIndex("sequence")) + "\""
-            val contentValues = ContentValues()
-            try {
-                contentValues.put("correct_number", cursorTable2.getInt(cursorTable2.getColumnIndex("correct_number")))
-            } catch(e: Exception) {
-                Log.e(tag, e.message)
+            while (!cursorTable2.isAfterLast) {
+                val sequence = "\"" + cursorTable2.getInt(cursorTable2.getColumnIndex("sequence")) + "\""
+                val contentValues = ContentValues()
+                try {
+                    contentValues.put("correct_number", cursorTable2.getInt(cursorTable2.getColumnIndex("correct_number")))
+                } catch(e: Exception) {
+                    Log.e(tag, e.message)
+                }
+                try {
+                    contentValues.put("total_number", cursorTable2.getInt(cursorTable2.getColumnIndex("total_number")))
+                } catch(e: Exception) {
+                    Log.e(tag, e.message)
+                }
+                db.update(TABLE_NAME2, contentValues, "sequence=$sequence", null)
+                cursorTable2.moveToNext()
             }
-            try {
-                contentValues.put("total_number", cursorTable2.getInt(cursorTable2.getColumnIndex("total_number")))
-            } catch(e: Exception) {
-                Log.e(tag, e.message)
-            }
-            db.update(TABLE_NAME2, contentValues, "sequence=$sequence", null)
-            cursorTable2.moveToNext()
         }
     }
 
