@@ -73,6 +73,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("IMPROVE", "6,4,0,1"),
         arrayOf("IMPURE", "8,0,3,2,0"),
         arrayOf("INDIVIDUAL", "9,8,7"),
+        arrayOf("INTELLIGENCE", "9,2,3,0,4,6"),
         arrayOf("INSIDE", "3,4,1"),
         arrayOf("JOURNEY", "6,4,0,3,10,9,8"),
         arrayOf("KNOWLEDGE", "8,3,0,4,8"),
@@ -130,10 +131,12 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("STRONG", "2,3,4,1,2"),
         arrayOf("STRUGGLE", "4,3,5,0,8,2"),
         arrayOf("SUCCESS", "5,0,3,2"),
+        arrayOf("TECHNOLOGY","6,4,0,2,3,0,1,7"),
         arrayOf("THEM", "5,2,1"),
         arrayOf("THOUGHT", "2,9,10,3,0,1,7,6,4"),
         arrayOf("TOGETHER", "9,2,0,4,3,0"),
         arrayOf("TRUTH", "3,0,1,4,0,2,3"),
+        arrayOf("UNBOUNDED", "0,4,3,2,1,6,5,10,9,8,7"),
         arrayOf("US", "3,4,8"),
         arrayOf("USE", "0,1,6"),
         arrayOf("WANT", "9,2,8,1"),
@@ -168,6 +171,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "CONTEMPLATE,RESTRAINT,DISCOVER,MORE,COURAGE", null),
         arrayOf("5", "COURAGE,ATTACK,SHAPERS,PORTAL,TOGETHER", null),
         arrayOf("5", "COURAGE,DESTROY,SHAPERS,PORTAL,TOGETHER", null),
+        arrayOf("5", "CREATE,OLD,FUTURE,SEE,ALL", null),
         arrayOf("5", "CREATE,PURE,FUTURE,HUMAN,CIVILIZATION", null),
         arrayOf("5", "CREATE,PURE,FUTURE,NOT,WAR", null),
         arrayOf("5", "CREATE,SEPARATE,PATH,END,JOURNEY", null),
@@ -188,6 +192,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "FORGET,PAST,SEE,PRESENT,DANGER", null),
         arrayOf("5", "FORGET,WAR,SEE,DISTANCE,HARMONY", null),
         arrayOf("5", "GAIN,TRUTH,OPEN,HUMAN,SOUL", null),
+        arrayOf("5", "GROW,UNBOUNDED,CREATE,NEW,FUTURE", null),
         arrayOf("5", "HARM,PROGRESS,PURSUE,MORE,WAR", null),
         arrayOf("5", "HELP,ENLIGHTENMENT,CAPTURE,ALL,PORTAL", null),
         arrayOf("5", "HELP,HUMAN,CIVILIZATION,PURSUE,DESTINY", null),
@@ -241,6 +246,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "SIMPLE,TRUTH,SHAPERS,DESTROY,CIVILIZATION", null),
         arrayOf("5", "STAY,STRONG,TOGETHER,DEFEND,RESISTANCE", null),
         arrayOf("5", "STRONG,TOGETHER,ATTACK,TOGETHER,DESTINY", null),
+        arrayOf("5", "TECHNOLOGY,INTELLIGENCE,SEE,ALL,UNBOUNDED", null),
         arrayOf("5", "USE,MIND,USE,COURAGE,CHANGE", null),
         arrayOf("5", "USE,RESTRAINT,FOLLOW,EASY,PATH", null),
         arrayOf("5", "WANT,TRUTH,PURSUE,DIFFICULT,PATH", null),
@@ -296,6 +302,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "HUMAN,HAVE,IMPURE,CIVILIZATION", null),
         arrayOf("4", "HUMAN,PAST,PRESENT,FUTURE", null),
         arrayOf("4", "HUMAN,SOUL,STRONG,PURE", null),
+        arrayOf("4", "HUMAN,UNBOUNDED,ESCAPE,ALL", null),
         arrayOf("4", "IGNORE,HUMAN,CHAOS,LIE", null),
         arrayOf("4", "IMPROVE,BODY,MIND,SOUL", null),
         arrayOf("4", "IMPROVE,BODY,PURSUE,JOURNEY", null),
@@ -362,6 +369,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "STRONG,TOGETHER,AVOID,WAR", null),
         arrayOf("4", "AVOID,DEFEND,SHAPERS,DANGER", null),
         arrayOf("4", "AVOID,IMPROVE,HUMAN,SOUL", null),
+        arrayOf("4", "TECHNOLOGY,INTELLIGENCE,SEE,ALL", null),
+        arrayOf("4", "TECHNOLOGY,INTELLIGENCE,GROW,UNBOUNDED", null),
         arrayOf("4", "TOGETHER,DISCOVER,HARMONY,EQUAL", null),
         arrayOf("4", "TRUTH,IDEA,DISCOVER,XM", null),
         arrayOf("4", "XM,DIE,CHAOS,LIVE", null),
@@ -434,7 +443,10 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("3", "HARMONY,STABILITY,FUTURE", null),
         arrayOf("3", "HIDE,JOURNEY,TRUTH", null),
         arrayOf("3", "HIDE,PATH,FUTURE", null),
+        arrayOf("3", "HUMAN,FAILURE,UNBOUNDED", null),
         arrayOf("3", "HUMAN,GAIN,SAFETY", null),
+        arrayOf("3", "HUMAN,SOUL,UNBOUNDED", null),
+        arrayOf("3", "HUMAN,SUCCESS,UNBOUNDED", null),
         arrayOf("3", "IMPROVE,ADVANCE,PRESENT", null),
         arrayOf("3", "IMPROVE,FUTURE,TOGETHER", null),
         arrayOf("3", "IMPROVE,HUMAN,SHAPERS", null),
@@ -542,10 +554,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
     )
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("create table if not exists $TABLE_NAME1(id integer primary key autoincrement,name text not null,path text not null);")
-        db.execSQL("create table if not exists $TABLE_NAME2(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text);")
-        db.execSQL("create table if not exists $TABLE_NAME3(id integer primary key autoincrement,name text not null,correct_number integer,total_number integer);")
-        db.execSQL("create table if not exists $TABLE_NAME4(id integer primary key autoincrement,level integer not null,sequence text not null,correct_number integer,total_number integer);")
+        db.execSQL("create table if not exists $TABLE_NAME1(id integer primary key autoincrement,name text not null,path text not null,correct_number integer,total_number integer);")
+        db.execSQL("create table if not exists $TABLE_NAME2(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text,correct_number integer,total_number integer);")
 
         db.beginTransaction()
         try {
@@ -576,74 +586,74 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         c.moveToFirst()
         while (!c.isAfterLast) {
             val contentValues = ContentValues()
-            contentValues.put("name", c.getString(c.getColumnIndex("name")))
             contentValues.put("correct_number", 0)
             contentValues.put("total_number", -1)
-            db.insert(TABLE_NAME3, null, contentValues)
+            db.update(TABLE_NAME1, contentValues, "id=${c.columnCount}", null)
             c.moveToNext()
         }
         c = db.query(TABLE_NAME2, null, null, null, null, null, null)
         c.moveToFirst()
         while (!c.isAfterLast) {
             val contentValues = ContentValues()
-            contentValues.put("level", c.getString(c.getColumnIndex("level")))
-            contentValues.put("sequence", c.getString(c.getColumnIndex("sequence")))
             contentValues.put("correct_number", 0)
             contentValues.put("total_number", -1)
-            db.insert(TABLE_NAME4, null, contentValues)
+            db.update(TABLE_NAME2, contentValues, "id=${c.columnCount}", null)
             c.moveToNext()
         }
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVer: Int, newVer: Int) {
         val tag = "DBHelper.onUpgrade"
-        db.execSQL("drop table if exists $TABLE_NAME1;")
-        db.execSQL("drop table if exists $TABLE_NAME2;")
-        onCreate(db)
 
-        val cursorTable3 = db.rawQuery("select $TABLE_NAME1.id, $TABLE_NAME1.name, correct_number, total_number from $TABLE_NAME1 left outer join $TABLE_NAME3 on $TABLE_NAME1.name", null)
-        cursorTable3.moveToFirst()
-        val cursorTable4 = db.rawQuery("select $TABLE_NAME2.id, $TABLE_NAME2.level, $TABLE_NAME2.sequence, correct_number, total_number from $TABLE_NAME2 left outer join $TABLE_NAME4 on $TABLE_NAME2.sequence", null)
-        cursorTable4.moveToFirst()
-        db.execSQL("drop table if exists $TABLE_NAME3;")
-        db.execSQL("drop table if exists $TABLE_NAME4;")
-        onCreate(db)
-
-        while (!cursorTable3.isAfterLast) {
-            val name = cursorTable3.getInt(cursorTable3.getColumnIndex("name"))
-            val correct_number: Int
-            try {
-                correct_number = cursorTable3.getInt(cursorTable3.getColumnIndex("correct_number"))
-            } catch(e: Exception) {
-                correct_number = 0
-            }
-            val total_number: Int
-            try {
-                total_number = cursorTable3.getInt(cursorTable3.getColumnIndex("total_number"))
-            } catch(e: Exception) {
-                total_number = -1
-            }
-            db.execSQL("insert into $TABLE_NAME3(name, correct_number, total_number) values($name, $correct_number, $total_number)")
-            cursorTable3.moveToNext()
+        if (oldVer < 11) {
+            db.execSQL("drop table if exists shapers;")
+            db.execSQL("drop table if exists sets;")
+            db.execSQL("drop table if exists weakShapers;")
+            db.execSQL("drop table if exists weakSets;")
         }
 
-        while (!cursorTable4.isAfterLast) {
-            val level = cursorTable4.getInt(cursorTable4.getColumnIndex("level"))
-            val sequence = cursorTable4.getInt(cursorTable4.getColumnIndex("sequence"))
-            val correct_number: Int
+        val cursorTable1 = db.rawQuery("select * from $TABLE_NAME1;", null)
+        cursorTable1.moveToFirst()
+        db.execSQL("drop table if exists $TABLE_NAME1;")
+
+        val cursorTable2 = db.rawQuery("select * from $TABLE_NAME2;", null)
+        cursorTable2.moveToFirst()
+        db.execSQL("drop table if exists $TABLE_NAME2;")
+
+        onCreate(db)
+
+        while (!cursorTable1.isAfterLast) {
+            val name = "\"" + cursorTable1.getString(cursorTable1.getColumnIndex("name")) + "\""
+            val contentValues = ContentValues()
             try {
-                correct_number = cursorTable4.getInt(cursorTable4.getColumnIndex("correct_number"))
+                contentValues.put("correct_number", cursorTable1.getInt(cursorTable1.getColumnIndex("correct_number")))
             } catch(e: Exception) {
-                correct_number = 0
+                Log.e(tag, e.message)
             }
-            val total_number: Int
             try {
-                total_number = cursorTable4.getInt(cursorTable4.getColumnIndex("total_number"))
+                contentValues.put("total_number", cursorTable1.getInt(cursorTable1.getColumnIndex("total_number")))
             } catch(e: Exception) {
-                total_number = -1
+                Log.e(tag, e.message)
             }
-            db.execSQL("insert into $TABLE_NAME4(level, sequence, correct_number, total_number) values($level, $sequence, $correct_number, $total_number)")
-            cursorTable4.moveToNext()
+            db.update(TABLE_NAME1, contentValues, "name=$name", null)
+            cursorTable1.moveToNext()
+        }
+
+        while (!cursorTable2.isAfterLast) {
+            val sequence = "\"" + cursorTable2.getInt(cursorTable2.getColumnIndex("sequence")) + "\""
+            val contentValues = ContentValues()
+            try {
+                contentValues.put("correct_number", cursorTable2.getInt(cursorTable2.getColumnIndex("correct_number")))
+            } catch(e: Exception) {
+                Log.e(tag, e.message)
+            }
+            try {
+                contentValues.put("total_number", cursorTable2.getInt(cursorTable2.getColumnIndex("total_number")))
+            } catch(e: Exception) {
+                Log.e(tag, e.message)
+            }
+            db.update(TABLE_NAME2, contentValues, "sequence=$sequence", null)
+            cursorTable2.moveToNext()
         }
     }
 
@@ -651,8 +661,6 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         val DB_NAME = "shaper.db"
         val TABLE_NAME1 = "shapers"
         val TABLE_NAME2 = "sets"
-        val TABLE_NAME3 = "weakShapers"
-        val TABLE_NAME4 = "weakSets"
-        val DB_VERSION = 9
+        val DB_VERSION = 11
     }
 }

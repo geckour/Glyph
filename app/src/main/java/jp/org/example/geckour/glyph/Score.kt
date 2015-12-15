@@ -1,3 +1,4 @@
+/*
 package jp.org.example.geckour.glyph
 
 import android.app.Activity
@@ -72,14 +73,16 @@ class Score : Activity() {
         }
     }
 
-    /*
+    */
+/*
     private class MyComparator implements Comparator<Scores> {
         @Override
         public int compare(Scores s1, Scores s2) {
             return s1.value > s2.value ? 1 : -1;
         }
     }
-    */
+    *//*
+
     inner class CustomAdapter(context: Context, textViewResourceId: Int, objects: List<Scores>) : ArrayAdapter<Scores>(context, textViewResourceId, objects) {
         internal var layoutInflater: LayoutInflater
 
@@ -110,3 +113,4 @@ class Score : Activity() {
         }
     }
 }
+*/

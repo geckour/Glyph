@@ -343,14 +343,14 @@ class MyActivity : Activity() {
 
         fun getSequence() {
             val tag = "MyView/getSequence"
+            val l = 12
 
             if (qTotal > 1) {
-                val l = 12
                 var shapesSplit: Array<String>
                 val cursor = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null)
 
                 if (isWeaknessMode) {
-                    val cursorForWeakness = db.query(DBHelper.TABLE_NAME4, null, "level = $qTotal and total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "$l")
+                    val cursorForWeakness = db.query(DBHelper.TABLE_NAME2, null, "level = $qTotal and total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "$l")
 
                     val n = cursorForWeakness.count
                     Log.v(tag, "n: $n")
@@ -380,7 +380,7 @@ class MyActivity : Activity() {
                     cursorInLevel.moveToLast()
                     val max = cursorInLevel.getLong(0)
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
-                    //randomVal = 24
+                    //randomVal = 297
 
                     cursorInLevel.close()
                 }
@@ -407,7 +407,7 @@ class MyActivity : Activity() {
                 val cursor = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null)
 
                 if (isWeaknessMode) {
-                    val cursorForWeakness = db.query(DBHelper.TABLE_NAME3, null, "total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "5")
+                    val cursorForWeakness = db.query(DBHelper.TABLE_NAME1, null, "total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "$l")
 
                     val n = cursorForWeakness.count
                     Log.v(tag, "n: $n")
@@ -755,8 +755,9 @@ class MyActivity : Activity() {
         fun drawButton(canvas: Canvas) {
             val nextButtonWidth = (if (isStartGame && doShow) 200 else 150) * scale
             val retryButtonWidth = 170 * scale
-            val buttonHeight = 90 * scale
-            val margin = 20 * scale
+            val buttonHeight = 100 * scale
+            val margin = 40 * scale
+            val buttonBaseline = 35;
             nextButtonPoint[0] = Point((offsetX * 2 - nextButtonWidth - margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
             nextButtonPoint[1] = Point((offsetX * 2 - margin).toInt(), (offsetY * 2 - margin).toInt())
             retryButtonPoint[0] = Point((margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
@@ -764,7 +765,7 @@ class MyActivity : Activity() {
 
             paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
             paint.textAlign = Paint.Align.CENTER
-            paint.textSize = 40 * scale
+            paint.textSize = 45 * scale
             paint.style = Paint.Style.FILL
             val dNext: Drawable
             val dRetry: Drawable
@@ -776,9 +777,9 @@ class MyActivity : Activity() {
             dNext.setBounds(nextButtonPoint[0]?.x ?: 0, nextButtonPoint[0]?.y ?: 0, nextButtonPoint[1]?.x ?: 0, nextButtonPoint[1]?.y ?: 0)
             dNext.draw(canvas)
             if (isStartGame && doShow) {
-                canvas.drawText("BYPASS", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
+                canvas.drawText("BYPASS", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             } else {
-                canvas.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
+                canvas.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             }
             if (isEndGame) {
                 if (isOnRetry) {
@@ -788,7 +789,7 @@ class MyActivity : Activity() {
                 }
                 dRetry.setBounds(retryButtonPoint[0]?.x ?: 0, retryButtonPoint[0]?.y ?: 0, retryButtonPoint[1]?.x ?: 0, retryButtonPoint[1]?.y ?: 0)
                 dRetry.draw(canvas)
-                canvas.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - 30 * scale, paint)
+                canvas.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             }
         }
 
@@ -1037,9 +1038,9 @@ class MyActivity : Activity() {
 
             var cursor: Cursor
             if (qTotal > 1) {
-                cursor = db.query(DBHelper.TABLE_NAME4, null, "id = ${randomVal + 1}", null, null, null, null, null)
+                cursor = db.query(DBHelper.TABLE_NAME2, null, "id = ${randomVal + 1}", null, null, null, null, null)
             } else {
-                cursor = db.query(DBHelper.TABLE_NAME3, null, "id = ${randomVal + 1}", null, null, null, null, null)
+                cursor = db.query(DBHelper.TABLE_NAME1, null, "id = ${randomVal + 1}", null, null, null, null, null)
             }
             cursor.moveToFirst()
 
@@ -1056,11 +1057,11 @@ class MyActivity : Activity() {
                 c.moveToFirst()
                 val shapesSplit = c.getString(0).split(",".toRegex()).toTypedArray()
                 c.close()
-                db.update(DBHelper.TABLE_NAME4, contentValues, "id = ${randomVal + 1}", null)
+                db.update(DBHelper.TABLE_NAME2, contentValues, "id = ${randomVal + 1}", null)
                 for (i in answerThroughList.indices) {
                     val cursorOnShaper = db.rawQuery("select id from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i]}';", null)
                     cursorOnShaper.moveToFirst()
-                    cursor = db.query(DBHelper.TABLE_NAME3, null, "id = ${cursorOnShaper.getInt(0)}", null, null, null, null, null)
+                    cursor = db.query(DBHelper.TABLE_NAME1, null, "id = ${cursorOnShaper.getInt(0)}", null, null, null, null, null)
                     cursor.moveToFirst()
 
                     totalNumber = cursor.getInt(cursor.getColumnIndex("total_number"))
@@ -1073,11 +1074,11 @@ class MyActivity : Activity() {
                         Log.v(tag, "fault: ${shapesSplit[i]}")
                     }
                     cv.put("total_number", if (totalNumber > 0) totalNumber + 1 else 1)
-                    db.update(DBHelper.TABLE_NAME3, cv, "id = ${cursor.getInt(0)}", null)
+                    db.update(DBHelper.TABLE_NAME1, cv, "id = ${cursor.getInt(0)}", null)
                     cursorOnShaper.close()
                 }
             } else {
-                db.update(DBHelper.TABLE_NAME3, contentValues, "id = ${randomVal + 1}", null)
+                db.update(DBHelper.TABLE_NAME1, contentValues, "id = ${randomVal + 1}", null)
             }
             cursor.close()
         }
