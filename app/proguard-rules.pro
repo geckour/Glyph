@@ -16,6 +16,3 @@
 #   public *;
 #}
 -dontwarn kotlin.**
--dontwarn android.support.v4.**
--dontwarn android.support.v7.**
--dontwarn com.google.android.gms.internal.**
