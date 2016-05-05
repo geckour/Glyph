@@ -150,7 +150,7 @@ class MyActivity : Activity() {
         var isPressedButton = false
 
         var dots = arrayOfNulls<PointF>(11)
-        var Locus = ArrayList<Particle>()
+        var locus = ArrayList<Particle>()
         var locusPath = Path()
         var now: Long = 0
         var throughList: Array<ThroughList?>
@@ -159,6 +159,7 @@ class MyActivity : Activity() {
         var correctStr = ArrayList<String>()
         var holdTime: Long = 0
         var nextButtonPoint = arrayOfNulls<Point>(2)
+        var redoButtonPoint = arrayOfNulls<Point>(2)
         var retryButtonPoint = arrayOfNulls<Point>(2)
         var previousDot = -1
         var passTime: Array<Long>
@@ -220,25 +221,30 @@ class MyActivity : Activity() {
             initTime = now
         }
 
-        public override fun surfaceCreated(holder: SurfaceHolder) {
+        override fun surfaceCreated(holder: SurfaceHolder) {
             isAttached = true
             thread = Thread(this)
             thread?.start()
         }
-        public override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-        public override fun surfaceDestroyed(holder: SurfaceHolder) {
+        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+        override fun surfaceDestroyed(holder: SurfaceHolder) {
             val tag = "MyView/surfaceDestroyed"
             isAttached = false
         }
 
-        public override fun run() {
+        override fun run() {
             val tag = "MyView/run"
             while (isAttached) {
                 draw()
+                try {
+                    Thread.sleep(10)
+                } catch (e: Exception) {
+                    Log.e(tag, e.message)
+                }
             }
         }
 
-        public fun draw() {
+        fun draw() {
             val tag = "MyView/draw"
             var canvas: Canvas? = null
             try {
@@ -257,7 +263,8 @@ class MyActivity : Activity() {
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
             typeface = Typeface.createFromAsset(context.assets, "Coda-Regular.ttf")
-            paint.setTypeface(typeface)
+            //paint.setTypeface(typeface)
+            paint.typeface = typeface
 
             if (drawCountView) {
                 drawCount(canvas)
@@ -279,8 +286,8 @@ class MyActivity : Activity() {
                         canvas.drawBitmap(dotFalse, dots[i]!!.x - dotDiam / 2, dots[i]!!.y - dotDiam / 2, paint)
                     }
                 }
-                synchronized(Locus) {
-                    for (particle in Locus) {
+                synchronized(locus) {
+                    for (particle in locus) {
                         particle.move()
                     }
                 }
@@ -565,7 +572,7 @@ class MyActivity : Activity() {
 
             fun move() {
                 val diffFrames = System.currentTimeMillis() - initFrame
-                if (diffFrames > moveFrames || isReleased || !isStartGame) phase = 1
+                if (diffFrames > moveFrames || isReleasedOutsideButton || !isStartGame) phase = 1
 
                 when (phase) {
                     0 -> {
@@ -641,7 +648,7 @@ class MyActivity : Activity() {
                     diff.x = step0.x - step1.x
                     diff.y = step0.y - step1.y
 
-                    if (isReleased || !isStartGame) {
+                    if (isReleasedOutsideButton || !isStartGame) {
                         this.x = step1.x
                         this.y = step1.y
                     } else {
@@ -652,11 +659,13 @@ class MyActivity : Activity() {
             }
 
             private fun draw() {
-                paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.ADD))
+                //paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.ADD))
+                paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.ADD)
                 for (gr in grain) {
                     canvas.drawBitmap(scaledGrain, gr.x - grainR, gr.y - grainR, paint)
                 }
-                paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
+                //paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
+                paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
             }
         }
 
@@ -673,8 +682,8 @@ class MyActivity : Activity() {
                     length[i - 1] = Math.sqrt(Math.pow((dotI1.x - dotI0.x).toDouble(), 2.0) + Math.pow((dotI1.y - dotI0.y).toDouble(), 2.0)).toFloat()
                 }
             }
-            synchronized(Locus) {
-                Locus.clear()
+            synchronized(locus) {
+                locus.clear()
             }
             for (i in length.indices) {
                 val dotI0 = dots[throughList.dots[i]]
@@ -685,7 +694,7 @@ class MyActivity : Activity() {
                     var y = dotI0.y
 
                     val sumLength = floatArrayOf(0f, 0f)
-                    synchronized(Locus) {
+                    synchronized(locus) {
                         val absX = Math.abs(dotI1.x - dotI0.x)
                         val absY = Math.abs(dotI1.y - dotI0.y)
                         val dX = unitV[0] * interval
@@ -693,7 +702,7 @@ class MyActivity : Activity() {
                         val dXa = absX * interval / length[i]
                         val dYa = absY * interval / length[i]
                         while (sumLength[0] <= absX && sumLength[1] <= absY) {
-                            Locus.add(Particle(x, y, canvas))
+                            locus.add(Particle(x, y, canvas))
                             x += dX
                             y += dY
                             sumLength[0] += dXa
@@ -754,25 +763,32 @@ class MyActivity : Activity() {
 
         fun drawButton(canvas: Canvas) {
             val nextButtonWidth = (if (isStartGame && doShow) 200 else 150) * scale
+            val redoButtonWidth = 150 * scale
             val retryButtonWidth = 170 * scale
             val buttonHeight = 100 * scale
             val margin = 40 * scale
             val buttonBaseline = 35;
             nextButtonPoint[0] = Point((offsetX * 2 - nextButtonWidth - margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
             nextButtonPoint[1] = Point((offsetX * 2 - margin).toInt(), (offsetY * 2 - margin).toInt())
-            retryButtonPoint[0] = Point((margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
+            redoButtonPoint[0] = Point((margin).toInt(), (offsetY * 2 - buttonHeight - margin).toInt())
+            redoButtonPoint[1] = Point((margin + redoButtonWidth).toInt(), (offsetY * 2 - margin).toInt())
+            retryButtonPoint[0] = redoButtonPoint[0]
             retryButtonPoint[1] = Point((margin + retryButtonWidth).toInt(), (offsetY * 2 - margin).toInt())
 
             paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
             paint.textAlign = Paint.Align.CENTER
             paint.textSize = 45 * scale
             paint.style = Paint.Style.FILL
+            val button0: Drawable = if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
+            val button1: Drawable = if (version >= 23) resources.getDrawable(R.drawable.button1, null) else resources.getDrawable(R.drawable.button1)
             val dNext: Drawable
+            val dRedo: Drawable
             val dRetry: Drawable
-            if (isOnNext) {
-                dNext = if (version >= 23) resources.getDrawable(R.drawable.button1, null) else resources.getDrawable(R.drawable.button1)
+
+            if ((isOnNext[0] || isOnNext[1] || isOnNext[2]) && isTouch) {
+                dNext = button1
             } else {
-                dNext = if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
+                dNext = button0
             }
             dNext.setBounds(nextButtonPoint[0]?.x ?: 0, nextButtonPoint[0]?.y ?: 0, nextButtonPoint[1]?.x ?: 0, nextButtonPoint[1]?.y ?: 0)
             dNext.draw(canvas)
@@ -781,8 +797,20 @@ class MyActivity : Activity() {
             } else {
                 canvas.drawText("NEXT", (nextButtonPoint[0]?.x ?: 0) + nextButtonWidth / 2, (nextButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             }
+
+            if (doShowRedo) {
+                if ((isOnRedo[0] || isOnRedo[1] || isOnRedo[2]) && isTouch) {
+                    dRedo = button1
+                } else {
+                    dRedo = button0
+                }
+                dRedo.setBounds(redoButtonPoint[0]?.x ?: 0, redoButtonPoint[0]?.y ?: 0, redoButtonPoint[1]?.x ?: 0, redoButtonPoint[1]?.y ?: 0)
+                dRedo.draw(canvas)
+                canvas.drawText("REDO", (redoButtonPoint[0]?.x ?: 0) + redoButtonWidth / 2, (redoButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
+            }
+
             if (isEndGame) {
-                if (isOnRetry) {
+                if (isOnRetry[0] || isOnRetry[1] || isOnRetry[2]) {
                     dRetry = if (version >= 23) resources.getDrawable(R.drawable.button1, null) else resources.getDrawable(R.drawable.button1)
                 } else {
                     dRetry = if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
@@ -882,26 +910,32 @@ class MyActivity : Activity() {
                 if (isStartGame) {
                     when (i) {
                         in 0..qNum - 1 -> {
-                            paint.setShader(lgNormal)
+                            //paint.setShader(lgNormal)
+                            paint.shader = lgNormal
                             paint.style = Paint.Style.FILL
                             canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                            paint.setShader(null)
+                            //paint.setShader(null)
+                            paint.shader = null
 
                             paint.color = Color.argb(140, r, g, b)
                         }
                         qNum -> {
-                            if ((isReleased && throughList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
-                                paint.setShader(lgNormal)
+                            if ((isReleasedOutsideButton && throughList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
+                                //paint.setShader(lgNormal)
+                                paint.shader = lgNormal
                                 paint.style = Paint.Style.FILL
                                 canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                                paint.setShader(null)
+                                //paint.setShader(null)
+                                paint.shader = null
 
                                 paint.color = Color.argb(140, r, g, b)
                             } else {
-                                paint.setShader(lgStrong)
+                                //paint.setShader(lgStrong)
+                                paint.shader = lgStrong
                                 paint.style = Paint.Style.FILL
                                 canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                                paint.setShader(null)
+                                //paint.setShader(null)
+                                paint.shader = null
 
                                 paint.color = Color.rgb(r, g, b)
                             }
@@ -916,10 +950,12 @@ class MyActivity : Activity() {
                     }
                 } else {
                     if (i.toLong() == (currentTime - marginTime) / drawAnswerLength && currentTime > marginTime) {
-                        paint.setShader(lgStrong)
+                        //paint.setShader(lgStrong)
+                        paint.shader = lgStrong
                         paint.style = Paint.Style.FILL
                         canvas.drawPath(hexagonPath(origin, hexRadius), paint)
-                        paint.setShader(null)
+                        //paint.setShader(null)
+                        paint.shader = null
 
                         paint.color = Color.rgb(r, g, b)
                     } else {
@@ -1236,8 +1272,8 @@ class MyActivity : Activity() {
         }
 
         fun setLocusStart(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
-            synchronized(Locus) {
-                Locus.add(Particle(x, y, canvas))
+            synchronized(locus) {
+                locus.add(Particle(x, y, canvas))
 
                 if (doCD) {
                     setCollision(x, y, x, y)
@@ -1247,11 +1283,11 @@ class MyActivity : Activity() {
         }
 
         fun setLocus(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
-            synchronized(Locus) {
-                Locus.add(Particle(x, y, canvas))
+            synchronized(locus) {
+                locus.add(Particle(x, y, canvas))
 
                 if (doCD) {
-                    setCollision(x, y, Locus[Locus.size - 2].x0, Locus[Locus.size - 2].y0)
+                    setCollision(x, y, locus[locus.size - 2].x0, locus[locus.size - 2].y0)
                 }
                 locusPath.lineTo(x, y)
             }
@@ -1314,8 +1350,8 @@ class MyActivity : Activity() {
 
         fun resetLocus() {
             locusPath.reset()
-            synchronized(Locus) {
-                Locus.clear()
+            synchronized(locus) {
+                locus.clear()
             }
         }
 
@@ -1327,11 +1363,12 @@ class MyActivity : Activity() {
 
         var downX = 0f
         var downY = 0f
-        var memX = 0f
-        var memY = 0f
-        var isReleased = false
-        var isOnNext = false
-        var isOnRetry = false
+        var isTouch = false
+        var isReleasedOutsideButton = false
+        var doShowRedo = false
+        var isOnNext = Array(3, {i -> false})
+        var isOnRedo = Array(3, {i -> false})
+        var isOnRetry = Array(3, {i -> false})
         var releaseTime: Long = -1
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val tag = "onTouchEvent"
@@ -1344,35 +1381,34 @@ class MyActivity : Activity() {
                 -> {
                     downX = event.x
                     downY = event.y
-                    isOnNext = nextButtonPoint[0]?.x ?: -1 <= downX && downX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= downY && downY <= nextButtonPoint[1]?.y ?: -1
-                    isOnRetry = isEndGame && retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1
+                    isTouch = true
+                    isOnNext[0] = nextButtonPoint[0]?.x ?: -1 <= downX && downX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= downY && downY <= nextButtonPoint[1]?.y ?: -1
+                    isOnRedo[0] = doShowRedo && redoButtonPoint[0]?.x ?: -1 <= downX && downX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= downY && downY <= redoButtonPoint[1]?.y ?: -1
+                    isOnRetry[0] = isEndGame && retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1
                     if (!isEndGame) releaseTime = -1
-                    if (!isOnNext && isStartGame && !isEndGame) {
-                        if (isReleased) {
+                    if (!isOnNext[0] && isStartGame && !isEndGame) {
+                        if (isReleasedOutsideButton) {
                             resetLocus()
                             resetThrough()
-                            isReleased = false
+                            isReleasedOutsideButton = false
                         }
-                        setLocusStart(downX, downY, true, canvas!!)
-                        memX = downX
-                        memY = downY
+                        if (!isOnRedo[0]) setLocusStart(downX, downY, true, canvas!!)
                     }
                 }
                 MotionEvent.ACTION_MOVE //スワイプ
                 -> {
                     val currentX = event.x
                     val currentY = event.y
-                    isOnNext = nextButtonPoint[0]?.x ?: -1 <= currentX && currentX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= currentY && currentY <= nextButtonPoint[1]?.y ?: -1
-                    isOnRetry = isEndGame && retryButtonPoint[0]?.x ?: -1 <= currentX && currentX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= currentY && currentY <= retryButtonPoint[1]?.y ?: -1
-                    if (!isOnNext && isStartGame && !isEndGame) {
-                        if (currentX + lim < memX || memX + lim < currentX || currentY + lim < memY || memY + lim < currentY) {
-                            if (Locus.size == 0) {
+                    isOnNext[1] = isOnNext[0] && nextButtonPoint[0]?.x ?: -1 <= currentX && currentX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= currentY && currentY <= nextButtonPoint[1]?.y ?: -1
+                    isOnRedo[1] = doShowRedo && isOnRedo[0] && redoButtonPoint[0]?.x ?: -1 <= currentX && currentX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= currentY && currentY <= redoButtonPoint[1]?.y ?: -1
+                    isOnRetry[1] = isEndGame && isOnRetry[0] && retryButtonPoint[0]?.x ?: -1 <= currentX && currentX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= currentY && currentY <= retryButtonPoint[1]?.y ?: -1
+                    if (isStartGame && !isEndGame) {
+                        if (currentX + lim < downX || downX + lim < currentX || currentY + lim < downY || downY + lim < currentY) {
+                            if (locus.size == 0) {
                                 setLocusStart(currentX, currentY, true, canvas!!)
                             } else {
                                 setLocus(currentX, currentY, true, canvas!!)
                             }
-                            memX = currentX
-                            memY = currentY
                         }
                     }
                 }
@@ -1380,13 +1416,15 @@ class MyActivity : Activity() {
                 -> {
                     upX = event.x
                     upY = event.y
-                    isOnNext = nextButtonPoint[0]?.x ?: -1 <= downX && downX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= downY && downY <= nextButtonPoint[1]?.y ?: -1 &&
+                    isTouch = false
+                    isOnNext[2] = isOnNext[0] &&
                             nextButtonPoint[0]?.x ?: -1 <= upX && upX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= upY && upY <= nextButtonPoint[1]?.y ?: -1
-                    isOnRetry = isEndGame &&
-                            retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1 &&
+                    isOnRedo[2] = isOnRedo[0] &&
+                            redoButtonPoint[0]?.x ?: -1 <= upX && upX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= upY && upY <= redoButtonPoint[1]?.y ?: -1
+                    isOnRetry[2] = isEndGame && isOnRetry[0] &&
                             retryButtonPoint[0]?.x ?: -1 <= upX && upX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= upY && upY <= retryButtonPoint[1]?.y ?: -1
-                    if (!isOnNext && !isOnRetry && isStartGame && !isEndGame) {
-                        isReleased = true
+                    if (!isOnNext[2] && !isOnRedo[2] && !isOnRetry[2] && isStartGame && !isEndGame) {
+                        isReleasedOutsideButton = true
                         releaseTime = now
                         var tpassTime = (now - initTime) / 10
                         for (i in 0..qNum - 1) {
@@ -1405,9 +1443,11 @@ class MyActivity : Activity() {
 
                         if (qTotal - 1 > qNum) {
                             qNum++
+                            doShowRedo = true
                         } else {
                             holdTime = now
                             upTime = (defTime - (holdTime - initTime)) / 10
+                            doShowRedo = false
                             isEndGame = true
                             for (i in 0..qTotal - 1) {
                                 Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i]!!))
@@ -1415,7 +1455,7 @@ class MyActivity : Activity() {
                             recordResult()
                         }
                     }
-                    if (isOnNext) {
+                    if (isOnNext[2]) {
                         if (!isStartGame) {
                             startActivity(Intent(this@MyActivity, MyActivity::class.java))
                         } else if (doShow) {
@@ -1428,15 +1468,22 @@ class MyActivity : Activity() {
                             startActivity(Intent(this@MyActivity, MyActivity::class.java))
                         }
                     }
-                    if (isOnRetry) {
+                    if (isOnRedo[2]) {
+                        if (qNum != 0) {
+                            qNum--
+                            throughList[qNum] = ThroughList()
+                            if (qNum == 0) {
+                                doShowRedo = false
+                            }
+                        }
+                    }
+                    if (isOnRetry[2]) {
                         val intent = Intent(this@MyActivity, MyActivity::class.java)
                         intent.putExtra("isRetry", true)
                         intent.putExtra("retryLevel", level)
                         intent.putExtra("retryValue", randomVal)
                         startActivity(intent)
                     }
-                    isOnNext = false
-                    isOnRetry = false
                 }
                 MotionEvent.ACTION_CANCEL
                 -> {}

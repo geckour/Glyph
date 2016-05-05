@@ -142,25 +142,25 @@ class DictActivity : Activity() {
             initTime = now
         }
 
-        public override fun surfaceCreated(holder: SurfaceHolder) {
+        override fun surfaceCreated(holder: SurfaceHolder) {
             isAttached = true
             thread = Thread(this)
             thread?.start()
         }
-        public override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-        public override fun surfaceDestroyed(holder: SurfaceHolder) {
+        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+        override fun surfaceDestroyed(holder: SurfaceHolder) {
             val tag = "DictView/surfaceDestroyed"
             isAttached = false
         }
 
-        public override fun run() {
+        override fun run() {
             val tag = "DictView/run"
             while (isAttached) {
                 draw()
             }
         }
 
-        public fun draw() {
+        fun draw() {
             val tag = "DictView/draw"
             var canvas: Canvas? = null
             try {
@@ -179,7 +179,8 @@ class DictActivity : Activity() {
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
             typeface = Typeface.createFromAsset(context.assets, "Coda-Regular.ttf")
-            paint.setTypeface(typeface)
+            //paint.setTypeface(typeface)
+            paint.typeface = typeface
 
             setGrainAlpha(releaseTime)
 
@@ -390,11 +391,13 @@ class DictActivity : Activity() {
             }
 
             private fun draw() {
-                paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.ADD))
+                //paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.ADD))
+                paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.ADD)
                 for (gr in grain) {
                     canvas.drawBitmap(scaledGrain, gr.x - grainR, gr.y - grainR, paint)
                 }
-                paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
+                //paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
+                paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
             }
         }
 
