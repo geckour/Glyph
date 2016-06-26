@@ -157,6 +157,11 @@ class DictActivity : Activity() {
             val tag = "DictView/run"
             while (isAttached) {
                 draw()
+                try {
+                    Thread.sleep(10)
+                } catch (e: Exception) {
+                    Log.e(tag, e.message)
+                }
             }
         }
 

@@ -143,7 +143,8 @@ class MyActivity : Activity() {
         var pressButtonTime: Long = 0
         var isFirstTimeUp = true
         var doVibrate = false
-        var drawCountView = false
+        var doDrawCount = false
+        var isCmdSeq = true
         var isStartGame = false
         var isEndGame = false
         var doShow = true
@@ -203,7 +204,7 @@ class MyActivity : Activity() {
             }
             gameMode = Integer.parseInt(sp?.getString("gamemode", "0") ?: "0")
             doVibrate = sp?.getBoolean("doVibrate", false) ?: false
-            drawCountView = sp?.getBoolean("showCountView", false) ?: false
+            doDrawCount = sp?.getBoolean("showCountView", false) ?: false
             level = if (receivedLevel > -1) receivedLevel else (Math.random() * (max - min + 1) + min).toInt()
             //level = 8;
             qTotal = difficulty[level].qs
@@ -258,7 +259,7 @@ class MyActivity : Activity() {
             }
         }
 
-        public override fun onDraw(canvas: Canvas) {
+        override fun onDraw(canvas: Canvas) {
             val tag = "MyView/onDraw"
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
@@ -266,16 +267,8 @@ class MyActivity : Activity() {
             //paint.setTypeface(typeface)
             paint.typeface = typeface
 
-            if (drawCountView) {
+            if (doDrawCount) {
                 drawCount(canvas)
-            }
-
-            if (!isStartGame) {
-                setGrainAlpha()
-                drawAnswer(initTime, now, canvas)
-                paint.color = Color.WHITE
-            } else if (!isEndGame) {
-                setGrainAlpha(releaseTime)
             }
 
             if (doShow) {
@@ -288,20 +281,32 @@ class MyActivity : Activity() {
                 }
                 synchronized(locus) {
                     for (particle in locus) {
-                        particle.move()
+                        particle.move(phase(particle))
                     }
                 }
             }
 
-            if (isStartGame && doShow) {
-                drawTime(now, canvas)
-                drawQueNumber(now - initTime, 0, 2, 255, 197, canvas)
-            } else if (!isStartGame) {
-                drawQueNumber(now - initTime, marginTime, 240, 150, 40, canvas)
-            }
+            if (isCmdSeq) {
+                setGrainAlpha(releaseTime)
+                listenCmd(canvas)
+            } else {
+                if (!isStartGame) {
+                    drawAnswer(initTime, now, canvas)
+                    //paint.color = Color.WHITE
+                } else if (!isEndGame) {
+                    setGrainAlpha(releaseTime)
+                }
 
-            drawButton(canvas)
-            //drawFPS();
+                if (isStartGame && doShow) {
+                    drawTime(now, canvas)
+                    drawQueNumber(now - initTime, 0, 2, 255, 197, canvas)
+                } else if (!isStartGame) {
+                    drawQueNumber(now - initTime, marginTime, 240, 150, 40, canvas)
+                }
+
+                drawButton(canvas)
+                //drawFPS();
+            }
 
             if (isEndGame) {
                 if (now > holdTime + marginTime) {
@@ -348,7 +353,7 @@ class MyActivity : Activity() {
             }
         }
 
-        fun getSequence() {
+        private fun getSequence() {
             val tag = "MyView/getSequence"
             val l = 12
 
@@ -403,12 +408,12 @@ class MyActivity : Activity() {
 
                 for (i in 0..qTotal - 1) {
                     throughList[i] = ThroughList()
-                    val cursorInMane = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null)
-                    cursorInMane.moveToFirst()
+                    val cursorInName = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null)
+                    cursorInName.moveToFirst()
                     //Log.v(tag, "shaper name: " + c.getString(1));
-                    val dotsSplit = cursorInMane.getString(cursorInMane.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
+                    val dotsSplit = cursorInName.getString(cursorInName.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
                     answerThroughList[i] = ThroughList(dotsSplit)
-                    cursorInMane.close()
+                    cursorInName.close()
                 }
             } else {
                 val cursor = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null)
@@ -450,77 +455,69 @@ class MyActivity : Activity() {
             }
         }
 
-        fun setGrainAlpha() {
+        private fun setGrainAlpha() { //解答表示用
+            val tag = "setGrainAlpha"
             scaledGrain = Bitmap.createScaledBitmap(grainImg, (grainR * 2).toInt(), (grainR * 2).toInt(), false)
-            val w = scaledGrain?.width ?: 0
-            val h = scaledGrain?.height ?: 0
-
-            val pixels = IntArray(w * h)
-            scaledGrain?.getPixels(pixels, 0, w, 0, 0, w, h)
 
             val subAlpha = calcSubAlpha()
-            if (subAlpha != 0) {
-                for (y in 0..h - 1) {
-                    for (x in 0..w - 1) {
-                        var a = pixels[x + y * w]
-                        var b = a
-                        a = a.ushr(24)
-
-                        if (a != 0) {
-                            a -= subAlpha
-                            if (a < 0) {
-                                a = 0
-                            }
-                        }
-                        a = a shl 24
-
-                        b = b and 16777215
-
-                        pixels[x + y * w] = a + b
-                    }
-                }
-                scaledGrain?.setPixels(pixels, 0, w, 0, 0, w, h)
+            if (subAlpha > 0) {
+                setSubAlpha(subAlpha)
             }
         }
 
         private fun calcSubAlpha(): Int {
             val tag = "MyView/calcSubAlpha"
-            val cue = (now - initTime - marginTime).toInt() / drawAnswerLength
-            val timeInCue = (now - initTime - marginTime - drawAnswerLength * cue).toInt()
             val phase = doubleArrayOf(drawAnswerLength * 0.2, drawAnswerLength * 0.7)
+            val timeInCue = ((now - initTime - marginTime) % drawAnswerLength).toInt() //制御のキー
 
-            when (timeInCue) {
-                in 0..phase[0].toInt() -> return (255 - 255 * timeInCue / phase[0]).toInt()
-                in phase[0].toInt()..phase[1].toInt() -> return 0
-                else -> return (255 * (timeInCue - phase[1]) / (drawAnswerLength - phase[1])).toInt()
+            var subAlpha = 0
+            when {
+                timeInCue < phase[0].toInt() -> subAlpha = (255 * (1 - timeInCue / phase[0])).toInt()
+                phase[1].toInt() < timeInCue -> subAlpha = (255 * (timeInCue - phase[1]) / (drawAnswerLength - phase[1])).toInt()
+            }
+            return subAlpha
+        }
+
+        private fun setGrainAlpha(releaseTime: Long) { //フェードアウト用
+            fun calcSubAlpha(releaseTime: Long): Int {
+                val tol = 500
+                if (now - releaseTime > tol) {
+                    resetThrough()
+                    var result = ((now - releaseTime - tol) / 2f).toInt()
+                    return result
+                } else {
+                    return 0
+                }
+            }
+
+            val tag = "setGrainAlpha"
+            scaledGrain = Bitmap.createScaledBitmap(grainImg, (grainR * 2).toInt(), (grainR * 2).toInt(), false)
+
+            var subAlpha = 0
+            if (releaseTime > -1) {
+                subAlpha = calcSubAlpha(releaseTime)
+            }
+            if (subAlpha > 0) {
+                setSubAlpha(subAlpha)
             }
         }
 
-        fun setGrainAlpha(time: Long) {
-            scaledGrain = Bitmap.createScaledBitmap(grainImg, (grainR * 2).toInt(), (grainR * 2).toInt(), false)
+        private fun setSubAlpha(subAlpha: Int) {
             val w = scaledGrain?.width ?: 0
             val h = scaledGrain?.height ?: 0
 
             val pixels = IntArray(w * h)
             scaledGrain?.getPixels(pixels, 0, w, 0, 0, w, h)
 
-            var subAlpha = 0
-            if (time > -1) {
-                subAlpha = calcSubAlpha(time)
-            }
-            if (subAlpha != 0) {
-                for (y in 0..h - 1) {
-                    for (x in 0..w - 1) {
-                        var a = pixels[x + y * w]
-                        var b = a
-                        a = a.ushr(24)
+            for (y in 0..h - 1) {
+                for (x in 0..w - 1) {
+                    var a = pixels[x + y * w]
+                    var b = a
+                    a = a.ushr(24) //alpha値
 
-                        if (a != 0) {
-                            a -= subAlpha
-                            if (a < 0) {
-                                a = 0
-                            }
-                        }
+                    if (a > 0) {
+                        a -= subAlpha
+                        if (a < 0) a = 0 //alphaがマイナスになると予期せぬ表示になるので防止
                         a = a shl 24
 
                         b = b and 16777215
@@ -528,61 +525,44 @@ class MyActivity : Activity() {
                         pixels[x + y * w] = a + b
                     }
                 }
-                scaledGrain?.setPixels(pixels, 0, w, 0, 0, w, h)
             }
+            scaledGrain?.setPixels(pixels, 0, w, 0, 0, w, h)
         }
 
-        private fun calcSubAlpha(time: Long): Int {
-            val tol = 500
-            if (now - time > tol) {
-                resetThrough()
-                var result = ((now - time - tol) / 2f).toInt()
-                if (result > 255) {
-                    result = 255
-                }
-                return result
-            } else {
-                return 0
-            }
+        private fun phase(particle: Particle): Int {
+            return if (particle.diffFrames > particle.moveFrames || isReleasedOutsideButton || (!isStartGame && !isCmdSeq)) 1 else 0
         }
 
-        internal inner class Particle(var x0: Float, var y0: Float, val canvas: Canvas) {
+        internal inner class Particle(val x0: Float, val y0: Float, val canvas: Canvas) {
             val tag = "MyActivity.Particle"
             var grain = ArrayList<Grain>()
-            var phase = 0
-            var moveFrames: Long = 350
+            val moveFrames: Long = 350
+            var diffFrames: Long = 0
             var initFrame: Long = 0
             var v = 0.15
 
             init {
                 initFrame = System.currentTimeMillis()
-                grain.add(Grain(x0, y0, true, null))
-                grain.add(Grain(x0, y0, true, null))
-                grain.add(Grain(x0, y0, true, null))
-                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
-                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
-                grain.add(Grain(grain[0].origin.x, grain[0].origin.y, false, grain[0].step0))
-                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
-                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
-                grain.add(Grain(grain[1].origin.x, grain[1].origin.y, false, grain[1].step0))
-                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
-                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
-                grain.add(Grain(grain[2].origin.x, grain[2].origin.y, false, grain[2].step0))
+                for (i in 0..2) {
+                    grain.add(Grain(x0, y0, true, null))
+                    for (j in 0..2) {
+                        grain.add(Grain(grain[i].origin.x, grain[i].origin.y, false, grain[i].step0))
+                    }
+                }
             }
 
-            fun move() {
-                val diffFrames = System.currentTimeMillis() - initFrame
-                if (diffFrames > moveFrames || isReleasedOutsideButton || !isStartGame) phase = 1
+            fun move(phase: Int) {
+                diffFrames = System.currentTimeMillis() - initFrame
 
                 when (phase) {
-                    0 -> {
+                    0 -> { //収束前
                         val param = (moveFrames - diffFrames) / (moveFrames.toFloat())
                         for (i in grain.indices) {
                             grain[i].x = grain[i].step1.x + grain[i].diff.x * param
                             grain[i].y = grain[i].step1.y + grain[i].diff.y * param
                         }
                     }
-                    1 -> {
+                    1 -> { //収束後
                         for (i in grain.lastIndex downTo 0) {
                             if (!grain[i].isOrigin) {
                                 grain.removeAt(i)
@@ -659,18 +639,15 @@ class MyActivity : Activity() {
             }
 
             private fun draw() {
-                //paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.ADD))
                 paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.ADD)
                 for (gr in grain) {
                     canvas.drawBitmap(scaledGrain, gr.x - grainR, gr.y - grainR, paint)
                 }
-                //paint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
                 paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
             }
         }
 
-
-
+        //dotのリストを与えてそのリストが示す軌跡上にパーティクルを表示させる
         fun putParticles(throughList: ThroughList, canvas: Canvas) {
             val tag = "MyView/putParticles"
             val interval = 25 * scale
@@ -825,8 +802,8 @@ class MyActivity : Activity() {
             paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
             paint.textSize = 40f
             paint.textAlign = Paint.Align.RIGHT
-            val x = (offsetX * 2.0 - 20.0 * scale).toFloat()
-            val y = (offsetY * 2.0 - 120.0 * scale).toFloat()
+            val x = (offsetX * 2.0 - 40.0 * scale).toFloat()
+            val y = (offsetY * 2.0 - 150.0 * scale).toFloat()
 
             canvas.drawText("HACK:" + viewCount, x, y, paint)
         }
@@ -974,8 +951,81 @@ class MyActivity : Activity() {
             }
         }
 
+        var cmdLimitTime = initTime + 2000
+        fun listenCmd(canvas: Canvas) {
+            if (now > cmdLimitTime && !isTouch) {
+                isCmdSeq = false
+                when(hackMode) {
+                    MODE_SIMPLE -> drawAnswerLength *= 2
+                    MODE_COMPLEX -> drawAnswerLength /= 2
+                }
+                resetLocus()
+                throughList[0] = ThroughList()
+                releaseTime = -1
+                initTime = now
+            } else {
+                drawDialog(canvas)
+            }
+        }
+
+        val MODE_NOMAL = "nomal"
+        val MODE_SIMPLE = "simple"
+        val MODE_COMPLEX = "complex"
+        var hackMode = MODE_NOMAL
+        fun judgeCmd() {
+            val tag = "judgeCmd"
+            val simple = arrayListOf(2, 1)
+            val complex = arrayListOf(4, 3, 0, 2)
+            if (judgeLocus(ThroughList(simple), throughList[0] ?: ThroughList())) {
+                hackMode = MODE_SIMPLE
+                Log.v(tag, "simple")
+            }
+            if (judgeLocus(ThroughList(complex), throughList[0] ?: ThroughList())) {
+                hackMode = MODE_COMPLEX
+                Log.v(tag, "complex")
+            }
+        }
+
+        fun drawDialog(canvas: Canvas) {
+            if (releaseTime > -1 && now < cmdLimitTime) {
+                val width = when(hackMode) {
+                    MODE_SIMPLE -> 400 * scale
+                    MODE_COMPLEX -> 440 * scale
+                    else -> 0F
+                }
+                val height = 170 * scale
+                val bgColor = 0xff2f1b00.toInt()
+                val textColor =  0xffe1b23a.toInt()
+                val borderColor = 0xff63502d.toInt()
+                val box = Rect((offsetX - width / 2).toInt(), (offsetY - height / 2).toInt(), (offsetX + width / 2).toInt(), (offsetY + height / 2).toInt())
+
+                paint.color = bgColor
+                paint.style = Paint.Style.FILL
+                canvas.drawRect(box, paint)
+
+                paint.color = borderColor
+                paint.strokeWidth = 5f
+                paint.style = Paint.Style.STROKE
+                canvas.drawRect(box, paint)
+                paint.strokeWidth = 0f
+
+                paint.color = textColor
+                paint.style = Paint.Style.FILL
+                paint.textSize = 50 * scale
+                paint.textAlign = Paint.Align.CENTER
+                val text = when(hackMode) {
+                    MODE_SIMPLE -> "SIMPLE HACK"
+                    MODE_COMPLEX -> "COMPLEX HACK"
+                    else -> ""
+                }
+                canvas.drawText(text, offsetX, offsetY + 18 * scale, paint)
+            }
+        }
+
         var preCue = -1
         fun drawAnswer(initTime: Long, currentTime: Long, canvas: Canvas) {
+            setGrainAlpha()
+
             var cue: Int = -1
             val diffTIme = currentTime - initTime - marginTime
 
@@ -1394,6 +1444,12 @@ class MyActivity : Activity() {
                         }
                         if (!isOnRedo[0]) setLocusStart(downX, downY, true, canvas!!)
                     }
+                    if (isCmdSeq) {
+                        resetLocus()
+                        resetThrough()
+                        throughList[0] = ThroughList()
+                        setLocusStart(downX, downY, true, canvas!!)
+                    }
                 }
                 MotionEvent.ACTION_MOVE //スワイプ
                 -> {
@@ -1402,7 +1458,7 @@ class MyActivity : Activity() {
                     isOnNext[1] = isOnNext[0] && nextButtonPoint[0]?.x ?: -1 <= currentX && currentX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= currentY && currentY <= nextButtonPoint[1]?.y ?: -1
                     isOnRedo[1] = doShowRedo && isOnRedo[0] && redoButtonPoint[0]?.x ?: -1 <= currentX && currentX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= currentY && currentY <= redoButtonPoint[1]?.y ?: -1
                     isOnRetry[1] = isEndGame && isOnRetry[0] && retryButtonPoint[0]?.x ?: -1 <= currentX && currentX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= currentY && currentY <= retryButtonPoint[1]?.y ?: -1
-                    if (isStartGame && !isEndGame) {
+                    if (isCmdSeq || (isStartGame && !isEndGame)) {
                         if (currentX + lim < downX || downX + lim < currentX || currentY + lim < downY || downY + lim < currentY) {
                             if (locus.size == 0) {
                                 setLocusStart(currentX, currentY, true, canvas!!)
@@ -1426,11 +1482,11 @@ class MyActivity : Activity() {
                     if (!isOnNext[2] && !isOnRedo[2] && !isOnRetry[2] && isStartGame && !isEndGame) {
                         isReleasedOutsideButton = true
                         releaseTime = now
-                        var tpassTime = (now - initTime) / 10
+                        var tPassTime = (now - initTime) / 10
                         for (i in 0..qNum - 1) {
-                            tpassTime -= passTime[i]
+                            tPassTime -= passTime[i]
                         }
-                        passTime[qNum] = tpassTime
+                        passTime[qNum] = tPassTime
                         var list = ""
                         for (throughDot in throughList[qNum]!!.dots) {
                             list += "$throughDot,"
@@ -1454,6 +1510,11 @@ class MyActivity : Activity() {
                             }
                             recordResult()
                         }
+                    }
+                    if (isCmdSeq) {
+                        releaseTime = now
+                        cmdLimitTime = releaseTime + 1000
+                        judgeCmd()
                     }
                     if (isOnNext[2]) {
                         if (!isStartGame) {
