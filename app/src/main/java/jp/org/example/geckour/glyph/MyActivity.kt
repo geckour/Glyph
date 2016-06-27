@@ -972,22 +972,26 @@ class MyActivity : Activity() {
         val MODE_SIMPLE = "simple"
         val MODE_COMPLEX = "complex"
         var hackMode = MODE_NOMAL
+        var isValidCmd = false
         fun judgeCmd() {
             val tag = "judgeCmd"
             val simple = arrayListOf(2, 1)
             val complex = arrayListOf(4, 3, 0, 2)
             if (judgeLocus(ThroughList(simple), throughList[0] ?: ThroughList())) {
                 hackMode = MODE_SIMPLE
+                isValidCmd = true
                 Log.v(tag, "simple")
-            }
-            if (judgeLocus(ThroughList(complex), throughList[0] ?: ThroughList())) {
+            } else if (judgeLocus(ThroughList(complex), throughList[0] ?: ThroughList())) {
                 hackMode = MODE_COMPLEX
+                isValidCmd = true
                 Log.v(tag, "complex")
+            } else {
+                isValidCmd = false
             }
         }
 
         fun drawDialog(canvas: Canvas) {
-            if (releaseTime > -1 && now < cmdLimitTime) {
+            if (releaseTime > -1 && now < cmdLimitTime && isValidCmd) {
                 val width = when(hackMode) {
                     MODE_SIMPLE -> 400 * scale
                     MODE_COMPLEX -> 440 * scale
