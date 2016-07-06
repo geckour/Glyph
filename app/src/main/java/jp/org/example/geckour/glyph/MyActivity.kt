@@ -53,14 +53,14 @@ class MyActivity : Activity() {
 
         try {
             min = Integer.parseInt(sp?.getString("min_level", "0"))
-            Log.v(tag, "min:" + min)
+            Log.d(tag, "min:" + min)
         } catch (e: Exception) {
             Log.e(tag, "Can't translate minimum-level to int.")
         }
 
         try {
             max = Integer.parseInt(sp?.getString("max_level", "8"))
-            Log.v(tag, "max:" + max)
+            Log.d(tag, "max:" + max)
         } catch (e: Exception) {
             Log.e(tag, "Can't translate maximum-level to int.")
         }
@@ -209,7 +209,7 @@ class MyActivity : Activity() {
             //level = 8;
             qTotal = difficulty[level].qs
             passTime = Array(qTotal, { i -> -1L })
-            Log.v(tag, "qTotal:" + qTotal)
+            Log.d(tag, "qTotal:" + qTotal)
             defTime = difficulty[level].time
 
             throughList = arrayOfNulls<ThroughList>(qTotal)
@@ -310,6 +310,9 @@ class MyActivity : Activity() {
 
             if (isEndGame) {
                 if (now > holdTime + marginTime) {
+                    doShowRedo = false
+                    if (!isRecorded) recordResult()
+
                     doShow = false
                     drawResult(marginTime, holdTime + marginTime, now, canvas)
                 }
@@ -365,7 +368,7 @@ class MyActivity : Activity() {
                     val cursorForWeakness = db.query(DBHelper.TABLE_NAME2, null, "level = $qTotal and total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "$l")
 
                     val n = cursorForWeakness.count
-                    Log.v(tag, "n: $n")
+                    Log.d(tag, "n: $n")
                     if (n > 0) {
                         val r = (Math.random() * n).toInt()
                         cursorForWeakness.moveToPosition(r)
@@ -398,9 +401,9 @@ class MyActivity : Activity() {
                 }
                 cursor.moveToPosition(randomVal)
                 shapesSplit = cursor.getString(2).split(",".toRegex()).toTypedArray()
-                Log.v(tag, "randomVal:$randomVal, level:$level")
+                Log.d(tag, "randomVal:$randomVal, level:$level")
                 for (s in shapesSplit) {
-                    Log.v(tag, "shapesSplit: " + s)
+                    Log.d(tag, "shapesSplit: " + s)
                 }
                 correctStr = getCorrectStrings(cursor)
 
@@ -410,7 +413,7 @@ class MyActivity : Activity() {
                     throughList[i] = ThroughList()
                     val cursorInName = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null)
                     cursorInName.moveToFirst()
-                    //Log.v(tag, "shaper name: " + c.getString(1));
+                    //Log.d(tag, "shaper name: " + c.getString(1));
                     val dotsSplit = cursorInName.getString(cursorInName.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
                     answerThroughList[i] = ThroughList(dotsSplit)
                     cursorInName.close()
@@ -422,7 +425,7 @@ class MyActivity : Activity() {
                     val cursorForWeakness = db.query(DBHelper.TABLE_NAME1, null, "total_number > 0", null, null, null, "cast(correct_number as double) / total_number asc", "$l")
 
                     val n = cursorForWeakness.count
-                    Log.v(tag, "n: $n")
+                    Log.d(tag, "n: $n")
                     if (n > 0) {
                         val r = (Math.random() * n).toInt()
                         cursorForWeakness.moveToPosition(r)
@@ -432,7 +435,7 @@ class MyActivity : Activity() {
                         val max = cursor.getLong(0)
                         randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
                         //int randomVal = (int)max - 1;
-                        Log.v(tag, "randomVal:$randomVal, level:$level")
+                        Log.d(tag, "randomVal:$randomVal, level:$level")
                         throughList[0] = ThroughList()
                     }
 
@@ -442,7 +445,7 @@ class MyActivity : Activity() {
                     val max = cursor.getLong(0)
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
                     //randomVal = 0
-                    Log.v(tag, "randomVal:$randomVal, level:$level")
+                    Log.d(tag, "randomVal:$randomVal, level:$level")
                     throughList[0] = ThroughList()
                 }
                 cursor.moveToPosition(randomVal)
@@ -784,9 +787,7 @@ class MyActivity : Activity() {
                 dRedo.setBounds(redoButtonPoint[0]?.x ?: 0, redoButtonPoint[0]?.y ?: 0, redoButtonPoint[1]?.x ?: 0, redoButtonPoint[1]?.y ?: 0)
                 dRedo.draw(canvas)
                 canvas.drawText("REDO", (redoButtonPoint[0]?.x ?: 0) + redoButtonWidth / 2, (redoButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
-            }
-
-            if (isEndGame) {
+            } else if (isEndGame) {
                 if (isOnRetry[0] || isOnRetry[1] || isOnRetry[2]) {
                     dRetry = if (version >= 23) resources.getDrawable(R.drawable.button1, null) else resources.getDrawable(R.drawable.button1)
                 } else {
@@ -830,7 +831,7 @@ class MyActivity : Activity() {
 
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (i in 0..qTotal - 1) {
-                    Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i] ?: ThroughList()))
+                    Log.d(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i] ?: ThroughList()))
                 }
                 holdTime = now
                 isEndGame = true
@@ -980,11 +981,11 @@ class MyActivity : Activity() {
             if (judgeLocus(ThroughList(simple), throughList[0] ?: ThroughList())) {
                 hackMode = MODE_SIMPLE
                 isValidCmd = true
-                Log.v(tag, "simple")
+                Log.d(tag, "simple")
             } else if (judgeLocus(ThroughList(complex), throughList[0] ?: ThroughList())) {
                 hackMode = MODE_COMPLEX
                 isValidCmd = true
-                Log.v(tag, "complex")
+                Log.d(tag, "complex")
             } else {
                 isValidCmd = false
             }
@@ -1114,6 +1115,7 @@ class MyActivity : Activity() {
             canvas.drawRect(0.0f, 0.0f, offsetX * 2, offsetY * 2, paint)
         }
 
+        var isRecorded = false
         fun recordResult() {
             val tag = "MyView/recordResult"
 
@@ -1125,6 +1127,8 @@ class MyActivity : Activity() {
                     correctNum++
                 }
             }
+            correctNum = isCorrect.count { it == true }
+            Log.d(tag, "correctNum: $correctNum")
 
             var cursor: Cursor
             if (qTotal > 1) {
@@ -1158,10 +1162,10 @@ class MyActivity : Activity() {
                     val cv = ContentValues()
                     if (isCorrect[i]) {
                         cv.put("correct_number", if (totalNumber > 0) cursor.getInt(cursor.getColumnIndex("correct_number")) + 1 else 1)
-                        Log.v(tag, "correct: ${shapesSplit[i]}")
+                        Log.d(tag, "correct: ${shapesSplit[i]}")
                     } else {
                         cv.put("correct_number", if (totalNumber > 0) cursor.getInt(cursor.getColumnIndex("correct_number")) else 0)
-                        Log.v(tag, "fault: ${shapesSplit[i]}")
+                        Log.d(tag, "fault: ${shapesSplit[i]}")
                     }
                     cv.put("total_number", if (totalNumber > 0) totalNumber + 1 else 1)
                     db.update(DBHelper.TABLE_NAME1, cv, "id = ${cursor.getInt(0)}", null)
@@ -1171,6 +1175,7 @@ class MyActivity : Activity() {
                 db.update(DBHelper.TABLE_NAME1, contentValues, "id = ${randomVal + 1}", null)
             }
             cursor.close()
+            isRecorded = true
         }
 
         fun drawResult(margin: Long, initTime: Long, currentTime: Long, canvas: Canvas) {
@@ -1438,7 +1443,7 @@ class MyActivity : Activity() {
                     isTouch = true
                     isOnNext[0] = nextButtonPoint[0]?.x ?: -1 <= downX && downX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= downY && downY <= nextButtonPoint[1]?.y ?: -1
                     isOnRedo[0] = doShowRedo && redoButtonPoint[0]?.x ?: -1 <= downX && downX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= downY && downY <= redoButtonPoint[1]?.y ?: -1
-                    isOnRetry[0] = isEndGame && retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1
+                    isOnRetry[0] = isEndGame && !doShowRedo && retryButtonPoint[0]?.x ?: -1 <= downX && downX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= downY && downY <= retryButtonPoint[1]?.y ?: -1
                     if (!isEndGame) releaseTime = -1
                     if (!isOnNext[0] && isStartGame && !isEndGame) {
                         if (isReleasedOutsideButton) {
@@ -1461,7 +1466,7 @@ class MyActivity : Activity() {
                     val currentY = event.y
                     isOnNext[1] = isOnNext[0] && nextButtonPoint[0]?.x ?: -1 <= currentX && currentX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= currentY && currentY <= nextButtonPoint[1]?.y ?: -1
                     isOnRedo[1] = doShowRedo && isOnRedo[0] && redoButtonPoint[0]?.x ?: -1 <= currentX && currentX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= currentY && currentY <= redoButtonPoint[1]?.y ?: -1
-                    isOnRetry[1] = isEndGame && isOnRetry[0] && retryButtonPoint[0]?.x ?: -1 <= currentX && currentX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= currentY && currentY <= retryButtonPoint[1]?.y ?: -1
+                    isOnRetry[1] = isEndGame && !doShowRedo && isOnRetry[0] && retryButtonPoint[0]?.x ?: -1 <= currentX && currentX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= currentY && currentY <= retryButtonPoint[1]?.y ?: -1
                     if (isCmdSeq || (isStartGame && !isEndGame)) {
                         if (currentX + lim < downX || downX + lim < currentX || currentY + lim < downY || downY + lim < currentY) {
                             if (locus.size == 0) {
@@ -1479,9 +1484,9 @@ class MyActivity : Activity() {
                     isTouch = false
                     isOnNext[2] = isOnNext[0] &&
                             nextButtonPoint[0]?.x ?: -1 <= upX && upX <= nextButtonPoint[1]?.x ?: -1 && nextButtonPoint[0]?.y ?: -1 <= upY && upY <= nextButtonPoint[1]?.y ?: -1
-                    isOnRedo[2] = isOnRedo[0] &&
+                    isOnRedo[2] = doShowRedo && isOnRedo[0] &&
                             redoButtonPoint[0]?.x ?: -1 <= upX && upX <= redoButtonPoint[1]?.x ?: -1 && redoButtonPoint[0]?.y ?: -1 <= upY && upY <= redoButtonPoint[1]?.y ?: -1
-                    isOnRetry[2] = isEndGame && isOnRetry[0] &&
+                    isOnRetry[2] = isEndGame && !doShowRedo && isOnRetry[0] &&
                             retryButtonPoint[0]?.x ?: -1 <= upX && upX <= retryButtonPoint[1]?.x ?: -1 && retryButtonPoint[0]?.y ?: -1 <= upY && upY <= retryButtonPoint[1]?.y ?: -1
                     if (!isOnNext[2] && !isOnRedo[2] && !isOnRetry[2] && isStartGame && !isEndGame) {
                         isReleasedOutsideButton = true
@@ -1491,28 +1496,18 @@ class MyActivity : Activity() {
                             tPassTime -= passTime[i]
                         }
                         passTime[qNum] = tPassTime
-                        var list = ""
-                        for (throughDot in throughList[qNum]!!.dots) {
-                            list += "$throughDot,"
-                        }
-                        Log.v(tag, "throughList:$list")
+                        Log.d(tag, "throughList: ${throughList[qNum]?.dots?.joinToString(",")}")
                         resetLocus()
                         if (throughList[qNum]?.dots?.size ?: 0 > 0) {
                             putParticles(throughList[qNum]!!, canvas!!)
                         }
-
-                        if (qTotal - 1 > qNum) {
-                            qNum++
+                        qNum++
+                        if (qTotal > qNum) {
                             doShowRedo = true
                         } else {
                             holdTime = now
                             upTime = (defTime - (holdTime - initTime)) / 10
-                            doShowRedo = false
                             isEndGame = true
-                            for (i in 0..qTotal - 1) {
-                                Log.v(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i]!!))
-                            }
-                            recordResult()
                         }
                     }
                     if (isCmdSeq) {
@@ -1534,6 +1529,7 @@ class MyActivity : Activity() {
                         }
                     }
                     if (isOnRedo[2]) {
+                        isEndGame = false
                         if (qNum != 0) {
                             qNum--
                             throughList[qNum] = ThroughList()
