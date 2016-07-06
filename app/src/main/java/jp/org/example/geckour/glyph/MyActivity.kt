@@ -138,7 +138,7 @@ class MyActivity : Activity() {
         var qNum = 0
         var defTime = 20000
         var initTime: Long = 0
-        var drawAnswerLength = 1150
+        var drawAnswerLength = 1200
         var marginTime: Long = 900
         var pressButtonTime: Long = 0
         var isFirstTimeUp = true
@@ -958,7 +958,7 @@ class MyActivity : Activity() {
                 isCmdSeq = false
                 when(hackMode) {
                     MODE_SIMPLE -> drawAnswerLength *= 2
-                    MODE_COMPLEX -> drawAnswerLength /= 2
+                    MODE_COMPLEX -> drawAnswerLength /= 3
                 }
                 resetLocus()
                 throughList[0] = ThroughList()
