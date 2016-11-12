@@ -9,8 +9,15 @@ import android.database.sqlite.SQLiteStatement
 import android.util.Log
 
 class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, null, DBHelper.DB_VERSION) {
+    companion object {
+        val DB_NAME = "shaper.db"
+        val TABLE_NAME1 = "shapers"
+        val TABLE_NAME2 = "sets"
+        val DB_VERSION = 13
+    }
 
     private val SHAPERS = arrayOf(
+        arrayOf("ABANDON", "6,4,0,2,9,8"),
         arrayOf("ACCEPT", "8,2,1,8"),
         arrayOf("ADVANCE", "5,3,9"),
         arrayOf("AGAIN", "9,3,2,0,4,1"),
@@ -40,6 +47,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("DANGER", "5,3,0,8"),
         arrayOf("DATA", "5,4,0,2,8"),
         arrayOf("DEFEND", "10,2,8,1,6"),
+        arrayOf("DESTINATION", "6,7,8"),
         arrayOf("DESTINY", "3,0,4,1,2,8"),
         arrayOf("DESTROY", "10,3,0,1,7"),
         arrayOf("DETERIORATE", "3,0,2,9"),
@@ -78,6 +86,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("JOURNEY", "6,4,0,3,10,9,8"),
         arrayOf("KNOWLEDGE", "8,3,0,4,8"),
         arrayOf("LEAD", "5,10,9,2,8"),
+        arrayOf("LEGACY", "9,2,3,10,5,6,4,1,7"),
         arrayOf("LESS", "3,0,4"),
         arrayOf("LIBERATE", "9,3,0,4,6,5"),
         arrayOf("LIE", "2,3,0,1,4,0"),
@@ -87,6 +96,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("MESSAGE", "9,3,0,1,6"),
         arrayOf("MIND", "8,2,3,0,8"),
         arrayOf("MORE", "2,0,1"),
+        arrayOf("N'ZEER", "8,0,5,3,0,4,5"),
         arrayOf("NATURE", "9,2,3,4,1,7"),
         arrayOf("NEW", "4,1,7"),
         arrayOf("NOT", "3,4,1"),
@@ -100,6 +110,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("PATH", "5,0,2,9"),
         arrayOf("PEACE", "0,1,8,2,0,4,5,3,0"),
         arrayOf("PERFECTION", "5,0,2,9,8,7,1,0"),
+        arrayOf("PERSPECTIVE", "9,2,0,4,5,3,0,1,7"),
         arrayOf("PORTAL", "10,3,4,6,7,1,2,9,10"),
         arrayOf("POTENTIAL", "5,0,1,7,6"),
         arrayOf("PRESENT", "3,2,1,4"),
@@ -149,8 +160,12 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
     )
 
     private val SETS = arrayOf(
+        arrayOf("5", "ABANDON,ALL,TECHNOLOGY,SAVE,US", null),
+        arrayOf("5", "ABANDON,FEAR,DEFEND,FUTURE,TOGETHER", null),
+        arrayOf("5", "ABANDON,FEAR,SEE,FUTURE,DESTINATION", null),
         arrayOf("5", "ADVANCE,CIVILIZATION,PURSUE,SHAPERS,PATH", null),
         arrayOf("5", "ADVANCE,CIVILIZATION,PURSUE,SHAPERS,TRUTH", null),
+        arrayOf("5", "ANSWER,N'ZEER,QUESTION,POTENTIAL,KNOWLEDGE", null),
         arrayOf("5", "ANSWER,QUESTION,DISCOVER,DIFFICULT,TRUTH", null),
         arrayOf("5", "ATTACK,HUMAN,CIVILIZATION,XM,MESSAGE", null),
         arrayOf("5", "ATTACK,PURE,FUTURE,HUMAN,CIVILIZATION", null),
@@ -159,8 +174,10 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "AVOID,CHAOS,AVOID,SHAPERS,LIE", null),
         arrayOf("5", "AVOID,CHAOS,REPAIR,POTENTIAL,WAR", null),
         arrayOf("5", "AVOID,PERFECTION,STAY,HUMAN,SELF", null),
+        arrayOf("5", "BEGIN,JOURNEY,BREATHE,XM,EVOLUTION", null),
         arrayOf("5", "BREATHE,INSIDE,XM,LOSE,SELF", null),
         arrayOf("5", "CAPTURE,PORTAL,DEFEND,PORTAL,COURAGE", null),
+        arrayOf("5", "CHANGE,PERSPECTIVE,BEGIN,NEW,STRUGGLE", null),
         arrayOf("5", "CHANGE,SEPARATE,PAST,END,JOURNEY", null),
         arrayOf("5", "CHAOS,ATTACK,CONFLICT,DISCOVER,HARMONY", null),
         arrayOf("5", "CHAOS,PERFECTION,STABILITY,HUMAN,SELF", null),
@@ -171,6 +188,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "CONTEMPLATE,RESTRAINT,DISCOVER,MORE,COURAGE", null),
         arrayOf("5", "COURAGE,ATTACK,SHAPERS,PORTAL,TOGETHER", null),
         arrayOf("5", "COURAGE,DESTROY,SHAPERS,PORTAL,TOGETHER", null),
+        arrayOf("5", "CREATE,NEW,FUTURE,SEE,ALL", null),
+        arrayOf("5", "CREATE,NEW,PORTAL,POTENTIAL,FUTURE", null),
         arrayOf("5", "CREATE,OLD,FUTURE,SEE,ALL", null),
         arrayOf("5", "CREATE,PURE,FUTURE,HUMAN,CIVILIZATION", null),
         arrayOf("5", "CREATE,PURE,FUTURE,NOT,WAR", null),
@@ -197,9 +216,13 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "HELP,ENLIGHTENMENT,CAPTURE,ALL,PORTAL", null),
         arrayOf("5", "HELP,HUMAN,CIVILIZATION,PURSUE,DESTINY", null),
         arrayOf("5", "HELP,RESISTANCE,CAPTURE,ALL,PORTAL", null),
+        arrayOf("5", "HELP,US,SAVE,US,ALL", null),
         arrayOf("5", "HIDE,RESISTANCE,ADVANCE,STRONG,TOGETHER", null),
+        arrayOf("5", "HUMAN,LEGACY,ABANDON,OLD,KNOWLEDGE", null),
+        arrayOf("5", "HUMAN,LEGACY,HAVE,ABANDON,NOW", null),
         arrayOf("5", "HUMAN,NOT,TOGETHER,CIVILIZATION,DETERIORATE", null),
         arrayOf("5", "HUMAN,SHAPERS,TOGETHER,CREATE,DESTINY", null),
+        arrayOf("5", "IMPERFECT,MESSAGE,BEGIN,HUMAN,CHAOS", null),
         arrayOf("5", "IMPERFECT,TRUTH,OPEN,COMPLEX,ANSWER", null),
         arrayOf("5", "IMPERFECT,XM,MESSAGE,HUMAN,CHAOS", null),
         arrayOf("5", "IMPROVE,MIND,IMPROVE,COURAGE,CHANGE", null),
@@ -234,6 +257,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "REPAIR,SOUL,LESS,HUMAN,HARM", null),
         arrayOf("5", "SAVE,HUMAN,CIVILIZATION,DESTROY,PORTAL", null),
         arrayOf("5", "SEARCH,DESTINY,CREATE,PURE,FUTURE", null),
+        arrayOf("5", "SEE,TRUTH,SEE,FUTURE,BEGIN", null),
         arrayOf("5", "SEPARATE,MIND,BODY,DISCOVER,ENLIGHTENMENT", null),
         arrayOf("5", "SEPARATE,TRUTH,LIE,SHAPERS,FUTURE", null),
         arrayOf("5", "SHAPERS,LEAD,HUMAN,COMPLEX,JOURNEY", null),
@@ -253,7 +277,9 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("5", "WEAK,HUMAN,DESTINY,DESTROY,CIVILIZATION", null),
         arrayOf("5", "XM,CREATE,COMPLEX,HUMAN,DESTINY", null),
         arrayOf("5", "XM,PAST,FUTURE,DESTINY,HARMONY", null),
-        arrayOf("5", "XM,PATH,FUTURE,JOURNEY,HARMONY", null), //#4
+        arrayOf("5", "XM,PATH,FUTURE,JOURNEY,HARMONY", null),
+        arrayOf("4", "ABANDON,FEAR,SEE,FUTURE", null), //#4
+        arrayOf("4", "ABANDON,FEAR,DEFEND,FUTURE", null),
         arrayOf("4", "ADVANCE,FUTURE,NOT,WAR", null),
         arrayOf("4", "ADVANCE,CIVILIZATION,REPEAT,FAILURE", null),
         arrayOf("4", "ALL,CHAOS,INSIDE,BODY", null),
@@ -263,12 +289,14 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "ATTACK,RESISTANCE,PURSUE,ENLIGHTENMENT", null),
         arrayOf("4", "ATTACK,WEAK,SHAPERS,LIE", null),
         arrayOf("4", "AVOID,XM,MESSAGE,LIE", null),
-        arrayOf("4", "BREATHE,AGAIN,JOURNEY,AGAIN", null),
+        arrayOf("4", "BEGIN,JOURNEY,BREATHE,XM", null),
+        arrayOf("4", "BEGIN,HUMAN,LEGACY,NOW", null),
         arrayOf("4", "BREATHE,NATURE,PERFECTION,HARMONY", null),
         arrayOf("4", "CAPTURE,FEAR,DISCOVER,COURAGE", null),
         arrayOf("4", "CHANGE,BODY,IMPROVE,HUMAN", null),
         arrayOf("4", "CHANGE,FUTURE,CAPTURE,DESTINY", null),
         arrayOf("4", "CHANGE,HUMAN,POTENTIAL,USE", null),
+        arrayOf("4", "CHANGE,PERSPECTIVE,BEGIN,NEW", null),
         arrayOf("4", "CHANGE,SIMPLE,HUMAN,FUTURE", null),
         arrayOf("4", "CHAOS,BARRIER,SHAPERS,PORTAL", null),
         arrayOf("4", "CHAOS,DESTROY,SHAPERS,PORTAL", null),
@@ -284,6 +312,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "CREATE,DISTANCE,IMPURE,PATH", null),
         arrayOf("4", "CREATE,FUTURE,CHANGE,DESTINY", null),
         arrayOf("4", "CREATE,FUTURE,NOT,WAR", null),
+        arrayOf("4", "CREATE,NEW,PORTAL,POTENTIAL", null),
         arrayOf("4", "DEFEND,MESSAGE,ANSWER,IDEA", null),
         arrayOf("4", "DESTROY,COMPLEX,SHAPERS,LIE", null),
         arrayOf("4", "DESTROY,DESTINY,HUMAN,LIE", null),
@@ -298,6 +327,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "HARMONY,PATH,NOURISH,PRESENT", null),
         arrayOf("4", "HELP,GAIN,CREATE,PURSUE", null),
         arrayOf("4", "HELP,SHAPERS,CREATE,FUTURE", null),
+        arrayOf("4", "HELP,US,SAVE,US", null),
         arrayOf("4", "HIDE,IMPURE,HUMAN,THOUGHT", null),
         arrayOf("4", "HUMAN,HAVE,IMPURE,CIVILIZATION", null),
         arrayOf("4", "HUMAN,PAST,PRESENT,FUTURE", null),
@@ -322,6 +352,8 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "LIVE,NATURE,BALANCE,HARMONY", null),
         arrayOf("4", "LOSE,DANGER,GAIN,SAFETY", null),
         arrayOf("4", "MORE,MIND,LESS,SOUL", null),
+        arrayOf("4", "N'ZEER,SHAPERS,STRUGGLE,KNOWLEDGE", null),
+        arrayOf("4", "N'ZEER,TECHNOLOGY,MIND,EVOLUTION", null),
         arrayOf("4", "NOT,MIND,JOURNEY,PERFECTION", null),
         arrayOf("4", "NOURISH,XM,CREATE,THOUGHT", null),
         arrayOf("4", "OPEN,CHAOS,INSIDE,BODY", null),
@@ -345,6 +377,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "SEE,TRUTH,SEE,FUTURE", null),
         arrayOf("4", "SEARCH,DATA,DISCOVER,PATH", null),
         arrayOf("4", "SEARCH,TRUTH,SAVE,CIVILIZATION", null),
+        arrayOf("4", "SEARCH,XM,DISTANCE,DESTINATION", null),
         arrayOf("4", "SEARCH,XM,SAVE,PORTAL", null),
         arrayOf("4", "SEARCH,TRUTH,SEE,FUTURE", null),
         arrayOf("4", "SEPARATE,WEAK,IGNORE,TRUTH", null),
@@ -376,14 +409,15 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("4", "XM,DIE,CHAOS,LIVE", null),
         arrayOf("4", "XM,HAVE,MIND,HARMONY", null),
         arrayOf("4", "XM,HAVE,MIND,JOURNEY", null),
-        arrayOf("4", "YOU,DESTINY,NOT,EASY", null), //#3
-        arrayOf("3", "ACCEPT,HUMAN,WEAK", null),
+        arrayOf("4", "YOU,DESTINY,NOT,EASY", null),
+        arrayOf("3", "ACCEPT,HUMAN,WEAK", null), //#3
         arrayOf("3", "ADVANCE,HUMAN,ENLIGHTENMENT", ",,ENLIGHTENED"),
         arrayOf("3", "ADVANCE,HUMAN,RESISTANCE", null),
         arrayOf("3", "ADVANCE,PURE,TRUTH", null),
         arrayOf("3", "AGAIN,JOURNEY,OUTSIDE", null),
         arrayOf("3", "ALL,CIVILIZATION,CHAOS", null),
         arrayOf("3", "ALL,XM,LIBERATE", null),
+        arrayOf("3", "ANSWER,N'ZEER,QUESTION", null),
         arrayOf("3", "ATTACK,CREATE,DANGER", null),
         arrayOf("3", "ATTACK,DESTROY,FUTURE", null),
         arrayOf("3", "ATTACK,DIFFICULT,FUTURE", null),
@@ -400,9 +434,11 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("3", "AVOID,PURE,CHAOS", null),
         arrayOf("3", "AVOID,WAR,CHAOS", null),
         arrayOf("3", "ANSWER,REPEAT,AVOID", null),
+        arrayOf("3", "BEGIN,NEW,STRUGGLE", null),
         arrayOf("3", "CAPTURE,SHAPERS,PORTAL", null),
         arrayOf("3", "CAPTURE,XM,PORTAL", null),
         arrayOf("3", "CHANGE,HUMAN,FUTURE", null),
+        arrayOf("3", "CHANGE,PERSPECTIVE,TECHNOLOGY", null),
         arrayOf("3", "CIVILIZATION,WAR,CHAOS", null),
         arrayOf("3", "COMPLEX,JOURNEY,FUTURE", null),
         arrayOf("3", "CONTEMPLATE,JOURNEY,OUTSIDE", null),
@@ -439,14 +475,19 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("3", "FUTURE,EQUAL,PAST", null),
         arrayOf("3", "GAIN,CIVILIZATION,PEACE", null),
         arrayOf("3", "GAIN,FUTURE,ESCAPE", null),
+        arrayOf("3", "GAIN,MORE,KNOWLEDGE", null),
         arrayOf("3", "HARM,DANGER,AVOID", null),
         arrayOf("3", "HARMONY,STABILITY,FUTURE", null),
+        arrayOf("3", "HELP,US,ALL", null),
         arrayOf("3", "HIDE,JOURNEY,TRUTH", null),
         arrayOf("3", "HIDE,PATH,FUTURE", null),
         arrayOf("3", "HUMAN,FAILURE,UNBOUNDED", null),
         arrayOf("3", "HUMAN,GAIN,SAFETY", null),
+        arrayOf("3", "HUMAN,INTELLIGENCE,UNBOUNDED", null),
+        arrayOf("3", "HUMAN,KNOWLEDGE,LEGACY", null),
         arrayOf("3", "HUMAN,SOUL,UNBOUNDED", null),
-        arrayOf("3", "HUMAN,SUCCESS,UNBOUNDED", null),
+        arrayOf("3", "HUMAN,EVOLUTION,UNBOUNDED", null),
+        arrayOf("3", "HUMAN,FAILURE,UNBOUNDED", null),
         arrayOf("3", "IMPROVE,ADVANCE,PRESENT", null),
         arrayOf("3", "IMPROVE,FUTURE,TOGETHER", null),
         arrayOf("3", "IMPROVE,HUMAN,SHAPERS", null),
@@ -500,11 +541,12 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("3", "WAR,ATTACK,CHAOS", null),
         arrayOf("3", "WAR,CREATE,DANGER", null),
         arrayOf("3", "WAR,DESTROY,FUTURE", null),
-        arrayOf("3", "XM,NOURISH,CIVILIZATION", null), //#2
-        arrayOf("2", "ADVANCE,ENLIGHTENMENT", null),
+        arrayOf("3", "XM,NOURISH,CIVILIZATION", null),
+        arrayOf("2", "ADVANCE,ENLIGHTENMENT", null), //#2
         arrayOf("2", "ATTACK,EVOLUTION", null),
         arrayOf("2", "AVOID,CONFLICT", null),
         arrayOf("2", "CAPTURE,PORTAL", null),
+        arrayOf("2", "CHANGE,PERSPECTIVE", null),
         arrayOf("2", "CHANGE,PRESENT", null),
         arrayOf("2", "ESCAPE,TOGETHER", null),
         arrayOf("2", "CIVILIZATION,CHAOS", null),
@@ -519,6 +561,7 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
         arrayOf("2", "DISCOVER,RESISTANCE", null),
         arrayOf("2", "ESCAPE,EVOLUTION", null),
         arrayOf("2", "FOLLOW,JOURNEY", null),
+        arrayOf("2", "FUTURE,DESTINATION", null),
         arrayOf("2", "GAIN,PEACE", null),
         arrayOf("2", "GAIN,SAFETY", null),
         arrayOf("2", "HIDE,TRUTH", null),
@@ -657,12 +700,5 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
                 cursorTable2.moveToNext()
             }
         }
-    }
-
-    companion object {
-        val DB_NAME = "shaper.db"
-        val TABLE_NAME1 = "shapers"
-        val TABLE_NAME2 = "sets"
-        val DB_VERSION = 12
     }
 }

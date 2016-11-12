@@ -206,7 +206,7 @@ class MyActivity : Activity() {
             doVibrate = sp?.getBoolean("doVibrate", false) ?: false
             doDrawCount = sp?.getBoolean("showCountView", false) ?: false
             level = if (receivedLevel > -1) receivedLevel else (Math.random() * (max - min + 1) + min).toInt()
-            //level = 8;
+            //level = 5
             qTotal = difficulty[level].qs
             passTime = Array(qTotal, { i -> -1L })
             Log.d(tag, "qTotal:" + qTotal)
@@ -305,7 +305,7 @@ class MyActivity : Activity() {
                 }
 
                 drawButton(canvas)
-                //drawFPS();
+                //drawFPS()
             }
 
             if (isEndGame) {
@@ -361,7 +361,7 @@ class MyActivity : Activity() {
             val l = 12
 
             if (qTotal > 1) {
-                var shapesSplit: Array<String>
+                val shapesSplit: Array<String>
                 val cursor = db.query(DBHelper.TABLE_NAME2, null, null, null, null, null, null)
 
                 if (isWeaknessMode) {
@@ -380,7 +380,7 @@ class MyActivity : Activity() {
                         val min = cursorInLevel.getLong(0)
                         cursorInLevel.moveToLast()
                         val max = cursorInLevel.getLong(0)
-                        randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
+                        randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min) + min).toInt()
                         //randomVal = 0
 
                         cursorInLevel.close()
@@ -394,8 +394,8 @@ class MyActivity : Activity() {
                     val min = cursorInLevel.getLong(0)
                     cursorInLevel.moveToLast()
                     val max = cursorInLevel.getLong(0)
-                    randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min + 1) + min).toInt() - 1
-                    //randomVal = 297
+                    randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min) + min).toInt()
+                    //randomVal = 327
 
                     cursorInLevel.close()
                 }
@@ -411,12 +411,12 @@ class MyActivity : Activity() {
 
                 for (i in 0..qTotal - 1) {
                     throughList[i] = ThroughList()
-                    val cursorInName = db.rawQuery("select * from " + DBHelper.TABLE_NAME1 + " where name = '" + shapesSplit[i] + "';", null)
+                    val cursorInName = db.rawQuery("select * from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i].replace("'", "''")}';", null)
                     cursorInName.moveToFirst()
                     //Log.d(tag, "shaper name: " + c.getString(1));
                     val dotsSplit = cursorInName.getString(cursorInName.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
-                    answerThroughList[i] = ThroughList(dotsSplit)
                     cursorInName.close()
+                    answerThroughList[i] = ThroughList(dotsSplit)
                 }
             } else {
                 val cursor = db.query(DBHelper.TABLE_NAME1, null, null, null, null, null, null)
@@ -1153,7 +1153,7 @@ class MyActivity : Activity() {
                 c.close()
                 db.update(DBHelper.TABLE_NAME2, contentValues, "id = ${randomVal + 1}", null)
                 for (i in answerThroughList.indices) {
-                    val cursorOnShaper = db.rawQuery("select id from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i]}';", null)
+                    val cursorOnShaper = db.rawQuery("select id from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i].replace("'", "''")}';", null)
                     cursorOnShaper.moveToFirst()
                     cursor = db.query(DBHelper.TABLE_NAME1, null, "id = ${cursorOnShaper.getInt(0)}", null, null, null, null, null)
                     cursor.moveToFirst()

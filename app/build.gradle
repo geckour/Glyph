@@ -2,14 +2,15 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.2'
+    compileSdkVersion 25
+    buildToolsVersion '25'
+
     defaultConfig {
         applicationId "jp.org.example.geckour.glyph"
         minSdkVersion 17
-        targetSdkVersion 23
-        versionCode 31
-        versionName "2.0.8"
+        targetSdkVersion 25
+        versionCode 33
+        versionName "2.0.10"
     }
     buildTypes {
         release {
@@ -24,20 +25,12 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:23.3.0'
-    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:appcompat-v7:25.0.0'
+    compile 'com.android.support:support-v4:25.0.0'
     compile 'com.google.android.gms:play-services-analytics:8.4.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
-buildscript {
-    ext.kotlin_version = '1.0.1-2'
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
+
 repositories {
     mavenCentral()
 }
