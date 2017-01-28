@@ -206,7 +206,7 @@ class MyActivity : Activity() {
             doVibrate = sp?.getBoolean("doVibrate", false) ?: false
             doDrawCount = sp?.getBoolean("showCountView", false) ?: false
             level = if (receivedLevel > -1) receivedLevel else (Math.random() * (max - min + 1) + min).toInt()
-            //level = 5
+            //level = 2
             qTotal = difficulty[level].qs
             passTime = Array(qTotal, { i -> -1L })
             Log.d(tag, "qTotal:" + qTotal)
@@ -395,7 +395,7 @@ class MyActivity : Activity() {
                     cursorInLevel.moveToLast()
                     val max = cursorInLevel.getLong(0)
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * (max - min) + min).toInt()
-                    //randomVal = 327
+                    //randomVal = 633 - 171
 
                     cursorInLevel.close()
                 }

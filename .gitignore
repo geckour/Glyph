@@ -1,7 +1,6 @@
 .gradle
 /local.properties
-/.idea/workspace.xml
-/.idea/libraries
+/.idea
 .DS_Store
 /build
 *.hprof
@@ -10,5 +9,4 @@
 /device*.png
 /device*.mp4
 /ScreenShot*.png
-/ScreenRecord*.mp4
 *.apk
