@@ -1,0 +1,17 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activity.MainActivity"
+        android:background="@color/background"
+        android:clickable="false"
+        android:id="@+id/root">
+
+        <jp.org.example.geckour.glyph.view.DotsView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/dotsView" />
+    </android.support.constraint.ConstraintLayout>
+</layout>

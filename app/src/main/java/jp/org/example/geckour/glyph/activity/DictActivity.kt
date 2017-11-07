@@ -1,78 +1,35 @@
-package jp.org.example.geckour.glyph
+package jp.org.example.geckour.glyph.activity
 
 import android.app.Activity
-import android.content.Context
-import android.content.SharedPreferences
-import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
-import android.graphics.*
-import android.os.Build
+import android.content.Intent
+import android.databinding.DataBindingUtil
 import android.os.Bundle
-import android.os.Vibrator
-import android.preference.PreferenceManager
-import android.util.Log
-import android.view.*
-import android.widget.RelativeLayout
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
-
-import java.util.ArrayList
-import java.util.Arrays
+import jp.org.example.geckour.glyph.App
+import jp.org.example.geckour.glyph.R
+import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
 
 class DictActivity : Activity() {
-    internal val version: Int = Build.VERSION.SDK_INT
-    internal var offsetX: Float = 0f
-    internal var offsetY: Float = 0f
-    internal var scale: Float = 0f
-    internal var sp: SharedPreferences? = null
+
+    companion object {
+        fun createIntent(activity: Activity): Intent =
+                Intent(activity, DictActivity::class.java)
+    }
+
+    private val tag = this::class.java.simpleName
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val tag = "onCreate"
-        sp = PreferenceManager.getDefaultSharedPreferences(this)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        val actionBar = actionBar
-        actionBar?.hide()
-        setContentView(R.layout.activity_my)
-
-        val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
-        t?.setScreenName("DictActivity")
+        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
+        t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
     }
-
-    internal var view: DictView? = null
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        val tag = "onWindowFocusChanged"
-
-        if (findViewById(R.id.root) != null) {
-            val r = findViewById(R.id.root) as RelativeLayout
-            offsetX = (r.width / 2).toFloat()
-            offsetY = (r.height / 2).toFloat()
-            scale = offsetY * 2 / 1280
-        }
-
-        if (view == null) {
-            view = DictView(this)
-            setContentView(view)
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        //getMenuInflater().inflate(R.menu.my, menu);
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        val id = item.itemId
-        return super.onOptionsItemSelected(item)
-    }
-
+/*
     internal inner class DictView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
         var thread: Thread? = null
         var canvas: Canvas? = null
@@ -107,7 +64,6 @@ class DictActivity : Activity() {
 
         init {
             holder.addCallback(this)
-            val tag = "DictView/init"
             dbHelper = DBHelper(context)
             db = dbHelper.readableDatabase
 
@@ -149,7 +105,6 @@ class DictActivity : Activity() {
         }
         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
         override fun surfaceDestroyed(holder: SurfaceHolder) {
-            val tag = "DictView/surfaceDestroyed"
             isAttached = false
         }
 
@@ -165,7 +120,7 @@ class DictActivity : Activity() {
             }
         }
 
-        fun draw() {
+        private fun draw() {
             val tag = "DictView/draw"
             var canvas: Canvas? = null
             try {
@@ -180,10 +135,9 @@ class DictActivity : Activity() {
         }
 
         public override fun onDraw(canvas: Canvas) {
-            val tag = "DictView/onDraw"
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
-            typeface = Typeface.createFromAsset(context.assets, "Coda-Regular.ttf")
+            typeface = Typeface.createFromAsset(context.assets, "coda_regular.ttf")
             //paint.setTypeface(typeface)
             paint.typeface = typeface
 
@@ -213,7 +167,7 @@ class DictActivity : Activity() {
             var dots: ArrayList<Int>
 
             constructor() {
-                dots = ArrayList<Int>()
+                dots = ArrayList()
             }
 
             constructor(argDots: ArrayList<Int>) {
@@ -222,7 +176,7 @@ class DictActivity : Activity() {
 
             constructor(argDots: Array<String>) {
                 val tag = "ThroughList"
-                dots = ArrayList<Int>()
+                dots = ArrayList()
                 for (s in argDots) {
                     try {
                         dots.add(Integer.parseInt(s))
@@ -234,7 +188,7 @@ class DictActivity : Activity() {
             }
         }
 
-        fun setGrainAlpha(time: Long) {
+        private fun setGrainAlpha(time: Long) {
             scaledGrain = Bitmap.createScaledBitmap(grainImg, (grainR * 2).toInt(), (grainR * 2).toInt(), false)
             val w = scaledGrain?.width ?: 0
             val h = scaledGrain?.height ?: 0
@@ -247,8 +201,8 @@ class DictActivity : Activity() {
                 subAlpha = calcSubAlpha(time)
             }
             if (subAlpha != 0) {
-                for (y in 0..h - 1) {
-                    for (x in 0..w - 1) {
+                for (y in 0 until h) {
+                    for (x in 0 until w) {
                         var a = pixels[x + y * w]
                         var b = a
                         a = a.ushr(24)
@@ -272,15 +226,15 @@ class DictActivity : Activity() {
 
         private fun calcSubAlpha(time: Long): Int {
             val tol = 500
-            if (now - time > tol) {
+            return if (now - time > tol) {
                 resetThrough()
                 var result = ((now - time - tol.toLong()) / 2f).toInt()
                 if (result > 255) {
                     result = 255
                 }
-                return result
+                result
             } else {
-                return 0
+                0
             }
         }
 
@@ -320,11 +274,9 @@ class DictActivity : Activity() {
                         }
                     }
                     1 -> {
-                        for (i in grain.lastIndex downTo 0) {
-                            if (!grain[i].isOrigin) {
-                                grain.removeAt(i)
-                            }
-                        }
+                        (grain.lastIndex downTo 0)
+                                .filterNot { grain[it].isOrigin }
+                                .forEach { grain.removeAt(it) }
                         for (i in grain.indices) {
                             val param = Math.cos(grain[i].a0)
                             grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
@@ -408,8 +360,7 @@ class DictActivity : Activity() {
 
 
 
-        fun putParticles(throughList: ThroughList, canvas: Canvas) {
-            val tag = "DictView/putParticles"
+        private fun putParticles(throughList: ThroughList, canvas: Canvas) {
             val interval = 25 * scale
             val length = FloatArray(throughList.dots.lastIndex)
             for (i in 1..throughList.dots.lastIndex) {
@@ -450,11 +401,9 @@ class DictActivity : Activity() {
             }
         }
 
-        fun searchIdFromDB(): ArrayList<Int> {
-            val tag = "DictView/searchIdFromDB"
-
-            var searchResult = ArrayList<Int>()
-            var cursor: Cursor = db.query(DBHelper.TABLE_NAME1, arrayOf("id", "path"), null, null, null, null, null)
+        private fun searchIdFromDB(): ArrayList<Int> {
+            val searchResult = ArrayList<Int>()
+            val cursor: Cursor = db.query(DBHelper.TABLE_NAME1, arrayOf("id", "path"), null, null, null, null, null)
             cursor.moveToFirst()
             while (!cursor.isAfterLast) {
                 val dotsSplit = cursor.getString(cursor.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
@@ -468,12 +417,10 @@ class DictActivity : Activity() {
             return searchResult
         }
 
-        fun drawResult(canvas: Canvas) {
-            val tag = "drawResult"
-
-            var resultStr = ArrayList<String>()
+        private fun drawResult(canvas: Canvas) {
+            val resultStr = ArrayList<String>()
             synchronized(resultId) {
-                var resultIdInString = Array(resultId.size, { i -> "" })
+                val resultIdInString = Array(resultId.size, { i -> "" })
                 for (i in 0..resultId.lastIndex) {
                     resultIdInString[i] = resultId[i].toString()
                     val cursor = db.query(DBHelper.TABLE_NAME1, null, "id = ?", arrayOf(resultIdInString[i]), null, null, null)
@@ -491,12 +438,12 @@ class DictActivity : Activity() {
             for (i in 0..resultStr.lastIndex) canvas.drawText(resultStr[i], offsetX, (offsetY * 1.2f - offsetX) / 2f + i * paint.textSize * 1.2f, paint)
         }
 
-        fun normalizePaths(paths: ArrayList<IntArray>): ArrayList<IntArray> {
+        private fun normalizePaths(paths: ArrayList<IntArray>): ArrayList<IntArray> {
             val returnPaths = ArrayList<IntArray>()
             for (i in paths.indices) {
                 var match = 0
                 val srcPath = paths[i]
-                for (j in i + 1..paths.size - 1) {
+                for (j in i + 1 until paths.size) {
                     val destPath = paths[j]
                     val tempPath = intArrayOf(destPath[1], destPath[0])
                     if (Arrays.equals(srcPath, destPath) || Arrays.equals(srcPath, tempPath)) {
@@ -511,22 +458,15 @@ class DictActivity : Activity() {
             return returnPaths
         }
 
-        fun judgeLocus(answer: ThroughList, through: ThroughList): Boolean {
-            val tag = "DictView/judgeLocus"
-            val answerPaths = ArrayList<IntArray>()
-            var passedPaths = ArrayList<IntArray>()
+        private fun judgeLocus(answer: ThroughList, through: ThroughList): Boolean {
 
-            for (i in 0..answer.dots.size - 1 - 1) {
-                val path = intArrayOf(answer.dots[i], answer.dots[i + 1])
-                answerPaths.add(path)
-            }
-            for (i in 0..through.dots.size - 1 - 1) {
-                val path = intArrayOf(through.dots[i], through.dots[i + 1])
-                passedPaths.add(path)
-            }
+            val answerPaths =
+                    (0 until answer.dots.size - 1).map { intArrayOf(answer.dots[it], answer.dots[it + 1]) }
+            var passedPaths =
+                    (0 until through.dots.size - 1).mapTo(ArrayList()) { intArrayOf(through.dots[it], through.dots[it + 1]) }
             passedPaths = normalizePaths(passedPaths)
 
-            if (answerPaths.size == passedPaths.size) {
+            return if (answerPaths.size == passedPaths.size) {
                 val clearFrags = BooleanArray(answerPaths.size)
                 for (i in answerPaths.indices) {
                     for (path in passedPaths) {
@@ -536,19 +476,14 @@ class DictActivity : Activity() {
                         }
                     }
                 }
-                var clearC = 0
-                for (flag in clearFrags) {
-                    if (flag) {
-                        clearC++
-                    }
-                }
-                return (clearC == answerPaths.size)
+                val clearC = clearFrags.count { it }
+                (clearC == answerPaths.size)
             } else {
-                return false
+                false
             }
         }
 
-        fun setLocusStart(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
+        private fun setLocusStart(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
             synchronized(Locus) {
                 Locus.add(Particle(x, y, canvas))
 
@@ -559,7 +494,7 @@ class DictActivity : Activity() {
             }
         }
 
-        fun setLocus(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
+        private fun setLocus(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
             synchronized(Locus) {
                 Locus.add(Particle(x, y, canvas))
 
@@ -570,7 +505,7 @@ class DictActivity : Activity() {
             }
         }
 
-        fun setCollision(x0: Float, y0: Float, x1: Float, y1: Float) {
+        private fun setCollision(x0: Float, y0: Float, x1: Float, y1: Float) {
             var collisionDot = -1
             val tol = 35 * scale
             for (i in 0..10) {
@@ -613,7 +548,7 @@ class DictActivity : Activity() {
                     }
                 }
             }
-            if (collisionDot != -1 && (throughList.dots.size < 1 || throughList.dots[throughList.dots.size - 1] !== collisionDot)) {
+            if (collisionDot != -1 && (throughList.dots.size < 1 || throughList.dots[throughList.dots.size - 1] != collisionDot)) {
                 throughList.dots.add(collisionDot)
                 if (doVibrate) {
                     val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -623,14 +558,14 @@ class DictActivity : Activity() {
             }
         }
 
-        fun resetLocus() {
+        private fun resetLocus() {
             locusPath.reset()
             synchronized(Locus) {
                 Locus.clear()
             }
         }
 
-        fun resetThrough() {
+        private fun resetThrough() {
             for (i in 0..10) {
                 isThrough[i] = false
             }
@@ -698,4 +633,5 @@ class DictActivity : Activity() {
             return true
         }
     }
+*/
 }

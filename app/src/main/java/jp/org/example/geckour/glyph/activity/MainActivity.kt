@@ -1,68 +1,68 @@
-package jp.org.example.geckour.glyph
+package jp.org.example.geckour.glyph.activity
 
 import android.app.Activity
-import android.content.ContentValues
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
-import android.graphics.*
-import android.graphics.drawable.Drawable
-import android.os.Build
+import android.databinding.DataBindingUtil
 import android.os.Bundle
-import android.os.Vibrator
-import android.preference.PreferenceManager
-import android.util.Log
-import android.view.*
-import android.widget.RelativeLayout
+import android.view.MotionEvent
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
+import jp.org.example.geckour.glyph.App
+import jp.org.example.geckour.glyph.App.Companion.sp
+import jp.org.example.geckour.glyph.R
+import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
+import jp.org.example.geckour.glyph.util.*
+import timber.log.Timber
 
-import java.util.ArrayList
-import java.util.Arrays
+class MainActivity : Activity() {
 
-class MyActivity : Activity() {
-    internal val version: Int = Build.VERSION.SDK_INT
-    internal var min = 0
-    internal var max = 8
-    internal var viewCount = 0
-    internal var receivedLevel = -1
-    internal var receivedValue = -1
-    internal var isWeaknessMode = false
-    internal var offsetX: Float = 0f
-    internal var offsetY: Float = 0f
-    internal var scale: Float = 0f
-    internal var sp: SharedPreferences? = null
+    companion object {
+        fun createIntent(activity: Activity): Intent =
+                Intent(activity, MainActivity::class.java)
+    }
+
+    private val tag = this::class.java.simpleName
+    private lateinit var binding: ActivityMainBinding
+
+    private var min = 0
+    private var max = 8
+    private var viewCount = 0
+    private var receivedLevel = -1
+    private var receivedValue = -1
+    private var isWeaknessMode = false
+
+    private val throughDotsList: ArrayList<ArrayList<Int>> = ArrayList()
+
+    private var fromX = -1f
+    private var fromY = -1f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val tag = "onCreate"
-        sp = PreferenceManager.getDefaultSharedPreferences(this)
 
         val actionBar = actionBar
         actionBar?.hide()
 
-        if (sp?.getInt("viewCount", -1) != -1) {
-            viewCount = sp?.getInt("viewCount", 0) ?: 0
-        } else {
-            viewCount = 1
-        }
-        sp?.edit()?.putInt("viewCount", viewCount + 1)?.apply()
+        viewCount =
+                if (sp.getInt("viewCount", -1) != -1) {
+                    sp.getInt("viewCount", 0)
+                } else {
+                    1
+                }
+        sp.edit().putInt("viewCount", viewCount + 1).apply()
 
         try {
-            min = Integer.parseInt(sp?.getString("min_level", "0"))
-            Log.d(tag, "min:" + min)
+            min = Integer.parseInt(sp.getString("min_level", "0"))
+            Timber.d("min: $min")
         } catch (e: Exception) {
-            Log.e(tag, "Can't translate minimum-level to int.")
+            Timber.e("Can't translate minimum-level to int.")
         }
 
         try {
-            max = Integer.parseInt(sp?.getString("max_level", "8"))
-            Log.d(tag, "max:" + max)
+            max = Integer.parseInt(sp.getString("max_level", "8"))
+            Timber.d("max: $max")
         } catch (e: Exception) {
-            Log.e(tag, "Can't translate maximum-level to int.")
+            Timber.e("Can't translate maximum-level to int.")
         }
 
         val intent = intent
@@ -73,45 +73,74 @@ class MyActivity : Activity() {
         if (intent.getBooleanExtra("isWeaknessMode", false)) {
             isWeaknessMode = true
         }
-        setContentView(R.layout.activity_my)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        val t: Tracker? = (application as Analytics).getTracker(Analytics.TrackerName.APP_TRACKER)
-        t?.setScreenName("MyActivity")
+        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
+        t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
-    }
 
-    internal var view: MyView? = null
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        val tag = "onWindowFocusChanged"
+        binding.dotsView.setOnTouchListener { _, event ->
 
-        if (findViewById(R.id.root) != null) {
-            val r = findViewById(R.id.root) as RelativeLayout
-            offsetX = (r.width / 2).toFloat()
-            offsetY = (r.height / 2).toFloat()
-            scale = offsetY * 2 / 1280
+            when (event.action) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    fromX = event.x
+                    fromY = event.y
+                    throughDotsList.add(ArrayList())
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                    throughDotsList.last().addAll(collision)
+                    binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                    fromX = event.x
+                    fromY = event.y
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                    //binding.dotsView.setLine(PointF(fromX, fromY), PointF(event.x, event.y))
+                    val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                    throughDotsList.last().addAll(collision)
+                    binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                    getNormalizedPaths(convertDotsListToPaths(throughDotsList.last()))
+                    true
+                }
+                else -> true
+            }
         }
+    }
 
-        if (view == null) {
-            view = MyView(this)
-            setContentView(view)
+    private fun convertDotsListToPaths(list: List<Int>): List<Pair<Int, Int>> =
+            when {
+                list.isEmpty() -> listOf()
+                list.size < 2 -> listOf(Pair(list[0], list[0]))
+                else -> {
+                    val droppedList = list.takeWhileIndexed { i, index -> i < 1 || list[i - 1] != index }
+                    when {
+                        droppedList.isEmpty() -> listOf()
+                        droppedList.size < 2 -> listOf(Pair(droppedList[0], droppedList[0]))
+                        else -> (1..droppedList.lastIndex)
+                                .map { Pair(droppedList[it - 1], droppedList[it]) }
+                    }
+                }
+            }
+
+    private fun getNormalizedPaths(paths: List<Pair<Int, Int>>, initialIndex: Int = 0): List<Pair<Int, Int>> {
+        return if (paths.size > 1 && initialIndex < paths.lastIndex) {
+            val normalizedPaths = ArrayList(paths.subList(0, initialIndex + 1)).apply {
+                addAll(
+                        paths.subList(initialIndex + 1, paths.size).filter {
+                            it != paths[initialIndex] && it != paths[initialIndex].inverse()
+                        }
+                )
+            }
+
+            getNormalizedPaths(normalizedPaths, initialIndex + 1)
+        } else {
+            Timber.d("normalized paths: $paths")
+            paths
         }
     }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        //getMenuInflater().inflate(R.menu.my, menu);
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        val id = item.itemId
-        return super.onOptionsItemSelected(item)
-    }
-
+/*
     internal inner class MyView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
         var thread: Thread? = null
         var canvas: Canvas? = null
@@ -154,7 +183,7 @@ class MyActivity : Activity() {
         var locus = ArrayList<Particle>()
         var locusPath = Path()
         var now: Long = 0
-        var throughList: Array<ThroughList?>
+        var throughDotsList: Array<ThroughList?>
         var answerThroughList: Array<ThroughList?>
         var difficulty = ArrayList<Difficulty>()
         var correctStr = ArrayList<String>()
@@ -212,8 +241,8 @@ class MyActivity : Activity() {
             Log.d(tag, "qTotal:" + qTotal)
             defTime = difficulty[level].time
 
-            throughList = arrayOfNulls<ThroughList>(qTotal)
-            answerThroughList = arrayOfNulls<ThroughList>(qTotal)
+            throughDotsList = arrayOfNulls(qTotal)
+            answerThroughList = arrayOfNulls(qTotal)
             getSequence()
 
             grainImg = BitmapFactory.decodeResource(resources, R.drawable.particle)
@@ -229,7 +258,6 @@ class MyActivity : Activity() {
         }
         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
         override fun surfaceDestroyed(holder: SurfaceHolder) {
-            val tag = "MyView/surfaceDestroyed"
             isAttached = false
         }
 
@@ -245,7 +273,7 @@ class MyActivity : Activity() {
             }
         }
 
-        fun draw() {
+        private fun draw() {
             val tag = "MyView/draw"
             var canvas: Canvas? = null
             try {
@@ -260,10 +288,9 @@ class MyActivity : Activity() {
         }
 
         override fun onDraw(canvas: Canvas) {
-            val tag = "MyView/onDraw"
             canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
             paint.isAntiAlias = true
-            typeface = Typeface.createFromAsset(context.assets, "Coda-Regular.ttf")
+            typeface = Typeface.createFromAsset(context.assets, "coda_regular.ttf")
             //paint.setTypeface(typeface)
             paint.typeface = typeface
 
@@ -325,7 +352,7 @@ class MyActivity : Activity() {
             var dots: ArrayList<Int>
 
             constructor() {
-                dots = ArrayList<Int>()
+                dots = ArrayList()
             }
 
             constructor(argDots: ArrayList<Int>) {
@@ -334,7 +361,7 @@ class MyActivity : Activity() {
 
             constructor(argDots: Array<String>) {
                 val tag = "ThroughList"
-                dots = ArrayList<Int>()
+                dots = ArrayList()
                 for (s in argDots) {
                     try {
                         dots.add(Integer.parseInt(s))
@@ -409,8 +436,8 @@ class MyActivity : Activity() {
 
                 cursor.close()
 
-                for (i in 0..qTotal - 1) {
-                    throughList[i] = ThroughList()
+                for (i in 0 until qTotal) {
+                    throughDotsList[i] = ThroughList()
                     val cursorInName = db.rawQuery("select * from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i].replace("'", "''")}';", null)
                     cursorInName.moveToFirst()
                     //Log.d(tag, "shaper name: " + c.getString(1));
@@ -436,7 +463,7 @@ class MyActivity : Activity() {
                         randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
                         //int randomVal = (int)max - 1;
                         Log.d(tag, "randomVal:$randomVal, level:$level")
-                        throughList[0] = ThroughList()
+                        throughDotsList[0] = ThroughList()
                     }
 
                     cursorForWeakness.close()
@@ -446,12 +473,12 @@ class MyActivity : Activity() {
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
                     //randomVal = 0
                     Log.d(tag, "randomVal:$randomVal, level:$level")
-                    throughList[0] = ThroughList()
+                    throughDotsList[0] = ThroughList()
                 }
                 cursor.moveToPosition(randomVal)
                 val dotsSplit = cursor.getString(cursor.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
                 answerThroughList[0] = ThroughList(dotsSplit)
-                throughList[0] = ThroughList()
+                throughDotsList[0] = ThroughList()
                 correctStr.add(cursor.getString(cursor.getColumnIndex("name")))
 
                 cursor.close()
@@ -512,8 +539,8 @@ class MyActivity : Activity() {
             val pixels = IntArray(w * h)
             scaledGrain?.getPixels(pixels, 0, w, 0, 0, w, h)
 
-            for (y in 0..h - 1) {
-                for (x in 0..w - 1) {
+            for (y in 0 until h) {
+                for (x in 0 until w) {
                     var a = pixels[x + y * w]
                     var b = a
                     a = a.ushr(24) //alpha値
@@ -566,11 +593,9 @@ class MyActivity : Activity() {
                         }
                     }
                     1 -> { //収束後
-                        for (i in grain.lastIndex downTo 0) {
-                            if (!grain[i].isOrigin) {
-                                grain.removeAt(i)
-                            }
-                        }
+                        (grain.lastIndex downTo 0)
+                                .filterNot { grain[it].isOrigin }
+                                .forEach { grain.removeAt(it) }
                         for (i in grain.indices) {
                             val param = Math.cos(grain[i].a0)
                             grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
@@ -651,13 +676,13 @@ class MyActivity : Activity() {
         }
 
         //dotのリストを与えてそのリストが示す軌跡上にパーティクルを表示させる
-        fun putParticles(throughList: ThroughList, canvas: Canvas) {
+        fun putParticles(throughDotsList: ThroughList, canvas: Canvas) {
             val tag = "MyView/putParticles"
             val interval = 25 * scale
-            val length = FloatArray(throughList.dots.lastIndex)
-            for (i in 1..throughList.dots.lastIndex) {
-                val dotI0 = dots[throughList.dots[i]]
-                val dotI1 = dots[throughList.dots[i - 1]]
+            val length = FloatArray(throughDotsList.dots.lastIndex)
+            for (i in 1..throughDotsList.dots.lastIndex) {
+                val dotI0 = dots[throughDotsList.dots[i]]
+                val dotI1 = dots[throughDotsList.dots[i - 1]]
                 if (dotI0 != null && dotI1 != null) {
                     length[i - 1] = Math.sqrt(Math.pow((dotI1.x - dotI0.x).toDouble(), 2.0) + Math.pow((dotI1.y - dotI0.y).toDouble(), 2.0)).toFloat()
                 }
@@ -666,8 +691,8 @@ class MyActivity : Activity() {
                 locus.clear()
             }
             for (i in length.indices) {
-                val dotI0 = dots[throughList.dots[i]]
-                val dotI1 = dots[throughList.dots[i + 1]]
+                val dotI0 = dots[throughDotsList.dots[i]]
+                val dotI1 = dots[throughDotsList.dots[i + 1]]
                 if (dotI0 != null && dotI1 != null) {
                     val unitV = floatArrayOf((dotI1.x - dotI0.x) / length[i], (dotI1.y - dotI0.y) / length[i])
                     var x = dotI0.x
@@ -722,11 +747,11 @@ class MyActivity : Activity() {
             }
         }
         */
-        fun getCorrectStrings(c: Cursor): ArrayList<String> {
+        private fun getCorrectStrings(c: Cursor): ArrayList<String> {
             val strings = ArrayList(Arrays.asList(*c.getString(c.getColumnIndex("sequence")).split(",".toRegex()).toTypedArray()))
             val correctStrings = if (c.isNull(c.getColumnIndex("correctSeq"))) null else ArrayList(Arrays.asList(*c.getString(c.getColumnIndex("correctSeq")).split(",".toRegex()).toTypedArray()))
 
-            if (correctStrings != null) {
+            return if (correctStrings != null) {
                 val tStrings = ArrayList<String>()
                 for (i in correctStrings.indices) {
                     if (correctStrings[i] == "") {
@@ -735,13 +760,13 @@ class MyActivity : Activity() {
                         tStrings.add(correctStrings[i])
                     }
                 }
-                return tStrings
+                tStrings
             } else {
-                return strings
+                strings
             }
         }
 
-        fun drawButton(canvas: Canvas) {
+        private fun drawButton(canvas: Canvas) {
             val nextButtonWidth = (if (isStartGame && doShow) 200 else 150) * scale
             val redoButtonWidth = 150 * scale
             val retryButtonWidth = 170 * scale
@@ -765,11 +790,12 @@ class MyActivity : Activity() {
             val dRedo: Drawable
             val dRetry: Drawable
 
-            if ((isOnNext[0] || isOnNext[1] || isOnNext[2]) && isTouch) {
-                dNext = button1
-            } else {
-                dNext = button0
-            }
+            dNext =
+                    if ((isOnNext[0] || isOnNext[1] || isOnNext[2]) && isTouch) {
+                        button1
+                    } else {
+                        button0
+                    }
             dNext.setBounds(nextButtonPoint[0]?.x ?: 0, nextButtonPoint[0]?.y ?: 0, nextButtonPoint[1]?.x ?: 0, nextButtonPoint[1]?.y ?: 0)
             dNext.draw(canvas)
             if (isStartGame && doShow) {
@@ -779,27 +805,29 @@ class MyActivity : Activity() {
             }
 
             if (doShowRedo) {
-                if ((isOnRedo[0] || isOnRedo[1] || isOnRedo[2]) && isTouch) {
-                    dRedo = button1
-                } else {
-                    dRedo = button0
-                }
+                dRedo =
+                        if ((isOnRedo[0] || isOnRedo[1] || isOnRedo[2]) && isTouch) {
+                            button1
+                        } else {
+                            button0
+                        }
                 dRedo.setBounds(redoButtonPoint[0]?.x ?: 0, redoButtonPoint[0]?.y ?: 0, redoButtonPoint[1]?.x ?: 0, redoButtonPoint[1]?.y ?: 0)
                 dRedo.draw(canvas)
                 canvas.drawText("REDO", (redoButtonPoint[0]?.x ?: 0) + redoButtonWidth / 2, (redoButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             } else if (isEndGame) {
-                if (isOnRetry[0] || isOnRetry[1] || isOnRetry[2]) {
-                    dRetry = if (version >= 23) resources.getDrawable(R.drawable.button1, null) else resources.getDrawable(R.drawable.button1)
-                } else {
-                    dRetry = if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
-                }
+                dRetry =
+                        if (isOnRetry[0] || isOnRetry[1] || isOnRetry[2]) {
+                            if (version >= 23) resources.getDrawable(R.drawable.button1, null) else resources.getDrawable(R.drawable.button1)
+                        } else {
+                            if (version >= 23) resources.getDrawable(R.drawable.button0, null) else resources.getDrawable(R.drawable.button0)
+                        }
                 dRetry.setBounds(retryButtonPoint[0]?.x ?: 0, retryButtonPoint[0]?.y ?: 0, retryButtonPoint[1]?.x ?: 0, retryButtonPoint[1]?.y ?: 0)
                 dRetry.draw(canvas)
                 canvas.drawText("RETRY", (retryButtonPoint[0]?.x ?: 0) + retryButtonWidth / 2, (retryButtonPoint[1]?.y ?: 0) - buttonBaseline * scale, paint)
             }
         }
 
-        fun drawCount(canvas: Canvas) {
+        private fun drawCount(canvas: Canvas) {
             paint.color = if (version >= 23) resources.getColor(R.color.button_text, null) else resources.getColor(R.color.button_text)
             paint.textSize = 40f
             paint.textAlign = Paint.Align.RIGHT
@@ -809,7 +837,7 @@ class MyActivity : Activity() {
             canvas.drawText("HACK:" + viewCount, x, y, paint)
         }
 
-        fun hexagonPath(origin: PointF, r: Float): Path {
+        private fun hexagonPath(origin: PointF, r: Float): Path {
             val path = Path()
 
             for (i in 0..6) {
@@ -825,13 +853,13 @@ class MyActivity : Activity() {
 
         var upTime: Long = 0
         var leftTime: Long = 0
-        fun drawTime(currentTime: Long, canvas: Canvas) {
+        private fun drawTime(currentTime: Long, canvas: Canvas) {
             val tag = "drawTime"
             leftTime = (defTime - ((if (isEndGame) holdTime else currentTime) - initTime)) / 10
 
             if (leftTime <= 0 && isFirstTimeUp) {
-                for (i in 0..qTotal - 1) {
-                    Log.d(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughList[i] ?: ThroughList()))
+                for (i in 0 until qTotal) {
+                    Log.d(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughDotsList[i] ?: ThroughList()))
                 }
                 holdTime = now
                 isEndGame = true
@@ -866,7 +894,7 @@ class MyActivity : Activity() {
             }
         }
 
-        fun drawQueNumber(currentTime: Long, marginTime: Long, r: Int, g: Int, b: Int, canvas: Canvas) {
+        private fun drawQueNumber(currentTime: Long, marginTime: Long, r: Int, g: Int, b: Int, canvas: Canvas) {
             val hexRadius = offsetX / 10
             val hexMargin = 5f
             val totalMargin = hexMargin * (qTotal - 1)
@@ -877,7 +905,7 @@ class MyActivity : Activity() {
             val arrayStrong = intArrayOf(Color.argb(255, r, g, b), Color.argb(130, r, g, b), Color.argb(85, r, g, b), Color.argb(75, r, g, b), Color.argb(85, r, g, b), Color.argb(130, r, g, b), Color.argb(255, r, g, b))
             val positions = floatArrayOf(0f, 0.15f, 0.35f, 0.5f, 0.65f, 0.85f, 1f)
 
-            for (i in 0..qTotal - 1) {
+            for (i in 0 until qTotal) {
                 x = offsetX - (width / 2 + totalMargin) + i.toFloat() * (hexRadius + hexMargin) * 2f
                 y = (offsetY / 7.5).toFloat()
                 val origin = PointF(x, y)
@@ -887,7 +915,7 @@ class MyActivity : Activity() {
                 paint.color = Color.BLACK
                 if (isStartGame) {
                     when (i) {
-                        in 0..qNum - 1 -> {
+                        in 0 until qNum -> {
                             //paint.setShader(lgNormal)
                             paint.shader = lgNormal
                             paint.style = Paint.Style.FILL
@@ -898,7 +926,7 @@ class MyActivity : Activity() {
                             paint.color = Color.argb(140, r, g, b)
                         }
                         qNum -> {
-                            if ((isReleasedOutsideButton && throughList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
+                            if ((isReleasedOutsideButton && throughDotsList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
                                 //paint.setShader(lgNormal)
                                 paint.shader = lgNormal
                                 paint.style = Paint.Style.FILL
@@ -953,7 +981,7 @@ class MyActivity : Activity() {
         }
 
         var cmdLimitTime = initTime + 2000
-        fun listenCmd(canvas: Canvas) {
+        private fun listenCmd(canvas: Canvas) {
             if (now > cmdLimitTime && !isTouch) {
                 isCmdSeq = false
                 when(hackMode) {
@@ -961,7 +989,7 @@ class MyActivity : Activity() {
                     MODE_COMPLEX -> drawAnswerLength /= 3
                 }
                 resetLocus()
-                throughList[0] = ThroughList()
+                throughDotsList[0] = ThroughList()
                 releaseTime = -1
                 initTime = now
             } else {
@@ -974,24 +1002,26 @@ class MyActivity : Activity() {
         val MODE_COMPLEX = "complex"
         var hackMode = MODE_NOMAL
         var isValidCmd = false
-        fun judgeCmd() {
+        private fun judgeCmd() {
             val tag = "judgeCmd"
             val simple = arrayListOf(2, 1)
             val complex = arrayListOf(4, 3, 0, 2)
-            if (judgeLocus(ThroughList(simple), throughList[0] ?: ThroughList())) {
-                hackMode = MODE_SIMPLE
-                isValidCmd = true
-                Log.d(tag, "simple")
-            } else if (judgeLocus(ThroughList(complex), throughList[0] ?: ThroughList())) {
-                hackMode = MODE_COMPLEX
-                isValidCmd = true
-                Log.d(tag, "complex")
-            } else {
-                isValidCmd = false
+            when {
+                judgeLocus(ThroughList(simple), throughDotsList[0] ?: ThroughList()) -> {
+                    hackMode = MODE_SIMPLE
+                    isValidCmd = true
+                    Log.d(tag, "simple")
+                }
+                judgeLocus(ThroughList(complex), throughDotsList[0] ?: ThroughList()) -> {
+                    hackMode = MODE_COMPLEX
+                    isValidCmd = true
+                    Log.d(tag, "complex")
+                }
+                else -> isValidCmd = false
             }
         }
 
-        fun drawDialog(canvas: Canvas) {
+        private fun drawDialog(canvas: Canvas) {
             if (releaseTime > -1 && now < cmdLimitTime && isValidCmd) {
                 val width = when(hackMode) {
                     MODE_SIMPLE -> 400 * scale
@@ -1028,7 +1058,7 @@ class MyActivity : Activity() {
         }
 
         var preCue = -1
-        fun drawAnswer(initTime: Long, currentTime: Long, canvas: Canvas) {
+        private fun drawAnswer(initTime: Long, currentTime: Long, canvas: Canvas) {
             setGrainAlpha()
 
             var cue: Int = -1
@@ -1062,7 +1092,7 @@ class MyActivity : Activity() {
 
         var initTimeFlash: Long = 0
         var isFirstFlash = true
-        fun drawFlash(currentTime: Long, canvas: Canvas) {
+        private fun drawFlash(currentTime: Long, canvas: Canvas) {
             val tag ="MyView/drawFlash"
             if (isFirstFlash) {
                 resetLocus()
@@ -1074,7 +1104,7 @@ class MyActivity : Activity() {
             val interval = 680
             val margin = 10
             val dT = (currentTime - initTimeFlash).toInt()
-            var alpha: Int
+            val alpha: Int
 
             cue = dT / interval
             if (dT > interval * 2.5) {
@@ -1083,27 +1113,30 @@ class MyActivity : Activity() {
 
             when (cue) {
                 0 -> {
-                    if (dT < margin) {
-                        alpha = 150 * dT / margin
-                    } else {
-                        alpha = 150 - 150 * (dT - margin) / (interval - margin)
-                    }
+                    alpha =
+                            if (dT < margin) {
+                                150 * dT / margin
+                            } else {
+                                150 - 150 * (dT - margin) / (interval - margin)
+                            }
                     paint.color = Color.argb(alpha, 220, 175, 50)
                 }
                 1 -> {
-                    if (dT < margin) {
-                        alpha = 200 * dT / cue / margin
-                    } else {
-                        alpha = 200 - 200 * (dT - margin) / cue / (interval - margin)
-                    }
+                    alpha =
+                            if (dT < margin) {
+                                200 * dT / cue / margin
+                            } else {
+                                200 - 200 * (dT - margin) / cue / (interval - margin)
+                            }
                     paint.color = Color.argb(alpha, 220, 175, 50)
                 }
                 2 -> {
-                    if (dT < margin) {
-                        alpha = 255 * dT / cue / margin
-                    } else {
-                        alpha = 255
-                    }
+                    alpha =
+                            if (dT < margin) {
+                                255 * dT / cue / margin
+                            } else {
+                                255
+                            }
                     paint.color = Color.argb(alpha, 255, 255, 255)
                 }
                 else -> {
@@ -1116,13 +1149,13 @@ class MyActivity : Activity() {
         }
 
         var isRecorded = false
-        fun recordResult() {
+        private fun recordResult() {
             val tag = "MyView/recordResult"
 
             var correctNum = 0
             val isCorrect = Array(qTotal, { i -> false })
-            for (i in 0..qTotal - 1) {
-                if (judgeLocus(answerThroughList[i]!!, throughList[i]!!)) {
+            for (i in 0 until qTotal) {
+                if (judgeLocus(answerThroughList[i]!!, throughDotsList[i]!!)) {
                     isCorrect[i] = true
                     correctNum++
                 }
@@ -1131,11 +1164,12 @@ class MyActivity : Activity() {
             Log.d(tag, "correctNum: $correctNum")
 
             var cursor: Cursor
-            if (qTotal > 1) {
-                cursor = db.query(DBHelper.TABLE_NAME2, null, "id = ${randomVal + 1}", null, null, null, null, null)
-            } else {
-                cursor = db.query(DBHelper.TABLE_NAME1, null, "id = ${randomVal + 1}", null, null, null, null, null)
-            }
+            cursor =
+                    if (qTotal > 1) {
+                        db.query(DBHelper.TABLE_NAME2, null, "id = ${randomVal + 1}", null, null, null, null, null)
+                    } else {
+                        db.query(DBHelper.TABLE_NAME1, null, "id = ${randomVal + 1}", null, null, null, null, null)
+                    }
             cursor.moveToFirst()
 
             var totalNumber = cursor.getInt(cursor.getColumnIndex("total_number"))
@@ -1178,9 +1212,7 @@ class MyActivity : Activity() {
             isRecorded = true
         }
 
-        fun drawResult(margin: Long, initTime: Long, currentTime: Long, canvas: Canvas) {
-            val tag = "drawResult"
-
+        private fun drawResult(margin: Long, initTime: Long, currentTime: Long, canvas: Canvas) {
             if (currentTime > initTime + margin) {
                 drawTime(now, canvas)
 
@@ -1188,7 +1220,7 @@ class MyActivity : Activity() {
                 val red = Color.RED
                 var drawColor: Int
                 var correctNum = 0
-                for (i in 0..qTotal - 1) {
+                for (i in 0 until qTotal) {
                     val answerPath = Path()
                     val hexaRadius = offsetX / 8
                     val hexaMargin = 10 * scale
@@ -1197,7 +1229,7 @@ class MyActivity : Activity() {
                     val x = offsetX / 6
                     val y = offsetY * 2 / 3 - (height / 2 + totalMargin) + i.toFloat() * (hexaRadius + hexaMargin) * 2f
                     val giveOrigin = PointF(x, y)
-                    if (judgeLocus(answerThroughList[i]!!, throughList[i] ?: ThroughList())) {
+                    if (judgeLocus(answerThroughList[i]!!, throughDotsList[i] ?: ThroughList())) {
                         drawColor = blue
                         correctNum++
                     } else {
@@ -1247,38 +1279,40 @@ class MyActivity : Activity() {
             }
         }
 
-        fun calcBonus(level: Int, isSpeed: Boolean, correctNum: Long, time: Long?): String {
+        private fun calcBonus(level: Int, isSpeed: Boolean, correctNum: Long, time: Long?): String {
             var bonus: Long
             val total = difficulty[level].qs.toLong()
             val isClearAll = total == correctNum
-            if (isSpeed) {
-                if (isClearAll) {
-                    bonus = Math.round((time ?: 0) * 1000.0 / difficulty[level].time)
-                } else {
-                    bonus = 0L
+            when {
+                isSpeed -> bonus =
+                        if (isClearAll) {
+                            Math.round((time ?: 0) * 1000.0 / difficulty[level].time)
+                        } else {
+                            0L
+                        }
+                isClearAll -> {
+                    bonus =
+                            when (level) {
+                                in 0..1 -> 38
+                                2 -> 60
+                                in 3..5 -> 85
+                                in 6..7 -> 120
+                                8 -> 162
+                                else -> 0
+                            }
+                    bonus = Math.round(bonus.toDouble() * correctNum / difficulty[level].qs)
                 }
-            } else if (isClearAll) {
-                when (level) {
-                    in 0..1 -> bonus = 38
-                    2 -> bonus = 60
-                    in 3..5 -> bonus = 85
-                    in 6..7 -> bonus = 120
-                    8 -> bonus = 162
-                    else -> bonus = 0
-                }
-                bonus = Math.round(bonus.toDouble() * correctNum / difficulty[level].qs)
-            } else {
-                bonus = correctNum * 10;
+                else -> bonus = correctNum * 10
             }
-            return "$bonus";
+            return "$bonus"
         }
 
-        fun normalizePaths(paths: ArrayList<IntArray>): ArrayList<IntArray> {
+        private fun normalizePaths(paths: ArrayList<IntArray>): ArrayList<IntArray> {
             val returnPaths = ArrayList<IntArray>()
             for (i in paths.indices) {
                 var match = 0
                 val srcPath = paths[i]
-                for (j in i + 1..paths.size - 1) {
+                for (j in i + 1 until paths.size) {
                     val destPath = paths[j]
                     val tempPath = intArrayOf(destPath[1], destPath[0])
                     if (Arrays.equals(srcPath, destPath) || Arrays.equals(srcPath, tempPath)) {
@@ -1293,22 +1327,14 @@ class MyActivity : Activity() {
             return returnPaths
         }
 
-        fun judgeLocus(answer: ThroughList, through: ThroughList): Boolean {
-            val tag = "MyView/judgeLocus"
-            val answerPaths = ArrayList<IntArray>()
-            var passedPaths = ArrayList<IntArray>()
-
-            for (i in 0..answer.dots.lastIndex - 1) {
-                val path = intArrayOf(answer.dots[i], answer.dots[i + 1])
-                answerPaths.add(path)
-            }
-            for (i in 0..through.dots.lastIndex - 1) {
-                val path = intArrayOf(through.dots[i], through.dots[i + 1])
-                passedPaths.add(path)
-            }
+        private fun judgeLocus(answer: ThroughList, through: ThroughList): Boolean {
+            val answerPaths =
+                    (0 until answer.dots.lastIndex).map { intArrayOf(answer.dots[it], answer.dots[it + 1]) }
+            var passedPaths =
+                    (0 until through.dots.lastIndex).mapTo(ArrayList()) { intArrayOf(through.dots[it], through.dots[it + 1]) }
             passedPaths = normalizePaths(passedPaths)
 
-            if (answerPaths.size == passedPaths.size) {
+            return if (answerPaths.size == passedPaths.size) {
                 val clearFrags = BooleanArray(answerPaths.size)
                 for (i in answerPaths.indices) {
                     for (path in passedPaths) {
@@ -1318,19 +1344,14 @@ class MyActivity : Activity() {
                         }
                     }
                 }
-                var clearC = 0
-                for (flag in clearFrags) {
-                    if (flag) {
-                        clearC++
-                    }
-                }
-                return (clearC == answerPaths.size)
+                val clearC = clearFrags.count { it }
+                (clearC == answerPaths.size)
             } else {
-                return false
+                false
             }
         }
 
-        fun setLocusStart(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
+        private fun setLocusStart(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
             synchronized(locus) {
                 locus.add(Particle(x, y, canvas))
 
@@ -1341,7 +1362,7 @@ class MyActivity : Activity() {
             }
         }
 
-        fun setLocus(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
+        private fun setLocus(x: Float, y: Float, doCD: Boolean, canvas: Canvas) {
             synchronized(locus) {
                 locus.add(Particle(x, y, canvas))
 
@@ -1352,9 +1373,7 @@ class MyActivity : Activity() {
             }
         }
 
-        fun setCollision(x0: Float, y0: Float, x1: Float, y1: Float) {
-            val tag = "MiView/setCollision"
-
+        private fun setCollision(x0: Float, y0: Float, x1: Float, y1: Float) {
             var collisionDot = -1
             val tol = 35 * scale
             for (i in 0..10) {
@@ -1397,8 +1416,8 @@ class MyActivity : Activity() {
                     }
                 }
             }
-            if (collisionDot != -1 && (throughList[qNum]!!.dots.size < 1 || throughList[qNum]!!.dots[throughList[qNum]!!.dots.size - 1] !== collisionDot)) {
-                throughList[qNum]?.dots?.add(collisionDot)
+            if (collisionDot != -1 && (throughDotsList[qNum]!!.dots.size < 1 || throughDotsList[qNum]!!.dots[throughDotsList[qNum]!!.dots.size - 1] != collisionDot)) {
+                throughDotsList[qNum]?.dots?.add(collisionDot)
                 if (doVibrate) {
                     val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                     vibrator.vibrate(30)
@@ -1407,14 +1426,14 @@ class MyActivity : Activity() {
             }
         }
 
-        fun resetLocus() {
+        private fun resetLocus() {
             locusPath.reset()
             synchronized(locus) {
                 locus.clear()
             }
         }
 
-        fun resetThrough() {
+        private fun resetThrough() {
             for (i in 0..10) {
                 isThrough[i] = false
             }
@@ -1456,7 +1475,7 @@ class MyActivity : Activity() {
                     if (isCmdSeq) {
                         resetLocus()
                         resetThrough()
-                        throughList[0] = ThroughList()
+                        throughDotsList[0] = ThroughList()
                         setLocusStart(downX, downY, true, canvas!!)
                     }
                 }
@@ -1492,14 +1511,14 @@ class MyActivity : Activity() {
                         isReleasedOutsideButton = true
                         releaseTime = now
                         var tPassTime = (now - initTime) / 10
-                        for (i in 0..qNum - 1) {
+                        for (i in 0 until qNum) {
                             tPassTime -= passTime[i]
                         }
                         passTime[qNum] = tPassTime
-                        Log.d(tag, "throughList: ${throughList[qNum]?.dots?.joinToString(",")}")
+                        Log.d(tag, "throughDotsList: ${throughDotsList[qNum]?.dots?.joinToString(",")}")
                         resetLocus()
-                        if (throughList[qNum]?.dots?.size ?: 0 > 0) {
-                            putParticles(throughList[qNum]!!, canvas!!)
+                        if (throughDotsList[qNum]?.dots?.size ?: 0 > 0) {
+                            putParticles(throughDotsList[qNum]!!, canvas!!)
                         }
                         qNum++
                         if (qTotal > qNum) {
@@ -1517,7 +1536,7 @@ class MyActivity : Activity() {
                     }
                     if (isOnNext[2]) {
                         if (!isStartGame) {
-                            startActivity(Intent(this@MyActivity, MyActivity::class.java))
+                            startActivity(Intent(this@MainActivity, MainActivity::class.java))
                         } else if (doShow) {
                             now = initTime + defTime
                             holdTime = now
@@ -1525,21 +1544,21 @@ class MyActivity : Activity() {
                             upTime = (defTime - (pressButtonTime - initTime)) / 10
                             isPressedButton = true
                         } else {
-                            startActivity(Intent(this@MyActivity, MyActivity::class.java))
+                            startActivity(Intent(this@MainActivity, MainActivity::class.java))
                         }
                     }
                     if (isOnRedo[2]) {
                         isEndGame = false
                         if (qNum != 0) {
                             qNum--
-                            throughList[qNum] = ThroughList()
+                            throughDotsList[qNum] = ThroughList()
                             if (qNum == 0) {
                                 doShowRedo = false
                             }
                         }
                     }
                     if (isOnRetry[2]) {
-                        val intent = Intent(this@MyActivity, MyActivity::class.java)
+                        val intent = Intent(this@MainActivity, MainActivity::class.java)
                         intent.putExtra("isRetry", true)
                         intent.putExtra("retryLevel", level)
                         intent.putExtra("retryValue", randomVal)
@@ -1552,4 +1571,5 @@ class MyActivity : Activity() {
             return true
         }
     }
+*/
 }

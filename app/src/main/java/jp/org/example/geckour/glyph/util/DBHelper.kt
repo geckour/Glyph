@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph
+package jp.org.example.geckour.glyph.util
 
 import android.content.ContentValues
 import android.content.Context
@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.database.sqlite.SQLiteStatement
 import android.util.Log
 
-class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, null, DBHelper.DB_VERSION) {
+class DBHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
     companion object {
         val DB_NAME = "shaper.db"
         val TABLE_NAME1 = "shapers"
@@ -634,14 +634,13 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
     )
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("create table if not exists $TABLE_NAME1(id integer primary key autoincrement,name text not null,path text not null,correct_number integer,total_number integer);")
-        db.execSQL("create table if not exists $TABLE_NAME2(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text,correct_number integer,total_number integer);")
+        db.execSQL("create table if not exists ${TABLE_NAME1}(id integer primary key autoincrement,name text not null,path text not null,correct_number integer,total_number integer);")
+        db.execSQL("create table if not exists ${TABLE_NAME2}(id integer primary key autoincrement,level integer not null,sequence text not null,correctSeq text,correct_number integer,total_number integer);")
 
         db.beginTransaction()
         try {
-            var stmt: SQLiteStatement
+            var stmt: SQLiteStatement = db.compileStatement("insert into shapers(name, path) values(?, ?);")
 
-            stmt = db.compileStatement("insert into shapers(name, path) values(?, ?);")
             for (shaper in SHAPERS) {
                 stmt.bindString(1, shaper[0])
                 stmt.bindString(2, shaper[1])
@@ -693,13 +692,13 @@ class DBHelper(context: Context) : SQLiteOpenHelper(context, DBHelper.DB_NAME, n
 
             onCreate(db)
         } else {
-            val cursorTable1 = db.rawQuery("select * from $TABLE_NAME1;", null)
+            val cursorTable1 = db.rawQuery("select * from ${TABLE_NAME1};", null)
             cursorTable1.moveToFirst()
-            db.execSQL("drop table if exists $TABLE_NAME1;")
+            db.execSQL("drop table if exists ${TABLE_NAME1};")
 
-            val cursorTable2 = db.rawQuery("select * from $TABLE_NAME2;", null)
+            val cursorTable2 = db.rawQuery("select * from ${TABLE_NAME2};", null)
             cursorTable2.moveToFirst()
-            db.execSQL("drop table if exists $TABLE_NAME2;")
+            db.execSQL("drop table if exists ${TABLE_NAME2};")
 
             onCreate(db)
 
