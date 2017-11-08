@@ -23,14 +23,13 @@ class DotsView: View {
     private val paint = Paint()
     private var offsetWidth = 0f
     private var offsetHeight = 0f
-    private var scale = 0f
+    var scale = 0f
     private var radius = 0f
     private var dotDiam = 0
     private var dotBitmapTrue: Bitmap? = null
     private var dotBitmapFalse: Bitmap? = null
     private val dots = Array(11) { PointF() }
     private val isThrough = Array(11) { false }
-    private val line = Pair(PointF(), PointF())
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
@@ -112,11 +111,6 @@ class DotsView: View {
             }
         }
         invalidate()
-    }
-
-    fun setLine(pointStart: PointF, pointEnd: PointF) {
-        line.first.set(pointStart)
-        line.second.set(pointEnd)
     }
 
     fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float): List<Int> {

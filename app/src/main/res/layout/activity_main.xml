@@ -1,4 +1,5 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools">
 
     <android.support.constraint.ConstraintLayout
@@ -10,8 +11,21 @@
         android:id="@+id/root">
 
         <jp.org.example.geckour.glyph.view.DotsView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/dotsView" />
+            android:id="@+id/dotsView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <jp.org.example.geckour.glyph.view.OverlayView
+            android:id="@+id/overlayView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@+id/dotsView"
+            app:layout_constraintEnd_toEndOf="@+id/dotsView"
+            app:layout_constraintStart_toStartOf="@+id/dotsView"
+            app:layout_constraintTop_toTopOf="@+id/dotsView"/>
     </android.support.constraint.ConstraintLayout>
 </layout>

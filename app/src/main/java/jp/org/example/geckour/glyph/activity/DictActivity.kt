@@ -278,10 +278,10 @@ class DictActivity : Activity() {
                                 .filterNot { grain[it].isOrigin }
                                 .forEach { grain.removeAt(it) }
                         for (i in grain.indices) {
-                            val param = Math.cos(grain[i].a0)
-                            grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
-                            grain[i].y += (Math.sin(grain[i].a1) * grain[i].circleR * param).toFloat()
-                            grain[i].a0 += v
+                            val param = Math.cos(grain[i].paramAngle)
+                            grain[i].x += (Math.cos(grain[i].baseAngle) * grain[i].circleR * param).toFloat()
+                            grain[i].y += (Math.sin(grain[i].baseAngle) * grain[i].circleR * param).toFloat()
+                            grain[i].paramAngle += v
                         }
                     }
                 }
@@ -297,8 +297,8 @@ class DictActivity : Activity() {
                 var step1 = PointF()
                 var diff = PointF()
                 val pi2 = Math.PI * 2.0
-                var a0 = Math.random() * pi2
-                val a1 = Math.random() * pi2
+                var paramAngle = Math.random() * pi2
+                val baseAngle = Math.random() * pi2
                 var circleR = Math.random() * 0.5 + 0.7
 
                 init {

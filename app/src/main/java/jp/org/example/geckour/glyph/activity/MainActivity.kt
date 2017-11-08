@@ -32,7 +32,8 @@ class MainActivity : Activity() {
     private var receivedValue = -1
     private var isWeaknessMode = false
 
-    private val throughDotsList: ArrayList<ArrayList<Int>> = ArrayList()
+    private val throughDots: ArrayList<Int> = ArrayList()
+    private val paths: ArrayList<List<Pair<Int, Int>>> = ArrayList()
 
     private var fromX = -1f
     private var fromY = -1f
@@ -79,29 +80,35 @@ class MainActivity : Activity() {
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
 
-        binding.dotsView.setOnTouchListener { _, event ->
+        binding.overlayView.setOnTouchListener { _, event ->
+            val lim = 2 * binding.dotsView.scale
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     fromX = event.x
                     fromY = event.y
-                    throughDotsList.add(ArrayList())
+                    throughDots.clear()
+                    binding.dotsView.setDotsState { false }
+                    binding.overlayView.addParticle(event.x, event.y)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
-                    throughDotsList.last().addAll(collision)
+                    throughDots.addAll(collision)
                     binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                    if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || event.y + lim < fromY) {
+                        binding.overlayView.addParticle(event.x, event.y)
+                    }
                     fromX = event.x
                     fromY = event.y
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                    //binding.dotsView.setLine(PointF(fromX, fromY), PointF(event.x, event.y))
                     val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
-                    throughDotsList.last().addAll(collision)
+                    throughDots.addAll(collision)
                     binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                    getNormalizedPaths(convertDotsListToPaths(throughDotsList.last()))
+                    paths.add(getNormalizedPaths(convertDotsListToPaths(throughDots)))
+                    binding.overlayView.clearParticle()
                     true
                 }
                 else -> true
@@ -183,7 +190,7 @@ class MainActivity : Activity() {
         var locus = ArrayList<Particle>()
         var locusPath = Path()
         var now: Long = 0
-        var throughDotsList: Array<ThroughList?>
+        var throughDots: Array<ThroughList?>
         var answerThroughList: Array<ThroughList?>
         var difficulty = ArrayList<Difficulty>()
         var correctStr = ArrayList<String>()
@@ -241,7 +248,7 @@ class MainActivity : Activity() {
             Log.d(tag, "qTotal:" + qTotal)
             defTime = difficulty[level].time
 
-            throughDotsList = arrayOfNulls(qTotal)
+            throughDots = arrayOfNulls(qTotal)
             answerThroughList = arrayOfNulls(qTotal)
             getSequence()
 
@@ -437,7 +444,7 @@ class MainActivity : Activity() {
                 cursor.close()
 
                 for (i in 0 until qTotal) {
-                    throughDotsList[i] = ThroughList()
+                    throughDots[i] = ThroughList()
                     val cursorInName = db.rawQuery("select * from ${DBHelper.TABLE_NAME1} where name = '${shapesSplit[i].replace("'", "''")}';", null)
                     cursorInName.moveToFirst()
                     //Log.d(tag, "shaper name: " + c.getString(1));
@@ -463,7 +470,7 @@ class MainActivity : Activity() {
                         randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
                         //int randomVal = (int)max - 1;
                         Log.d(tag, "randomVal:$randomVal, level:$level")
-                        throughDotsList[0] = ThroughList()
+                        throughDots[0] = ThroughList()
                     }
 
                     cursorForWeakness.close()
@@ -473,12 +480,12 @@ class MainActivity : Activity() {
                     randomVal = if (receivedValue > -1) receivedValue else (Math.random() * max).toInt()
                     //randomVal = 0
                     Log.d(tag, "randomVal:$randomVal, level:$level")
-                    throughDotsList[0] = ThroughList()
+                    throughDots[0] = ThroughList()
                 }
                 cursor.moveToPosition(randomVal)
                 val dotsSplit = cursor.getString(cursor.getColumnIndex("path")).split(",".toRegex()).toTypedArray()
                 answerThroughList[0] = ThroughList(dotsSplit)
-                throughDotsList[0] = ThroughList()
+                throughDots[0] = ThroughList()
                 correctStr.add(cursor.getString(cursor.getColumnIndex("name")))
 
                 cursor.close()
@@ -597,10 +604,10 @@ class MainActivity : Activity() {
                                 .filterNot { grain[it].isOrigin }
                                 .forEach { grain.removeAt(it) }
                         for (i in grain.indices) {
-                            val param = Math.cos(grain[i].a0)
-                            grain[i].x += (Math.cos(grain[i].a1) * grain[i].circleR * param).toFloat()
-                            grain[i].y += (Math.sin(grain[i].a1) * grain[i].circleR * param).toFloat()
-                            grain[i].a0 += v
+                            val param = Math.cos(grain[i].paramAngle)
+                            grain[i].x += (Math.cos(grain[i].baseAngle) * grain[i].circleR * param).toFloat()
+                            grain[i].y += (Math.sin(grain[i].baseAngle) * grain[i].circleR * param).toFloat()
+                            grain[i].paramAngle += v
                         }
                     }
                 }
@@ -616,8 +623,8 @@ class MainActivity : Activity() {
                 var step1 = PointF()
                 var diff = PointF()
                 val pi2 = Math.PI * 2.0
-                var a0 = Math.random() * pi2
-                val a1 = Math.random() * pi2
+                var paramAngle = Math.random() * pi2
+                val baseAngle = Math.random() * pi2
                 var circleR = Math.random() * 0.5 + 0.7
 
                 init {
@@ -676,13 +683,13 @@ class MainActivity : Activity() {
         }
 
         //dotのリストを与えてそのリストが示す軌跡上にパーティクルを表示させる
-        fun putParticles(throughDotsList: ThroughList, canvas: Canvas) {
+        fun putParticles(throughDots: ThroughList, canvas: Canvas) {
             val tag = "MyView/putParticles"
             val interval = 25 * scale
-            val length = FloatArray(throughDotsList.dots.lastIndex)
-            for (i in 1..throughDotsList.dots.lastIndex) {
-                val dotI0 = dots[throughDotsList.dots[i]]
-                val dotI1 = dots[throughDotsList.dots[i - 1]]
+            val length = FloatArray(throughDots.dots.lastIndex)
+            for (i in 1..throughDots.dots.lastIndex) {
+                val dotI0 = dots[throughDots.dots[i]]
+                val dotI1 = dots[throughDots.dots[i - 1]]
                 if (dotI0 != null && dotI1 != null) {
                     length[i - 1] = Math.sqrt(Math.pow((dotI1.x - dotI0.x).toDouble(), 2.0) + Math.pow((dotI1.y - dotI0.y).toDouble(), 2.0)).toFloat()
                 }
@@ -691,8 +698,8 @@ class MainActivity : Activity() {
                 locus.clear()
             }
             for (i in length.indices) {
-                val dotI0 = dots[throughDotsList.dots[i]]
-                val dotI1 = dots[throughDotsList.dots[i + 1]]
+                val dotI0 = dots[throughDots.dots[i]]
+                val dotI1 = dots[throughDots.dots[i + 1]]
                 if (dotI0 != null && dotI1 != null) {
                     val unitV = floatArrayOf((dotI1.x - dotI0.x) / length[i], (dotI1.y - dotI0.y) / length[i])
                     var x = dotI0.x
@@ -859,7 +866,7 @@ class MainActivity : Activity() {
 
             if (leftTime <= 0 && isFirstTimeUp) {
                 for (i in 0 until qTotal) {
-                    Log.d(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughDotsList[i] ?: ThroughList()))
+                    Log.d(tag, "q[" + i + "]:" + judgeLocus(answerThroughList[i]!!, throughDots[i] ?: ThroughList()))
                 }
                 holdTime = now
                 isEndGame = true
@@ -926,7 +933,7 @@ class MainActivity : Activity() {
                             paint.color = Color.argb(140, r, g, b)
                         }
                         qNum -> {
-                            if ((isReleasedOutsideButton && throughDotsList[qTotal - 1]?.dots?.size ?: 0 > 0)) {
+                            if ((isReleasedOutsideButton && throughDots[qTotal - 1]?.dots?.size ?: 0 > 0)) {
                                 //paint.setShader(lgNormal)
                                 paint.shader = lgNormal
                                 paint.style = Paint.Style.FILL
@@ -989,7 +996,7 @@ class MainActivity : Activity() {
                     MODE_COMPLEX -> drawAnswerLength /= 3
                 }
                 resetLocus()
-                throughDotsList[0] = ThroughList()
+                throughDots[0] = ThroughList()
                 releaseTime = -1
                 initTime = now
             } else {
@@ -1007,12 +1014,12 @@ class MainActivity : Activity() {
             val simple = arrayListOf(2, 1)
             val complex = arrayListOf(4, 3, 0, 2)
             when {
-                judgeLocus(ThroughList(simple), throughDotsList[0] ?: ThroughList()) -> {
+                judgeLocus(ThroughList(simple), throughDots[0] ?: ThroughList()) -> {
                     hackMode = MODE_SIMPLE
                     isValidCmd = true
                     Log.d(tag, "simple")
                 }
-                judgeLocus(ThroughList(complex), throughDotsList[0] ?: ThroughList()) -> {
+                judgeLocus(ThroughList(complex), throughDots[0] ?: ThroughList()) -> {
                     hackMode = MODE_COMPLEX
                     isValidCmd = true
                     Log.d(tag, "complex")
@@ -1155,7 +1162,7 @@ class MainActivity : Activity() {
             var correctNum = 0
             val isCorrect = Array(qTotal, { i -> false })
             for (i in 0 until qTotal) {
-                if (judgeLocus(answerThroughList[i]!!, throughDotsList[i]!!)) {
+                if (judgeLocus(answerThroughList[i]!!, throughDots[i]!!)) {
                     isCorrect[i] = true
                     correctNum++
                 }
@@ -1229,7 +1236,7 @@ class MainActivity : Activity() {
                     val x = offsetX / 6
                     val y = offsetY * 2 / 3 - (height / 2 + totalMargin) + i.toFloat() * (hexaRadius + hexaMargin) * 2f
                     val giveOrigin = PointF(x, y)
-                    if (judgeLocus(answerThroughList[i]!!, throughDotsList[i] ?: ThroughList())) {
+                    if (judgeLocus(answerThroughList[i]!!, throughDots[i] ?: ThroughList())) {
                         drawColor = blue
                         correctNum++
                     } else {
@@ -1416,8 +1423,8 @@ class MainActivity : Activity() {
                     }
                 }
             }
-            if (collisionDot != -1 && (throughDotsList[qNum]!!.dots.size < 1 || throughDotsList[qNum]!!.dots[throughDotsList[qNum]!!.dots.size - 1] != collisionDot)) {
-                throughDotsList[qNum]?.dots?.add(collisionDot)
+            if (collisionDot != -1 && (throughDots[qNum]!!.dots.size < 1 || throughDots[qNum]!!.dots[throughDots[qNum]!!.dots.size - 1] != collisionDot)) {
+                throughDots[qNum]?.dots?.add(collisionDot)
                 if (doVibrate) {
                     val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                     vibrator.vibrate(30)
@@ -1475,7 +1482,7 @@ class MainActivity : Activity() {
                     if (isCmdSeq) {
                         resetLocus()
                         resetThrough()
-                        throughDotsList[0] = ThroughList()
+                        throughDots[0] = ThroughList()
                         setLocusStart(downX, downY, true, canvas!!)
                     }
                 }
@@ -1515,10 +1522,10 @@ class MainActivity : Activity() {
                             tPassTime -= passTime[i]
                         }
                         passTime[qNum] = tPassTime
-                        Log.d(tag, "throughDotsList: ${throughDotsList[qNum]?.dots?.joinToString(",")}")
+                        Log.d(tag, "throughDots: ${throughDots[qNum]?.dots?.joinToString(",")}")
                         resetLocus()
-                        if (throughDotsList[qNum]?.dots?.size ?: 0 > 0) {
-                            putParticles(throughDotsList[qNum]!!, canvas!!)
+                        if (throughDots[qNum]?.dots?.size ?: 0 > 0) {
+                            putParticles(throughDots[qNum]!!, canvas!!)
                         }
                         qNum++
                         if (qTotal > qNum) {
@@ -1551,7 +1558,7 @@ class MainActivity : Activity() {
                         isEndGame = false
                         if (qNum != 0) {
                             qNum--
-                            throughDotsList[qNum] = ThroughList()
+                            throughDots[qNum] = ThroughList()
                             if (qNum == 0) {
                                 doShowRedo = false
                             }
