@@ -362,22 +362,22 @@ class DictActivity : Activity() {
 
         private fun putParticles(throughList: ThroughList, canvas: Canvas) {
             val interval = 25 * scale
-            val length = FloatArray(throughList.dots.lastIndex)
+            val size = FloatArray(throughList.dots.lastIndex)
             for (i in 1..throughList.dots.lastIndex) {
                 val dotI0 = dots[throughList.dots[i]]
                 val dotI1 = dots[throughList.dots[i - 1]]
                 if (dotI0 != null && dotI1 != null) {
-                    length[i - 1] = Math.sqrt(Math.pow((dotI1.x - dotI0.x).toDouble(), 2.0) + Math.pow((dotI1.y - dotI0.y).toDouble(), 2.0)).toFloat()
+                    size[i - 1] = Math.sqrt(Math.pow((dotI1.x - dotI0.x).toDouble(), 2.0) + Math.pow((dotI1.y - dotI0.y).toDouble(), 2.0)).toFloat()
                 }
             }
             synchronized(Locus) {
                 Locus.clear()
             }
-            for (i in length.indices) {
+            for (i in size.indices) {
                 val dotI0 = dots[throughList.dots[i]]
                 val dotI1 = dots[throughList.dots[i + 1]]
                 if (dotI0 != null && dotI1 != null) {
-                    val unitV = floatArrayOf((dotI1.x - dotI0.x) / length[i], (dotI1.y - dotI0.y) / length[i])
+                    val unitV = floatArrayOf((dotI1.x - dotI0.x) / size[i], (dotI1.y - dotI0.y) / size[i])
                     var x = dotI0.x
                     var y = dotI0.y
 
@@ -387,8 +387,8 @@ class DictActivity : Activity() {
                         val absY = Math.abs(dotI1.y - dotI0.y)
                         val dX = unitV[0] * interval
                         val dY = unitV[1] * interval
-                        val dXa = absX * interval / length[i]
-                        val dYa = absY * interval / length[i]
+                        val dXa = absX * interval / size[i]
+                        val dYa = absY * interval / size[i]
                         while (sumLength[0] <= absX && sumLength[1] <= absY) {
                             Locus.add(Particle(x, y, canvas))
                             x += dX
