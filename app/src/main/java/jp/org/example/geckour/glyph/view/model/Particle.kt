@@ -1,9 +1,8 @@
 package jp.org.example.geckour.glyph.view.model
 
 import android.graphics.*
-import timber.log.Timber
 
-class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grainImg: Bitmap) {
+class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grainImg: Bitmap, private val phase: Int?) {
     
     private val grains: ArrayList<Grain> = ArrayList(List(3) { Grain(x, y) })
             .apply {
@@ -16,15 +15,18 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
     private var elapsedTime: Long = 0
     private var v = 0.15
     private var grainR = 16f * canvasHeight / 1280
+    private var grainAlpha = 255
 
     private var scaledGrain = Bitmap.createScaledBitmap(grainImg, (grainR * 2).toInt(), (grainR * 2).toInt(), false)
 
     private fun phase(): Int = if (elapsedTime > moveUntil) 1 else 0
 
-    fun move(canvas: Canvas, paint: Paint) {
-        elapsedTime = (System.currentTimeMillis() - initTime).apply { Timber.d("elapsedTime: $this") }
+    fun move(canvas: Canvas, paint: Paint, alpha: Int) {
+        elapsedTime = (System.currentTimeMillis() - initTime)
 
-        when (phase()) {
+        setGrainAlpha(alpha)
+
+        when (phase ?: phase()) {
             0 -> { //収束前
                 grains.forEach {
                     val param = (moveUntil - elapsedTime).toFloat() / moveUntil
@@ -46,6 +48,28 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
         draw(canvas, paint)
     }
 
+    private fun setGrainAlpha(alpha: Int) {
+        val w = scaledGrain.width
+        val h = scaledGrain.height
+
+        val pixels = IntArray(w * h)
+        scaledGrain.getPixels(pixels, 0, w, 0, 0, w, h)
+
+        for (y in 0 until h) {
+            for (x in 0 until w) {
+                val pixel = pixels[x + y * w]
+                var pixelAlpha = pixel.ushr(24)
+
+                    pixelAlpha -= alpha
+                    if (pixelAlpha < 0) pixelAlpha = 0 //alphaがマイナスになると予期せぬ表示になるので防止
+                    pixelAlpha = pixelAlpha shl 24
+
+                    pixels[x + y * w] = pixelAlpha + (pixel and 16777215)
+            }
+        }
+        scaledGrain.setPixels(pixels, 0, w, 0, 0, w, h)
+    }
+
     inner class Grain(var x: Float, var y: Float, val start: PointF = PointF(-1f, -1f)) {
         val end = PointF()
         val isOrigin = start.x < 0 || start.y < 0
@@ -56,7 +80,7 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
         val circleR = Math.random() * 0.5 + 0.7
 
         init {
-            val margin = Math.random() * canvasWidth * 0.03
+            val margin = Math.random() * canvasWidth * 0.025
             
             var blurR: Double
             var blurA: Double = Math.random() * pi2
@@ -84,6 +108,9 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
             //収束までの距離
             diff.x = end.x - start.x
             diff.y = end.y - start.y
+
+            x = end.x
+            y = end.y
         }
     }
 

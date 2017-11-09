@@ -13,6 +13,7 @@ import kotlinx.coroutines.experimental.Job
 import kotlin.collections.ArrayList
 
 class DotsView: View {
+
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int): super(context, attrs, defStyleAttr, defStyleRes)
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int): super(context, attrs, defStyleAttr)
     constructor(context: Context, attrs: AttributeSet): super(context, attrs)
@@ -87,9 +88,6 @@ class DotsView: View {
                 dotBitmapFalse?.let { canvas.drawBitmap(it, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint) }
             }
         }
-
-        //paint.color = Color.RED
-        //canvas.drawLine(line.first.x, line.first.y, line.second.x, line.second.y, paint)
     }
 
     fun setDotState(index: Int, b: Boolean) {
@@ -112,6 +110,8 @@ class DotsView: View {
         }
         invalidate()
     }
+
+    fun getDots(): Array<PointF> = dots
 
     fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float): List<Int> {
         val collisionDots: ArrayList<Int> = ArrayList()

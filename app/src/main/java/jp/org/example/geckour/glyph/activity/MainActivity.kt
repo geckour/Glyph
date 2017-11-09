@@ -5,6 +5,7 @@ import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.View
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
@@ -66,7 +67,6 @@ class MainActivity : Activity() {
             Timber.e("Can't translate maximum-level to int.")
         }
 
-        val intent = intent
         if (intent.getBooleanExtra("isRetry", false)) {
             receivedLevel = intent.getIntExtra("retryLevel", -1)
             receivedValue = intent.getIntExtra("retryValue", -1)
@@ -76,28 +76,33 @@ class MainActivity : Activity() {
         }
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        hideLeftButton()
+        hideRightButton()
+
         val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
 
-        binding.overlayView.setOnTouchListener { _, event ->
-            val lim = 2 * binding.dotsView.scale
+        binding.animateView.setOnTouchListener { _, event ->
+            val lim = 4 * binding.dotsView.scale
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     fromX = event.x
                     fromY = event.y
+                    binding.animateView.clearParticle()
+                    binding.animateView.resetGrainAlphaMode()
                     throughDots.clear()
                     binding.dotsView.setDotsState { false }
-                    binding.overlayView.addParticle(event.x, event.y)
+                    binding.animateView.addParticle(event.x, event.y)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
                     throughDots.addAll(collision)
                     binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                    if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || event.y + lim < fromY) {
-                        binding.overlayView.addParticle(event.x, event.y)
+                    if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                        binding.animateView.addParticle(event.x, event.y)
                     }
                     fromX = event.x
                     fromY = event.y
@@ -108,7 +113,10 @@ class MainActivity : Activity() {
                     throughDots.addAll(collision)
                     binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                     paths.add(getNormalizedPaths(convertDotsListToPaths(throughDots)))
-                    binding.overlayView.clearParticle()
+                    binding.animateView.setGrainAlphaModeIntoFadeout(System.currentTimeMillis()) {
+                        binding.dotsView.setDotsState { false }
+                    }
+                    binding.animateView.showPaths(paths.last(), binding.dotsView.getDots())
                     true
                 }
                 else -> true
@@ -145,6 +153,36 @@ class MainActivity : Activity() {
         } else {
             Timber.d("normalized paths: $paths")
             paths
+        }
+    }
+
+    private fun setRightButton(buttonText: String, predicate: (View) -> Unit) {
+        binding.buttonRight.apply {
+            text = buttonText
+            setOnClickListener { predicate(it) }
+            visibility = View.VISIBLE
+        }
+    }
+
+    private fun hideRightButton() {
+        binding.buttonRight.apply {
+            visibility = View.INVISIBLE
+            setOnClickListener(null)
+        }
+    }
+
+    private fun setLeftButton(buttonText: String, predicate: (View) -> Unit) {
+        binding.buttonLeft.apply {
+            text = buttonText
+            setOnClickListener { predicate(it) }
+            visibility = View.VISIBLE
+        }
+    }
+
+    private fun hideLeftButton() {
+        binding.buttonLeft.apply {
+            visibility = View.INVISIBLE
+            setOnClickListener(null)
         }
     }
 /*
