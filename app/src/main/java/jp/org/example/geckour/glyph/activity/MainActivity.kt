@@ -46,7 +46,7 @@ class MainActivity : Activity() {
     private var fromY = -1f
 
     private var onInitAnimateView: () -> Unit = {
-        showSequence(getSequence()) { // attach後に実行しないとwidthが取れないのでaddParticleが呼ばれない
+        showSequence(getSequence()) { // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
             binding.animateView.apply {
                 clearParticle()
                 setGrainAlphaModeIntoFadeout(-1L) { binding.dotsView.setDotsState { false } }

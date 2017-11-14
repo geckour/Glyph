@@ -162,13 +162,17 @@ class AnimateView : View {
                     if (releaseTime > -1L) {
                         val elapsedTime = now - releaseTime
 
-                        if (elapsedTime in tol..tol + fade) {
-                            onFadeStart()
-                            onFadeStart = {}
-                            (255.0 * (tol + fade - elapsedTime) / fade).toInt()
-                        } else {
-                            onFadeStart = _onFadeStart
-                            255
+                        when (elapsedTime) {
+                            in 0..tol -> {
+                                onFadeStart = _onFadeStart
+                                255
+                            }
+                            in tol..tol + fade -> {
+                                onFadeStart()
+                                onFadeStart = {}
+                                (255.0 * (tol + fade - elapsedTime) / fade).toInt()
+                            }
+                            else -> 0
                         }
                     } else 255
                 }
