@@ -2,11 +2,39 @@ package jp.org.example.geckour.glyph.view.model
 
 import android.graphics.*
 
-class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grainImg: Bitmap, private val phase: Int?) {
+class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Int?) {
+
+    companion object {
+        lateinit var grainImg: Bitmap
+        private val grainImgWithAlpha: Bitmap by lazy { grainImg.copy(Bitmap.Config.ARGB_8888, true) }
+
+        fun setGrainAlpha(alpha: Int) {
+            if (alpha < 0 || alpha > 255) return
+
+            val w = grainImg.width
+            val h = grainImg.height
+            val subAlpha = 255 - alpha
+
+            val pixels = IntArray(w * h).apply { grainImg.getPixels(this, 0, w, 0, 0, w, h) }
+
+            pixels.forEachIndexed { i, pixel ->
+                val oldAlpha = Color.alpha(pixel)
+                val newAlpha = oldAlpha - subAlpha
+                pixels[i] =
+                        (when {
+                            newAlpha < 0 -> 0
+                            newAlpha > 255 -> 255
+                            else -> newAlpha
+                        } shl 24) + (pixel and 0x00ffffff)
+            }
+
+            grainImgWithAlpha.setPixels(pixels, 0, w, 0, 0, w, h)
+        }
+    }
     
     private val grains: ArrayList<Grain> = ArrayList(List(3) { Grain(x, y) })
             .apply {
-                (0..2).forEach {
+                if (phase == 0) (0..2).forEach {
                     addAll(List(3) { Grain(x, y, this[it].start) })
                 }
             }
@@ -14,17 +42,12 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
     private var initTime: Long = System.currentTimeMillis()
     private var elapsedTime: Long = 0
     private var v = 0.15
-    private var grainR = 16f * canvasHeight / 1280
-    private var grainAlpha = 255
-
-    private var scaledGrain = Bitmap.createScaledBitmap(grainImg, (grainR * 2).toInt(), (grainR * 2).toInt(), false)
+    private val grainR = grainImg.width ushr 1
 
     private fun phase(): Int = if (elapsedTime > moveUntil) 1 else 0
 
-    fun move(canvas: Canvas, paint: Paint, alpha: Int) {
+    fun move(canvas: Canvas, paint: Paint) {
         elapsedTime = (System.currentTimeMillis() - initTime)
-
-        setGrainAlpha(alpha)
 
         when (phase ?: phase()) {
             0 -> { //収束前
@@ -46,28 +69,6 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
             }
         }
         draw(canvas, paint)
-    }
-
-    private fun setGrainAlpha(alpha: Int) {
-        val w = scaledGrain.width
-        val h = scaledGrain.height
-
-        val pixels = IntArray(w * h)
-        scaledGrain.getPixels(pixels, 0, w, 0, 0, w, h)
-
-        for (y in 0 until h) {
-            for (x in 0 until w) {
-                val pixel = pixels[x + y * w]
-                var pixelAlpha = pixel.ushr(24)
-
-                    pixelAlpha -= alpha
-                    if (pixelAlpha < 0) pixelAlpha = 0 //alphaがマイナスになると予期せぬ表示になるので防止
-                    pixelAlpha = pixelAlpha shl 24
-
-                    pixels[x + y * w] = pixelAlpha + (pixel and 16777215)
-            }
-        }
-        scaledGrain.setPixels(pixels, 0, w, 0, 0, w, h)
     }
 
     inner class Grain(var x: Float, var y: Float, val start: PointF = PointF(-1f, -1f)) {
@@ -117,7 +118,7 @@ class Particle(x: Float, y: Float, canvasHeight: Int, val canvasWidth: Int, grai
     private fun draw(canvas: Canvas, paint: Paint) {
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.ADD)
         grains.filter { it.isOrigin }.forEach {
-            canvas.drawBitmap(scaledGrain, it.x - grainR, it.y - grainR, paint)
+            canvas.drawBitmap(grainImgWithAlpha, it.x - grainR, it.y - grainR, paint)
         }
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     }

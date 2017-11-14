@@ -3,17 +3,22 @@ package jp.org.example.geckour.glyph.activity
 import android.app.Activity
 import android.content.Intent
 import android.databinding.DataBindingUtil
+import android.graphics.PointF
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
+import io.realm.Realm
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.sp
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
+import jp.org.example.geckour.glyph.db.model.Sequence
+import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.util.*
+import jp.org.example.geckour.glyph.view.AnimateView
 import timber.log.Timber
 
 class MainActivity : Activity() {
@@ -25,6 +30,7 @@ class MainActivity : Activity() {
 
     private val tag = this::class.java.simpleName
     private lateinit var binding: ActivityMainBinding
+    private lateinit var realm: Realm
 
     private var min = 0
     private var max = 8
@@ -42,8 +48,10 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val actionBar = actionBar
         actionBar?.hide()
+
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        realm = Realm.getDefaultInstance()
 
         viewCount =
                 if (sp.getInt("viewCount", -1) != -1) {
@@ -74,7 +82,6 @@ class MainActivity : Activity() {
         if (intent.getBooleanExtra("isWeaknessMode", false)) {
             isWeaknessMode = true
         }
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
         hideLeftButton()
         hideRightButton()
@@ -83,45 +90,63 @@ class MainActivity : Activity() {
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
 
+        binding.animateView.resetInitTime()
+        showSequence(getSequence()) {
+            binding.animateView.apply {
+                clearParticle()
+                setGrainAlphaModeIntoFadeout(-1L) { binding.dotsView.setDotsState { false } }
+                status = AnimateView.Status.RELEASE
+            }
+            // TODO: 入力シーケンスに移行
+        }
+
         binding.animateView.setOnTouchListener { _, event ->
             val lim = 4 * binding.dotsView.scale
 
-            when (event.action) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                    fromX = event.x
-                    fromY = event.y
-                    binding.animateView.clearParticle()
-                    binding.animateView.resetGrainAlphaMode()
-                    throughDots.clear()
-                    binding.dotsView.setDotsState { false }
-                    binding.animateView.addParticle(event.x, event.y)
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
-                    throughDots.addAll(collision)
-                    binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                    if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
-                        binding.animateView.addParticle(event.x, event.y)
-                    }
-                    fromX = event.x
-                    fromY = event.y
-                    true
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                    val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
-                    throughDots.addAll(collision)
-                    binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                    paths.add(getNormalizedPaths(convertDotsListToPaths(throughDots)))
-                    binding.animateView.setGrainAlphaModeIntoFadeout(System.currentTimeMillis()) {
+            if (binding.animateView.status == AnimateView.Status.PROTECT) false
+            else {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                        fromX = event.x
+                        fromY = event.y
+                        binding.animateView.clearParticle()
+                        binding.animateView.resetGrainAlphaMode()
+                        throughDots.clear()
                         binding.dotsView.setDotsState { false }
+                        binding.animateView.addParticle(event.x, event.y)
+                        true
                     }
-                    binding.animateView.showPaths(paths.last(), binding.dotsView.getDots())
-                    true
+                    MotionEvent.ACTION_MOVE -> {
+                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                        throughDots.addAll(collision)
+                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                        if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                            binding.animateView.addParticle(event.x, event.y)
+                        }
+                        fromX = event.x
+                        fromY = event.y
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                        throughDots.addAll(collision)
+                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                        paths.add(getNormalizedPaths(convertDotsListToPaths(throughDots)))
+                        binding.animateView.setGrainAlphaModeIntoFadeout(System.currentTimeMillis()) {
+                            binding.dotsView.setDotsState { false }
+                        }
+                        binding.animateView.showPaths(paths.last().mapToPointPathsFromDotPaths())
+                        true
+                    }
+                    else -> true
                 }
-                else -> true
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        realm.close()
     }
 
     private fun convertDotsListToPaths(list: List<Int>): List<Pair<Int, Int>> =
@@ -185,6 +210,69 @@ class MainActivity : Activity() {
             setOnClickListener(null)
         }
     }
+
+    private fun showSequence(questions: List<Shaper>, onComplete: () -> Unit = {}) {
+        if (questions.isNotEmpty()) {
+            showShaper(questions.first())
+            binding.animateView.setGrainAlphaModeIntoQuestion { showSequence(questions.drop(1), onComplete) }
+        } else onComplete()
+    }
+
+    private fun showShaper(shaper: Shaper) =
+            binding.animateView.showPaths(
+                    getNormalizedPaths(convertDotsListToPaths(shaper.dots)).mapToPointPathsFromDotPaths()
+            )
+
+    private fun getSequence(id: Long? = null): List<Shaper> {
+        fun getLevel(): Int =
+                if (receivedLevel > -1) receivedLevel else ((max - min + 1) * Math.random() + min).toInt()
+
+        fun getDifficulty(level: Int): Int =
+                when (level) {
+                    in 0..1 -> 1
+                    2 -> 2
+                    in 3..5 -> 3
+                    in 6..7 -> 4
+                    8 -> 5
+                    else -> 0
+                }
+
+        val level = getLevel().apply { Timber.d("level: $this") }
+        val difficulty = getDifficulty(level).apply { Timber.d("difficulty: $this") }
+        return when (difficulty) {
+            1 -> {
+                realm.where(Shaper::class.java).count().let {
+                    realm.where(Shaper::class.java)
+                            .equalTo("id", id ?: (Math.random() * it).toLong())
+                            .findFirst()?.let { listOf(it) } ?: listOf()
+                }
+            }
+
+            in 2..5 -> {
+                realm.where(Sequence::class.java)
+                        .equalTo("size", difficulty)
+                        .let { sequences ->
+                            val first = sequences.findFirst()?.id
+                            val last = sequences.findAll().lastOrNull()?.id
+
+                            if (first == null || last == null) return listOf()
+                            else sequences.equalTo("id", id ?: (Math.random() * (last - first) + first).toLong())
+                                    .findAll().firstOrNull()?.message?.toList()
+                            } ?: listOf()
+            }
+
+            else -> listOf()
+        }.apply { forEach { Timber.d("shaper id: ${it.id}, name: ${it.name}, dots: ${it.dots}") } }
+    }
+
+    private fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(): List<Pair<PointF, PointF>> =
+            binding.dotsView.getDots().let {
+                map { path ->
+                    if (path.first in 0..it.size)
+                        Pair(PointF(it[path.first].x, it[path.first].y), PointF(it[path.second].x, it[path.second].y))
+                    else null
+                }
+            }.filterNotNull()
 /*
     internal inner class MyView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
         var thread: Thread? = null

@@ -9,6 +9,7 @@ import com.google.android.gms.analytics.GoogleAnalytics
 import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import io.realm.RealmList
 import jp.org.example.geckour.glyph.db.DBInitialData.sequences
 import jp.org.example.geckour.glyph.db.DBInitialData.shapers
 import jp.org.example.geckour.glyph.db.model.Sequence
@@ -23,7 +24,6 @@ class App: Application() {
     companion object {
         val version = Build.VERSION.SDK_INT
         lateinit var sp: SharedPreferences
-        lateinit var realm: Realm
     }
 
     enum class TrackerName {
@@ -41,7 +41,6 @@ class App: Application() {
         Stetho.initializeWithDefaults(this)
 
         Realm.init(this)
-        realm = Realm.getDefaultInstance()
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -67,21 +66,21 @@ class App: Application() {
 
     private fun injectInitialData() {
         RealmConfiguration.Builder().initialData { realm ->
-            var i = 0
-            shapers.forEach {
-                realm.createObject(Shaper::class.java, i++).apply {
-                    name = it.first.displayName
-                    dots = it.second
+            shapers.forEachIndexed { i, shaper ->
+                realm.createObject(Shaper::class.java, i).apply {
+                    name = shaper.first.displayName
+                    dots = shaper.second
                 }
             }
 
-            i = 0
-            sequences.forEach {
-                realm.createObject(Sequence::class.java, i++).apply {
-                    size = it.size
-                    message = it.map { realm.where(Shaper::class.java).notEqualTo("name", it.displayName).findFirstAsync() }
+            sequences.forEachIndexed { i, sequence ->
+                realm.createObject(Sequence::class.java, i).apply {
+                    size = sequence.size
+                    message = sequence.mapTo(RealmList()) { realm.where(Shaper::class.java).equalTo("name", it.displayName).findFirstAsync() }
                 }
             }
+        }.build().apply {
+            Realm.setDefaultConfiguration(this)
         }
     }
 }

@@ -1,5 +1,6 @@
 package jp.org.example.geckour.glyph.db.model
 
+import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 
@@ -10,5 +11,5 @@ open class Sequence(
 
         var size: Int = 0,
 
-        var message: List<Shaper> = listOf()
+        var message: RealmList<Shaper> = RealmList()
 ): RealmObject()
