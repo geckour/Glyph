@@ -45,6 +45,17 @@ class MainActivity : Activity() {
     private var fromX = -1f
     private var fromY = -1f
 
+    private var onInitAnimateView: () -> Unit = {
+        showSequence(getSequence()) { // attach後に実行しないとwidthが取れないのでaddParticleが呼ばれない
+            binding.animateView.apply {
+                clearParticle()
+                setGrainAlphaModeIntoFadeout(-1L) { binding.dotsView.setDotsState { false } }
+                status = AnimateView.Status.RELEASE
+            }
+            // TODO: 入力シーケンスに移行
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -91,13 +102,9 @@ class MainActivity : Activity() {
         t?.send(HitBuilders.ScreenViewBuilder().build())
 
         binding.animateView.resetInitTime()
-        showSequence(getSequence()) {
-            binding.animateView.apply {
-                clearParticle()
-                setGrainAlphaModeIntoFadeout(-1L) { binding.dotsView.setDotsState { false } }
-                status = AnimateView.Status.RELEASE
-            }
-            // TODO: 入力シーケンスに移行
+        binding.animateView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            onInitAnimateView()
+            onInitAnimateView = {}
         }
 
         binding.animateView.setOnTouchListener { _, event ->
@@ -213,15 +220,16 @@ class MainActivity : Activity() {
 
     private fun showSequence(questions: List<Shaper>, onComplete: () -> Unit = {}) {
         if (questions.isNotEmpty()) {
-            showShaper(questions.first())
             binding.animateView.setGrainAlphaModeIntoQuestion { showSequence(questions.drop(1), onComplete) }
+            showShaper(questions.first())
         } else onComplete()
     }
 
-    private fun showShaper(shaper: Shaper) =
-            binding.animateView.showPaths(
-                    getNormalizedPaths(convertDotsListToPaths(shaper.dots)).mapToPointPathsFromDotPaths()
-            )
+    private fun showShaper(shaper: Shaper) {
+        binding.animateView.showPaths(
+                getNormalizedPaths(convertDotsListToPaths(shaper.dots)).mapToPointPathsFromDotPaths()
+        ).apply { Timber.d("showing shaper id: ${shaper.id}, name: ${shaper.name}, dots: ${shaper.dots}") }
+    }
 
     private fun getSequence(id: Long? = null): List<Shaper> {
         fun getLevel(): Int =
@@ -262,7 +270,7 @@ class MainActivity : Activity() {
             }
 
             else -> listOf()
-        }.apply { forEach { Timber.d("shaper id: ${it.id}, name: ${it.name}, dots: ${it.dots}") } }
+        }
     }
 
     private fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(): List<Pair<PointF, PointF>> =
