@@ -18,7 +18,6 @@ import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
 import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.util.*
-import jp.org.example.geckour.glyph.view.AnimateView
 import timber.log.Timber
 
 class MainActivity : Activity() {
@@ -34,11 +33,13 @@ class MainActivity : Activity() {
 
     private var min = 0
     private var max = 8
+    private var level = 0
     private var viewCount = 0
     private var receivedLevel = -1
     private var receivedValue = -1
     private var isWeaknessMode = false
 
+    private val questions: ArrayList<Shaper> = ArrayList()
     private val throughDots: ArrayList<Int> = ArrayList()
     private val paths: ArrayList<List<Pair<Int, Int>>> = ArrayList()
 
@@ -49,10 +50,8 @@ class MainActivity : Activity() {
         showSequence(getSequence()) { // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
             binding.animateView.apply {
                 clearParticle()
-                setGrainAlphaModeIntoFadeout(-1L) { binding.dotsView.setDotsState { false } }
-                status = AnimateView.Status.RELEASE
+                setGrainAlphaModeIntoPrepareInput()
             }
-            // TODO: 入力シーケンスに移行
         }
     }
 
@@ -110,19 +109,20 @@ class MainActivity : Activity() {
         binding.animateView.setOnTouchListener { _, event ->
             val lim = 4 * binding.dotsView.scale
 
-            if (binding.animateView.status == AnimateView.Status.PROTECT) false
+            if (!binding.animateView.isInputEnabled()) false
             else {
                 when (event.action) {
                     MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                         fromX = event.x
                         fromY = event.y
                         binding.animateView.clearParticle()
-                        binding.animateView.resetGrainAlphaMode()
                         throughDots.clear()
                         binding.dotsView.setDotsState { false }
+                        binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, getDifficulty(level)))
                         binding.animateView.addParticle(event.x, event.y)
                         true
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
                         throughDots.addAll(collision)
@@ -134,15 +134,17 @@ class MainActivity : Activity() {
                         fromY = event.y
                         true
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
                         val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
                         throughDots.addAll(collision)
                         binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                         paths.add(getNormalizedPaths(convertDotsListToPaths(throughDots)))
-                        binding.animateView.setGrainAlphaModeIntoFadeout(System.currentTimeMillis()) {
-                            binding.dotsView.setDotsState { false }
+                        binding.animateView.apply {
+                            setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
+                            showPaths(paths.last().mapToPointPathsFromDotPaths())
                         }
-                        binding.animateView.showPaths(paths.last().mapToPointPathsFromDotPaths())
+                        if (paths.size >= getDifficulty(level)) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
                         true
                     }
                     else -> true
@@ -155,6 +157,23 @@ class MainActivity : Activity() {
         super.onDestroy()
         realm.close()
     }
+
+    private fun getDifficulty(level: Int): Int =
+            when (level) {
+                in 0..1 -> 1
+                2 -> 2
+                in 3..5 -> 3
+                in 6..7 -> 4
+                8 -> 5
+                else -> 0
+            }
+
+    private fun getAllowableTime(level: Int): Long =
+            when (level) {
+                in 0..2 -> 20000L
+                in 3..8 -> 20000L - 1000L * (level - 2)
+                else -> 0L
+            }
 
     private fun convertDotsListToPaths(list: List<Int>): List<Pair<Int, Int>> =
             when {
@@ -219,8 +238,21 @@ class MainActivity : Activity() {
     }
 
     private fun showSequence(questions: List<Shaper>, onComplete: () -> Unit = {}) {
+        this.questions.apply {
+            clear()
+            addAll(questions)
+        }
+
         if (questions.isNotEmpty()) {
-            binding.animateView.setGrainAlphaModeIntoQuestion { showSequence(questions.drop(1), onComplete) }
+            val difficulty = getDifficulty(level)
+            binding.animateView
+                    .setGrainAlphaModeIntoQuestion(
+                            Pair(difficulty + 1 - questions.size, difficulty),
+                            getAllowableTime(level),
+                            { showSequence(questions.drop(1), onComplete) },
+                            { binding.dotsView.visibility = View.INVISIBLE },
+                            { checkAnswer() }
+                    )
             showShaper(questions.first())
         } else onComplete()
     }
@@ -235,17 +267,7 @@ class MainActivity : Activity() {
         fun getLevel(): Int =
                 if (receivedLevel > -1) receivedLevel else ((max - min + 1) * Math.random() + min).toInt()
 
-        fun getDifficulty(level: Int): Int =
-                when (level) {
-                    in 0..1 -> 1
-                    2 -> 2
-                    in 3..5 -> 3
-                    in 6..7 -> 4
-                    8 -> 5
-                    else -> 0
-                }
-
-        val level = getLevel().apply { Timber.d("level: $this") }
+        level = getLevel().apply { Timber.d("level: $this") }
         val difficulty = getDifficulty(level).apply { Timber.d("difficulty: $this") }
         return when (difficulty) {
             1 -> {
@@ -271,6 +293,10 @@ class MainActivity : Activity() {
 
             else -> listOf()
         }
+    }
+
+    private fun checkAnswer(remainingTime: Long = -1L) { // TODO: 答え合わせの実装・遷移
+
     }
 
     private fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(): List<Pair<PointF, PointF>> =

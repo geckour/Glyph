@@ -40,3 +40,5 @@ inline fun <T> Iterable<T>.takeWhileIndexed(predicate: (Int, T) -> Boolean): Lis
 }
 
 fun <T, R> Pair<T, R>.inverse(): Pair<R, T> = Pair(this.second, this.first)
+
+fun Number.format(disit: Int): String = String.format("%0${disit}d", this)
