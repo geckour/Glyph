@@ -4,11 +4,11 @@ import android.app.Activity
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.os.Bundle
-import android.support.v4.content.res.ResourcesCompat
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
 import jp.org.example.geckour.glyph.App
+import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.App.Companion.sp
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivitySplashBinding
@@ -21,10 +21,6 @@ class SplashActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_splash)
-
-        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
 
         if (sp.getString("min_level", null) == null) {
             sp.edit()?.putString("min_level", "0")?.apply()
@@ -42,13 +38,17 @@ class SplashActivity : Activity() {
                 binding.buttonDict,
                 binding.buttonWeak
         ).forEach {
-            it.typeface = ResourcesCompat.getFont(this, R.font.coda_regular)
+            it.typeface = coda
         }
 
         binding.buttonHack.setOnClickListener { onClickHack() }
         binding.buttonOpt.setOnClickListener { onClickSetting() }
         binding.buttonDict.setOnClickListener { onClickDictionary() }
         binding.buttonWeak.setOnClickListener { onClickWeakness() }
+
+        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onResume() {

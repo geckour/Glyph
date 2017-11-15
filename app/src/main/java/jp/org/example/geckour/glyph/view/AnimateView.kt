@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.util.format
@@ -64,13 +65,19 @@ class AnimateView: View {
 
     private val strongHexImg: Bitmap by lazy {
         val hexWidth = (width * 0.1f).toInt()
-        BitmapFactory.decodeResource(resources, R.drawable.dot_t).let { // FIXME
+        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
             Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
         }
     }
     private val normalHexImg: Bitmap by lazy {
         val hexWidth = (width * 0.1f).toInt()
-        BitmapFactory.decodeResource(resources, R.drawable.particle).let { // FIXME
+        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal).let {
+            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+        }
+    }
+    private val weakHexImg: Bitmap by lazy {
+        val hexWidth = (width * 0.1f).toInt()
+        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_weak).let {
             Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
         }
     }
@@ -197,7 +204,7 @@ class AnimateView: View {
                     textSize = remainingHeight * 0.2f
                     color = Color.rgb(220, 190, 50)
                     textAlign = align
-                    typeface = Typeface.create("coda", Typeface.NORMAL)
+                    typeface = coda
                 }
 
         fun getBarRect(): RectF {
@@ -267,30 +274,32 @@ class AnimateView: View {
     private fun drawQuestionProgress(canvas: Canvas, numerator: Int? = null) {
         val n = numerator ?: progress.first
         if (n > -1) {
-            fun draw() {
-                hexagons.forEachIndexed { i, pointF ->
-                    if (i + 1 > n)
-                        canvas.drawBitmap(normalHexImg, pointF.x, pointF.y, paint)
-                    else
-                        canvas.drawBitmap(strongHexImg, pointF.x, pointF.y, paint)
-                }
-
-                paint.colorFilter = null
-            }
-
             when (state) {
                 State.QUESTION -> {
                     paint.colorFilter = PorterDuffColorFilter(Color.rgb(240, 150, 40), PorterDuff.Mode.SRC_ATOP)
+                    hexagons.forEachIndexed { i, pointF ->
+                        if (i + 1 == n)
+                            canvas.drawBitmap(strongHexImg, pointF.x, pointF.y, paint)
+                        else
+                            canvas.drawBitmap(weakHexImg, pointF.x, pointF.y, paint)
+                    }
                 }
 
                 State.INPUT, State.FADEOUT, State.PREPARE_ANSWER -> {
                     paint.colorFilter = PorterDuffColorFilter(Color.rgb(2, 255, 197), PorterDuff.Mode.SRC_ATOP)
+                    hexagons.forEachIndexed { i, pointF ->
+                        when (i + 1) {
+                            in 0..(n - 1) -> canvas.drawBitmap(normalHexImg, pointF.x, pointF.y, paint)
+                            n -> canvas.drawBitmap(strongHexImg, pointF.x, pointF.y, paint)
+                            else -> canvas.drawBitmap(weakHexImg, pointF.x, pointF.y, paint)
+                        }
+                    }
                 }
 
                 else -> {}
             }
 
-            draw()
+            paint.colorFilter = null
         }
     }
 
@@ -308,7 +317,7 @@ class AnimateView: View {
                 color = Color.WHITE
                 style = Paint.Style.STROKE
                 textSize = fontSize
-                typeface = Typeface.create("coda", Typeface.NORMAL)
+                typeface = coda
             })
         }
     }

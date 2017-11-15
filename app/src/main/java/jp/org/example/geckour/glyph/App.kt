@@ -2,8 +2,10 @@ package jp.org.example.geckour.glyph
 
 import android.app.Application
 import android.content.SharedPreferences
+import android.graphics.Typeface
 import android.os.Build
 import android.preference.PreferenceManager
+import android.support.v4.content.res.ResourcesCompat
 import com.facebook.stetho.Stetho
 import com.google.android.gms.analytics.GoogleAnalytics
 import com.google.android.gms.analytics.Tracker
@@ -24,6 +26,7 @@ class App: Application() {
     companion object {
         val version = Build.VERSION.SDK_INT
         lateinit var sp: SharedPreferences
+        var coda: Typeface? = null
     }
 
     enum class TrackerName {
@@ -43,6 +46,7 @@ class App: Application() {
         Realm.init(this)
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
+        coda = ResourcesCompat.getFont(this, R.font.coda_regular)
 
         injectInitialData()
     }
