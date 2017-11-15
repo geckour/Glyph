@@ -227,7 +227,7 @@ class AnimateView: View {
 
         fun getBarRect(): RectF {
             val halfWidth = width * 0.35f * remainTime / allowableTime
-            val halfHeight = remainingHeight * 0.03f
+            val halfHeight = remainingHeight * 0.015f
             val center = PointF(width.toFloat() / 2, remainingHeight * 0.75f)
 
             return RectF(center.x - halfWidth, center.y - halfHeight, center.x + halfWidth, center.y + halfHeight)
@@ -548,6 +548,7 @@ class AnimateView: View {
             canvas.drawText(message, 20f, 60f, paint.apply {
                 color = Color.GREEN
                 textSize = 40f
+                textAlign = Paint.Align.LEFT
             })
 
     override fun performClick(): Boolean = super.performClick()

@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import io.realm.Realm
 import jp.org.example.geckour.glyph.App
+import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity
@@ -260,6 +261,7 @@ class CheckAnswerFragment: Fragment() {
             text = buttonText
             setOnClickListener { predicate(it) }
             visibility = View.VISIBLE
+            typeface = coda
         }
     }
 
@@ -275,6 +277,7 @@ class CheckAnswerFragment: Fragment() {
             text = buttonText
             setOnClickListener { predicate(it) }
             visibility = View.VISIBLE
+            typeface = coda
         }
     }
 

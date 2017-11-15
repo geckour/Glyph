@@ -35,6 +35,8 @@
                 android:paddingRight="@dimen/button_padding"
                 android:textColor="@color/button_text"
                 android:textSize="20sp"
+                app:fontFamily="@font/coda_regular"
+                tools:fontFamily="@font/coda_regular"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:text="RIGHT"/>
@@ -50,6 +52,8 @@
                 android:paddingRight="@dimen/button_padding"
                 android:textColor="@color/button_text"
                 android:textSize="20sp"
+                app:fontFamily="@font/coda_regular"
+                tools:fontFamily="@font/coda_regular"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="LEFT"/>

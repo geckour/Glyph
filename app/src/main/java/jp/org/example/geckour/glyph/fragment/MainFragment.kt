@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import io.realm.Realm
 import jp.org.example.geckour.glyph.App
+import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
@@ -225,6 +226,7 @@ class MainFragment: Fragment() {
             text = buttonText
             setOnClickListener { predicate(it) }
             visibility = View.VISIBLE
+            typeface = coda
         }
     }
 
@@ -240,6 +242,7 @@ class MainFragment: Fragment() {
             text = buttonText
             setOnClickListener { predicate(it) }
             visibility = View.VISIBLE
+            typeface = coda
         }
     }
 
@@ -258,7 +261,7 @@ class MainFragment: Fragment() {
                             Pair(difficulty + 1 - questions.size, difficulty),
                             getAllowableTime(level),
                             onStartNextQ = { showSequence(questions.drop(1), onComplete) },
-                            onStartInput = { setRightButton("BYPASSS") { binding.animateView.setGrainAlphaModeIntoPrepareAnswer() } },
+                            onStartInput = { setRightButton("BYPASS") { binding.animateView.setGrainAlphaModeIntoPrepareAnswer() } },
                             onPrepareAnswer = { binding.dotsView.visibility = View.INVISIBLE },
                             onTransitionToCheckAnswer = { checkAnswer() }
                     )

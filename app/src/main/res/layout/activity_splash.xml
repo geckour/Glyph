@@ -24,6 +24,8 @@
             android:text="HACK"
             android:textColor="@color/button_text"
             android:textSize="20sp"
+            app:fontFamily="@font/coda_regular"
+            tools:fontFamily="@font/coda_regular"
             app:layout_constraintBottom_toTopOf="@+id/guideline_half_vertical"
             app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -38,6 +40,8 @@
             android:text="WEAKNESS"
             android:textColor="@color/button_text"
             android:textSize="20sp"
+            app:fontFamily="@font/coda_regular"
+            tools:fontFamily="@font/coda_regular"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/guideline_half_vertical"/>
 
@@ -51,6 +55,8 @@
             android:text="OPT"
             android:textColor="@color/button_text"
             android:textSize="20sp"
+            app:fontFamily="@font/coda_regular"
+            tools:fontFamily="@font/coda_regular"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>
 
@@ -64,6 +70,8 @@
             android:text="DICTIONARY"
             android:textColor="@color/button_text"
             android:textSize="20sp"
+            app:fontFamily="@font/coda_regular"
+            tools:fontFamily="@font/coda_regular"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
