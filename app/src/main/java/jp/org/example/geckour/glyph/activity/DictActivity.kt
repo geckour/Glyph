@@ -59,7 +59,9 @@ class DictActivity : Activity() {
                     }
 
                     MotionEvent.ACTION_MOVE -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                            if (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0) vibrate()
+                        }
                         throughDots.addAll(collision)
                         binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                         if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
@@ -71,7 +73,9 @@ class DictActivity : Activity() {
                     }
 
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                            if (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0) vibrate()
+                        }
                         throughDots.addAll(collision)
                         binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                         val path = throughDots.convertDotsListToPaths().getNormalizedPaths()

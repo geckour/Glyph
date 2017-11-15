@@ -1,6 +1,11 @@
 package jp.org.example.geckour.glyph.util
 
+import android.app.Activity
+import android.content.Context
 import android.graphics.PointF
+import android.os.VibrationEffect
+import android.os.Vibrator
+import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.db.model.Shaper
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.CoroutineScope
@@ -83,6 +88,14 @@ fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
     return if (path.size == shaperPath.size) {
         shaperPath.size == shaperPath.count { path.contains(it) || path.contains(it.inverse()) }
     } else false
+}
+
+fun Activity.vibrate() {
+    when (version) {
+        in 0..22 -> (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(30)
+        in 23..25 -> this.getSystemService(Vibrator::class.java).vibrate(30)
+        else -> this.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(30L, 255))
+    }
 }
 
 fun Number.format(disit: Int): String = String.format("%0${disit}d", this)

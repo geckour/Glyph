@@ -117,7 +117,7 @@ class DotsView: View {
 
     fun getDots(): Array<PointF> = dots
 
-    fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float): List<Int> {
+    fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float, onCollision: (List<Int>) -> Unit = {}): List<Int> {
         val collisionDots: ArrayList<Int> = ArrayList()
         val tol = 28 * scale
         for (i in 0..10) {
@@ -161,6 +161,6 @@ class DotsView: View {
             }
         }
 
-        return collisionDots.distinct()
+        return collisionDots.distinct().apply { if (this.isNotEmpty()) onCollision(this) }
     }
 }

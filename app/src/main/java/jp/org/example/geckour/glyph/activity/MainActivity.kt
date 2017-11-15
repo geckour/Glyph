@@ -1,9 +1,12 @@
 package jp.org.example.geckour.glyph.activity
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.MotionEvent
 import android.view.View
 
@@ -132,7 +135,9 @@ class MainActivity : Activity() {
                     }
 
                     MotionEvent.ACTION_MOVE -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                            if (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0) vibrate()
+                        }
                         throughDots.addAll(collision)
                         binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                         if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
@@ -144,7 +149,9 @@ class MainActivity : Activity() {
                     }
 
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
+                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                            if (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0) vibrate()
+                        }
                         throughDots.addAll(collision)
                         binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                         paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
