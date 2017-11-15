@@ -26,6 +26,7 @@ class AnimateView: View {
         INPUT,
         FADEOUT,
         PREPARE_ANSWER,
+        DICTIONARY,
         INVISIBLE
     }
 
@@ -34,6 +35,8 @@ class AnimateView: View {
 
     private var state = State.DEFAULT
     private var inputEnabled = false
+    private var showName = true
+    private val shaperName: ArrayList<String> = ArrayList()
     private val locus: ArrayList<Particle> = ArrayList()
     private var _onFadeStart: () -> Unit = {}
     private var onFadeStart: () -> Unit = {}
@@ -55,6 +58,9 @@ class AnimateView: View {
     private var inputStartTime = -1L
     private var spentTime = -1L
     private var progress: Pair<Int, Int> = Pair(0, 0)
+    private val hexWidth: Float by lazy { width * 0.1f }
+    private val hexMargin: Float by lazy { width * 0.05f }
+    private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
     private val strongHexImg: Bitmap by lazy {
         val hexWidth = (width * 0.1f).toInt()
@@ -99,6 +105,8 @@ class AnimateView: View {
                 State.QUESTION -> {
                     if (now - initTime > marginTime) {
                         drawQuestionProgress(it)
+                        if (showName) drawShaperName(it)
+                        drawParticle(it)
                     } else {
                         referenceTime = now
                         drawQuestionProgress(it, 0)
@@ -118,6 +126,7 @@ class AnimateView: View {
 
                         drawQuestionProgress(it)
                         drawRemain(it, now - inputStartTime)
+                        drawParticle(it)
                     }
                 }
 
@@ -128,6 +137,7 @@ class AnimateView: View {
                     if (referenceTime > -1L) {
                         drawQuestionProgress(it)
                         drawRemain(it, now - inputStartTime)
+                        drawParticle(it)
 
                         val tol = 500
                         onFadeStart =
@@ -145,6 +155,7 @@ class AnimateView: View {
                         elapsedTime  < 500L -> {
                             drawRemain(it, spentTime)
                             drawQuestionProgress(it)
+                            drawParticle(it)
                         }
 
                         elapsedTime in 500L..1000L -> {
@@ -160,10 +171,13 @@ class AnimateView: View {
                     }
                 }
 
+                State.DICTIONARY -> {
+                    drawShaperName(it)
+                    drawParticle(it)
+                }
+
                 else -> {}
             }
-
-            drawParticle(it)
 
             if (BuildConfig.DEBUG) drawDebugMessage(it)
         }
@@ -176,18 +190,19 @@ class AnimateView: View {
 
     private fun drawRemain(canvas: Canvas, elapsedTime: Long) {
         val remainTime = allowableTime - elapsedTime
-        val remainingHeight = height * 0.6f - width * 0.5f
+        val remainingHeight = height * 0.6f - (width * 0.4f + 0.1f / 3)
 
         fun Paint.setForRemainInputTime(align: Paint.Align = Paint.Align.CENTER) =
                 this.apply {
                     textSize = remainingHeight * 0.2f
                     color = Color.rgb(220, 190, 50)
                     textAlign = align
+                    typeface = Typeface.create("coda", Typeface.NORMAL)
                 }
 
         fun getBarRect(): RectF {
             val halfWidth = width * 0.35f * remainTime / allowableTime
-            val halfHeight = remainingHeight * 0.0375f
+            val halfHeight = remainingHeight * 0.03f
             val center = PointF(width.toFloat() / 2, remainingHeight * 0.375f)
 
             return RectF(center.x - halfWidth, center.y - halfHeight, center.x + halfWidth, center.y + halfHeight)
@@ -241,19 +256,17 @@ class AnimateView: View {
         }
     }
 
+    private fun getHexagonPosition(index: Int): PointF {
+        val indexForCalc = index - (progress.second - 1) * 0.5f
+        return PointF(
+                width * 0.5f - hexWidth * 0.5f + indexForCalc * (hexWidth + hexMargin),
+                height * 0.6f - (width * 0.4f + 0.1f / 3) - hexWidth - hexMargin * 2f
+        )
+    }
+
     private fun drawQuestionProgress(canvas: Canvas, numerator: Int? = null) {
         val n = numerator ?: progress.first
-        if (n > -1 && progress.second > 0) {
-            val hexWidth: Float = width * 0.1f
-            val hexMargin: Float = width * 0.05f
-            val hexagons: Array<PointF> = Array(progress.second) {
-                val indexForCalc = it - (progress.second - 1) * 0.5f
-                PointF(
-                        width * 0.5f - hexWidth * 0.5f + indexForCalc * (hexWidth + hexMargin),
-                        (height * 0.6f - width * 0.5f) * 0.75f
-                )
-            }
-
+        if (n > -1) {
             fun draw() {
                 hexagons.forEachIndexed { i, pointF ->
                     if (i + 1 > n)
@@ -278,6 +291,25 @@ class AnimateView: View {
             }
 
             draw()
+        }
+    }
+
+    private fun drawShaperName(canvas: Canvas, names: List<String> = shaperName) {
+        if (names.isEmpty()) return
+
+        val remainingArea = height * 0.6f - (width * 0.4f + 0.1f / 3)
+        val baseLine = remainingArea * 0.75f
+        val fontSize = remainingArea * 0.15f
+        val margin = remainingArea * 0.05f
+
+        names.forEachIndexed { i, name ->
+            canvas.drawText(name, width.toFloat() / 2, baseLine - (fontSize + margin) * (names.lastIndex - i), paint.apply {
+                textAlign = Paint.Align.CENTER
+                color = Color.WHITE
+                style = Paint.Style.STROKE
+                textSize = fontSize
+                typeface = Typeface.create("coda", Typeface.NORMAL)
+            })
         }
     }
 
@@ -361,8 +393,9 @@ class AnimateView: View {
 
                 State.PREPARE_ANSWER -> grainAlpha
 
-                State.PREPARE_INPUT,
-                State.INVISIBLE -> 0
+                State.DICTIONARY -> 255
+
+                else -> 0
             }
 
     private fun getFlashColor(onFinish: () -> Unit): Int {
@@ -412,6 +445,19 @@ class AnimateView: View {
         return Color.TRANSPARENT
     }
 
+    fun setShaperName(names: List<String>) {
+        this.shaperName.apply {
+            clear()
+            addAll(names)
+        }
+        this.showName = true
+    }
+
+    fun resetShaperName() {
+        this.shaperName.clear()
+        this.showName = false
+    }
+
     private fun setState(state: State) {
         this.state = state
     }
@@ -450,6 +496,7 @@ class AnimateView: View {
         _onFadeStart = onFadeStart
         this.onFadeStart = _onFadeStart
         referenceTime = now
+        inputEnabled = true
     }
 
     fun setGrainAlphaModeIntoPrepareAnswer(timeUp: Boolean = false) {
@@ -457,6 +504,11 @@ class AnimateView: View {
         spentTime = if (timeUp) allowableTime else now - inputStartTime
         referenceTime = now
         inputEnabled = false
+    }
+
+    fun setGrainAlphaModeIntoDictionary() {
+        setState(State.DICTIONARY)
+        inputEnabled = true
     }
 
     @Deprecated("This method is redundant.")

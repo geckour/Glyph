@@ -3,7 +3,6 @@ package jp.org.example.geckour.glyph.activity
 import android.app.Activity
 import android.content.Intent
 import android.databinding.DataBindingUtil
-import android.graphics.PointF
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
@@ -22,9 +21,18 @@ import timber.log.Timber
 
 class MainActivity : Activity() {
 
+    enum class Mode { // TODO: Modeのハンドル
+        NORMAL,
+        WEAKNESS
+    }
+
     companion object {
-        fun createIntent(activity: Activity): Intent =
-                Intent(activity, MainActivity::class.java)
+        fun createIntent(activity: Activity, mode: Mode): Intent =
+                Intent(activity, MainActivity::class.java).apply {
+                    putExtra(ARGS_MODE, mode)
+                }
+
+        private val ARGS_MODE = "mode"
     }
 
     private val tag = this::class.java.simpleName
@@ -46,7 +54,7 @@ class MainActivity : Activity() {
     private var fromX = -1f
     private var fromY = -1f
 
-    private var onInitAnimateView: () -> Unit = {
+    private var onLayoutAnimateView: () -> Unit = {
         showSequence(getSequence()) { // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
             binding.animateView.apply {
                 clearParticle()
@@ -102,8 +110,8 @@ class MainActivity : Activity() {
 
         binding.animateView.resetInitTime()
         binding.animateView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            onInitAnimateView()
-            onInitAnimateView = {}
+            onLayoutAnimateView()
+            onLayoutAnimateView = {}
         }
 
         binding.animateView.setOnTouchListener { _, event ->
@@ -139,10 +147,10 @@ class MainActivity : Activity() {
                         val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y)
                         throughDots.addAll(collision)
                         binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        paths.add(getNormalizedPaths(convertDotsListToPaths(throughDots)))
+                        paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
                         binding.animateView.apply {
                             setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
-                            showPaths(paths.last().mapToPointPathsFromDotPaths())
+                            showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
                         }
                         if (paths.size >= getDifficulty(level)) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
                         true
@@ -174,38 +182,6 @@ class MainActivity : Activity() {
                 in 3..8 -> 20000L - 1000L * (level - 2)
                 else -> 0L
             }
-
-    private fun convertDotsListToPaths(list: List<Int>): List<Pair<Int, Int>> =
-            when {
-                list.isEmpty() -> listOf()
-                list.size < 2 -> listOf(Pair(list[0], list[0]))
-                else -> {
-                    val droppedList = list.takeWhileIndexed { i, index -> i < 1 || list[i - 1] != index }
-                    when {
-                        droppedList.isEmpty() -> listOf()
-                        droppedList.size < 2 -> listOf(Pair(droppedList[0], droppedList[0]))
-                        else -> (1..droppedList.lastIndex)
-                                .map { Pair(droppedList[it - 1], droppedList[it]) }
-                    }
-                }
-            }
-
-    private fun getNormalizedPaths(paths: List<Pair<Int, Int>>, initialIndex: Int = 0): List<Pair<Int, Int>> {
-        return if (paths.size > 1 && initialIndex < paths.lastIndex) {
-            val normalizedPaths = ArrayList(paths.subList(0, initialIndex + 1)).apply {
-                addAll(
-                        paths.subList(initialIndex + 1, paths.size).filter {
-                            it != paths[initialIndex] && it != paths[initialIndex].inverse()
-                        }
-                )
-            }
-
-            getNormalizedPaths(normalizedPaths, initialIndex + 1)
-        } else {
-            Timber.d("normalized paths: $paths")
-            paths
-        }
-    }
 
     private fun setRightButton(buttonText: String, predicate: (View) -> Unit) {
         binding.buttonRight.apply {
@@ -259,7 +235,7 @@ class MainActivity : Activity() {
 
     private fun showShaper(shaper: Shaper) {
         binding.animateView.showPaths(
-                getNormalizedPaths(convertDotsListToPaths(shaper.dots)).mapToPointPathsFromDotPaths()
+                shaper.dots.convertDotsListToPaths().getNormalizedPaths().mapToPointPathsFromDotPaths(binding.dotsView.getDots())
         ).apply { Timber.d("showing shaper id: ${shaper.id}, name: ${shaper.name}, dots: ${shaper.dots}") }
     }
 
@@ -295,18 +271,9 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun checkAnswer(remainingTime: Long = -1L) { // TODO: 答え合わせの実装・遷移
+    private fun checkAnswer(remainingTime: Long = -1L) { // TODO: 答え合わせ画面の実装・遷移 -> 同ActivityでのViewのVisibilityの切り替えで対応
 
     }
-
-    private fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(): List<Pair<PointF, PointF>> =
-            binding.dotsView.getDots().let {
-                map { path ->
-                    if (path.first in 0..it.size)
-                        Pair(PointF(it[path.first].x, it[path.first].y), PointF(it[path.second].x, it[path.second].y))
-                    else null
-                }
-            }.filterNotNull()
 /*
     internal inner class MyView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
         var thread: Thread? = null

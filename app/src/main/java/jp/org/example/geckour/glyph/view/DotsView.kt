@@ -27,8 +27,16 @@ class DotsView: View {
     var scale = 0f
     private var radius = 0f
     private var dotDiam = 0
-    private var dotBitmapTrue: Bitmap? = null
-    private var dotBitmapFalse: Bitmap? = null
+    private val dotBitmapTrue: Bitmap by lazy {
+        BitmapFactory.decodeResource(resources, R.drawable.dot_t).let {
+            Bitmap.createScaledBitmap(it, dotDiam, dotDiam, false)
+        }
+    }
+    private val dotBitmapFalse: Bitmap by lazy {
+        BitmapFactory.decodeResource(resources, R.drawable.dot_f).let {
+            Bitmap.createScaledBitmap(it, dotDiam, dotDiam, false)
+        }
+    }
     private val dots = Array(11) { PointF() }
     private val isThrough = Array(11) { false }
 
@@ -65,11 +73,7 @@ class DotsView: View {
 
         paint.isAntiAlias = true
 
-        ui(jobList) {
-            async { dotBitmapTrue = (Glide.with(this@DotsView.context).load(R.drawable.dot_t).submit(dotDiam, dotDiam).get() as BitmapDrawable).bitmap }.await()
-            async { dotBitmapFalse = (Glide.with(this@DotsView.context).load(R.drawable.dot_f).submit(dotDiam, dotDiam).get() as BitmapDrawable).bitmap }.await()
-            invalidate()
-        }
+        invalidate()
     }
 
     override fun onDetachedFromWindow() {
@@ -83,9 +87,9 @@ class DotsView: View {
 
         isThrough.forEachIndexed { i, b ->
             if (b) {
-                dotBitmapTrue?.let { canvas.drawBitmap(it, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint) }
+                canvas.drawBitmap(dotBitmapTrue, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint)
             } else {
-                dotBitmapFalse?.let { canvas.drawBitmap(it, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint) }
+                canvas.drawBitmap(dotBitmapFalse, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint)
             }
         }
     }

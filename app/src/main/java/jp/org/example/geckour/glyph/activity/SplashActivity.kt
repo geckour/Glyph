@@ -42,7 +42,7 @@ class SplashActivity : Activity() {
                 binding.buttonDict,
                 binding.buttonWeak
         ).forEach {
-            it.typeface = ResourcesCompat.getFont(this@SplashActivity, R.font.coda_regular)
+            it.typeface = ResourcesCompat.getFont(this, R.font.coda_regular)
         }
 
         binding.buttonHack.setOnClickListener { onClickHack() }
@@ -59,19 +59,16 @@ class SplashActivity : Activity() {
 
 
     private fun onClickHack() =
-        startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+        startActivity(MainActivity.createIntent(this, MainActivity.Mode.NORMAL))
 
     private fun onClickSetting() =
-        startActivityForResult(Intent(this@SplashActivity, Pref::class.java), 0)
+        startActivityForResult(Pref.createIntent(this), 0)
 
     private fun onClickDictionary() =
-        startActivity(Intent(this@SplashActivity, DictActivity::class.java))
+        startActivity(DictActivity.createIntent(this))
 
-    private fun onClickWeakness() {
-        val intent = Intent(this@SplashActivity, MainActivity::class.java)
-        intent.putExtra("isWeaknessMode", true)
-        startActivity(intent)
-    }
+    private fun onClickWeakness() =
+        startActivity(MainActivity.createIntent(this, MainActivity.Mode.WEAKNESS))
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         //Pref.javaからの戻り値の場合
