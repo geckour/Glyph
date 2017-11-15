@@ -1,12 +1,14 @@
 package jp.org.example.geckour.glyph.util
 
-import android.app.Activity
 import android.content.Context
 import android.graphics.PointF
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.support.v4.app.Fragment
+import android.support.v7.app.AppCompatActivity
 import jp.org.example.geckour.glyph.App.Companion.version
-import jp.org.example.geckour.glyph.db.model.Shaper
+import jp.org.example.geckour.glyph.view.model.Shaper
+import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Job
@@ -83,6 +85,15 @@ fun List<Pair<Int, Int>>.getNormalizedPaths(initialIndex: Int = 0): List<Pair<In
     } else this
 }
 
+fun DBShaper.match(path: List<Pair<Int, Int>>): Boolean {
+    val shaperPath = this.dots.convertDotsListToPaths()
+    return if (path.size == shaperPath.size) {
+        shaperPath.size == shaperPath.count { path.contains(it) || path.contains(it.inverse()) }
+    } else false
+}
+
+fun DBShaper.parse(): Shaper = Shaper(this.id, this.name, this.dots.toList())
+
 fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
     val shaperPath = this.dots.convertDotsListToPaths()
     return if (path.size == shaperPath.size) {
@@ -90,12 +101,22 @@ fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
     } else false
 }
 
-fun Activity.vibrate() {
+fun AppCompatActivity.vibrate() {
     when (version) {
         in 0..22 -> (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(30)
         in 23..25 -> this.getSystemService(Vibrator::class.java).vibrate(30)
         else -> this.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(30L, 255))
     }
 }
+
+fun Fragment.vibrate() {
+    when (version) {
+        in 0..22 -> (activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(30)
+        in 23..25 -> activity.getSystemService(Vibrator::class.java).vibrate(30)
+        else -> activity.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(30L, 255))
+    }
+}
+
+fun Long.toTimeStringPair(): Pair<String, String> = Pair((this / 1000).toString(), (this % 1000).format(2).take(2))
 
 fun Number.format(disit: Int): String = String.format("%0${disit}d", this)

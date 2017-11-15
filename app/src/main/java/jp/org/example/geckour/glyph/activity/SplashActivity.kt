@@ -11,6 +11,7 @@ import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.App.Companion.sp
 import jp.org.example.geckour.glyph.R
+import jp.org.example.geckour.glyph.activity.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.databinding.ActivitySplashBinding
 import timber.log.Timber
 
@@ -53,7 +54,7 @@ class SplashActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        sp.edit().putInt("viewCount", 1).apply() // FIXME: 0スタートのが自然
+        hacks = 0
     }
 
 

@@ -7,7 +7,7 @@ import android.view.View
 import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
-import jp.org.example.geckour.glyph.util.format
+import jp.org.example.geckour.glyph.util.toTimeStringPair
 import jp.org.example.geckour.glyph.view.model.Particle
 import jp.org.example.geckour.glyph.view.model.Particle.Companion.grainImg
 import timber.log.Timber
@@ -60,7 +60,7 @@ class AnimateView: View {
     private var spentTime = -1L
     private var progress: Pair<Int, Int> = Pair(0, 0)
     private val hexWidth: Float by lazy { width * 0.1f }
-    private val hexMargin: Float by lazy { width * 0.05f }
+    private val hexMargin: Float by lazy { width * 0.02f }
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
     private val strongHexImg: Bitmap by lazy {
@@ -90,14 +90,14 @@ class AnimateView: View {
             grainImg = BitmapFactory.decodeResource(resources, R.drawable.particle).let {
                 Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
             }
-        }
 
-        thread {
-            while (true) {
-                postInvalidate()
-                try {
-                    Thread.sleep(10)
-                } catch (e: Exception) { Timber.e(e) }
+            thread {
+                while (true) {
+                    postInvalidate()
+                    try {
+                        Thread.sleep(10)
+                    } catch (e: Exception) { Timber.e(e) }
+                }
             }
         }
     }
@@ -111,6 +111,18 @@ class AnimateView: View {
             when (state) {
                 State.QUESTION -> {
                     if (now - initTime > marginTime) {
+                        timeInQ = (elapsedTime % drawAnswerLength).apply {
+                            onStartNextQ =
+                                    when {
+                                        timeInQ > -1 && this - timeInQ < 0 -> {
+                                            onStartNextQ()
+                                            ({})
+                                        }
+                                        else ->
+                                            _onStartNextQ
+                                    }
+                        }
+
                         drawQuestionProgress(it)
                         if (showName) drawShaperName(it)
                         drawParticle(it)
@@ -195,9 +207,12 @@ class AnimateView: View {
         return this.initTime
     }
 
+    internal fun getInputStartTime(): Long = this.inputStartTime
+
+    private val remainingHeight: Float by lazy { height * 0.6f - (width * 0.4f + 0.1f / 3) }
+
     private fun drawRemain(canvas: Canvas, elapsedTime: Long) {
         val remainTime = allowableTime - elapsedTime
-        val remainingHeight = height * 0.6f - (width * 0.4f + 0.1f / 3)
 
         fun Paint.setForRemainInputTime(align: Paint.Align = Paint.Align.CENTER) =
                 this.apply {
@@ -210,13 +225,13 @@ class AnimateView: View {
         fun getBarRect(): RectF {
             val halfWidth = width * 0.35f * remainTime / allowableTime
             val halfHeight = remainingHeight * 0.03f
-            val center = PointF(width.toFloat() / 2, remainingHeight * 0.375f)
+            val center = PointF(width.toFloat() / 2, remainingHeight * 0.75f)
 
             return RectF(center.x - halfWidth, center.y - halfHeight, center.x + halfWidth, center.y + halfHeight)
         }
 
         fun getRemainInputTimeCenterRect(paint: Paint, divider: String = ":"): Rect {
-            val center = Point((width.toDouble() / 2).toInt(), (remainingHeight * 0.25).toInt())
+            val center = Point((width.toDouble() / 2).toInt(), (remainingHeight * 0.625).toInt())
 
             return Rect().apply {
                 paint.getTextBounds(divider, 0, 1, this)
@@ -237,14 +252,13 @@ class AnimateView: View {
         }
 
         fun drawRemainInputTime() {
-            val sec = remainTime / 1000
-            val millis = remainTime % 1000
             val rect = getRemainInputTimeCenterRect(paint.setForRemainInputTime())
+            val timeStringPair = remainTime.toTimeStringPair()
 
             canvas.apply {
-                drawText("$sec", rect.left.toFloat(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.RIGHT))
+                drawText(timeStringPair.first, rect.left.toFloat(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.RIGHT))
                 drawText(":", rect.exactCenterX(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.CENTER))
-                drawText(millis.format(2).take(2), rect.right.toFloat(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.LEFT))
+                drawText(timeStringPair.second, rect.right.toFloat(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.LEFT))
             }
         }
 
@@ -267,7 +281,7 @@ class AnimateView: View {
         val indexForCalc = index - (progress.second - 1) * 0.5f
         return PointF(
                 width * 0.5f - hexWidth * 0.5f + indexForCalc * (hexWidth + hexMargin),
-                height * 0.6f - (width * 0.4f + 0.1f / 3) - hexWidth - hexMargin * 2f
+                remainingHeight * 0.125f - hexWidth * 0.5f
         )
     }
 
@@ -306,13 +320,12 @@ class AnimateView: View {
     private fun drawShaperName(canvas: Canvas, names: List<String> = shaperName) {
         if (names.isEmpty()) return
 
-        val remainingArea = height * 0.6f - (width * 0.4f + 0.1f / 3)
-        val baseLine = remainingArea * 0.75f
-        val fontSize = remainingArea * 0.15f
-        val margin = remainingArea * 0.05f
+        val fontSize = remainingHeight * 0.15f
+        val baseLine = remainingHeight * 0.125f + hexWidth * 0.5f + hexMargin + fontSize
+        val margin = remainingHeight * 0.02f
 
         names.forEachIndexed { i, name ->
-            canvas.drawText(name, width.toFloat() / 2, baseLine - (fontSize + margin) * (names.lastIndex - i), paint.apply {
+            canvas.drawText(name, width.toFloat() / 2, baseLine + (fontSize + margin) * (names.lastIndex - i), paint.apply {
                 textAlign = Paint.Align.CENTER
                 color = Color.WHITE
                 style = Paint.Style.STROKE
@@ -359,17 +372,6 @@ class AnimateView: View {
 
                 State.QUESTION -> {
                     if (now - initTime > marginTime) {
-                        timeInQ = (elapsedTime % drawAnswerLength).apply {
-                            onStartNextQ =
-                                    when {
-                                        timeInQ > -1 && this - timeInQ < 0 -> {
-                                            onStartNextQ()
-                                            ({})
-                                        }
-                                        else ->
-                                            _onStartNextQ
-                                    }
-                        }
                         val phase = longArrayOf((drawAnswerLength * 0.2).toLong(), (drawAnswerLength * 0.7).toLong())
 
                         when (timeInQ) {

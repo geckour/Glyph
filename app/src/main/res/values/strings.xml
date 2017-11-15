@@ -12,4 +12,6 @@
     <string name="bonus_hack">HACKING BONUS:</string>
     <string name="bonus_speed">SPEED BONUS:</string>
 
+    <string name="bonus_value">%1$d%%</string>
+    <string name="count_hack">HACK:%1$d</string>
 </resources>

@@ -1,11 +1,16 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'realm-android'
 
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'
+
+    androidExtensions {
+        experimental = true
+    }
 
     defaultConfig {
         applicationId "jp.org.example.geckour.glyph"
@@ -38,7 +43,7 @@ dependencies {
     implementation "com.android.support:cardview-v7:$android_support_version"
     implementation "com.android.support:recyclerview-v7:$android_support_version"
     implementation "com.android.support:support-v4:$android_support_version"
-    implementation 'com.google.android.gms:play-services-analytics:11.4.2'
+    implementation 'com.google.android.gms:play-services-analytics:11.6.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'

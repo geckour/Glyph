@@ -1,28 +1,21 @@
 package jp.org.example.geckour.glyph.activity
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.view.MotionEvent
-import android.view.View
+import android.support.v7.app.AppCompatActivity
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
-import io.realm.Realm
 import jp.org.example.geckour.glyph.App
-import jp.org.example.geckour.glyph.App.Companion.sp
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
-import jp.org.example.geckour.glyph.db.model.Sequence
-import jp.org.example.geckour.glyph.db.model.Shaper
-import jp.org.example.geckour.glyph.util.*
-import timber.log.Timber
+import jp.org.example.geckour.glyph.fragment.CheckAnswerFragment
+import jp.org.example.geckour.glyph.fragment.MainFragment
+import jp.org.example.geckour.glyph.fragment.model.Result
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
     enum class Mode { // TODO: Modeのハンドル
         NORMAL,
@@ -30,41 +23,25 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        val tag = this::class.java.simpleName
+
         fun createIntent(activity: Activity, mode: Mode): Intent =
                 Intent(activity, MainActivity::class.java).apply {
                     putExtra(ARGS_MODE, mode)
                 }
 
         private val ARGS_MODE = "mode"
+
+        var hacks: Int = 0
     }
 
-    private val tag = this::class.java.simpleName
     private lateinit var binding: ActivityMainBinding
-    private lateinit var realm: Realm
+    private lateinit var mode: Mode
 
-    private var min = 0
-    private var max = 8
-    private var level = 0
-    private var viewCount = 0
-    private var receivedLevel = -1
-    private var receivedValue = -1
-    private var isWeaknessMode = false
+    internal var level: Int? = null
+    internal var sequenceId: Long? = null
 
-    private val questions: ArrayList<Shaper> = ArrayList()
-    private val throughDots: ArrayList<Int> = ArrayList()
-    private val paths: ArrayList<List<Pair<Int, Int>>> = ArrayList()
-
-    private var fromX = -1f
-    private var fromY = -1f
-
-    private var onLayoutAnimateView: () -> Unit = {
-        showSequence(getSequence()) { // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
-            binding.animateView.apply {
-                clearParticle()
-                setGrainAlphaModeIntoPrepareInput()
-            }
-        }
-    }
+    internal val scale: Float by lazy { binding.container.height.toFloat() / 1280 }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,215 +49,38 @@ class MainActivity : Activity() {
         actionBar?.hide()
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        realm = Realm.getDefaultInstance()
 
-        viewCount =
-                if (sp.getInt("viewCount", -1) != -1) {
-                    sp.getInt("viewCount", 0)
-                } else {
-                    1
-                }
-        sp.edit().putInt("viewCount", viewCount + 1).apply()
+        hacks++
 
-        try {
-            min = Integer.parseInt(sp.getString("min_level", "0"))
-            Timber.d("min: $min")
-        } catch (e: Exception) {
-            Timber.e("Can't translate minimum-level to int.")
-        }
+        val fragment = MainFragment.newInstance()
+        supportFragmentManager.beginTransaction()
+                .replace(R.id.container, fragment, MainFragment.tag)
+                .commit()
 
-        try {
-            max = Integer.parseInt(sp.getString("max_level", "8"))
-            Timber.d("max: $max")
-        } catch (e: Exception) {
-            Timber.e("Can't translate maximum-level to int.")
-        }
-
-        if (intent.getBooleanExtra("isRetry", false)) {
-            receivedLevel = intent.getIntExtra("retryLevel", -1)
-            receivedValue = intent.getIntExtra("retryValue", -1)
-        }
-        if (intent.getBooleanExtra("isWeaknessMode", false)) {
-            isWeaknessMode = true
-        }
-
-        hideLeftButton()
-        hideRightButton()
+        if (intent.hasExtra(ARGS_MODE)) mode = intent.getSerializableExtra(ARGS_MODE) as Mode
 
         val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
-
-        binding.animateView.resetInitTime()
-        binding.animateView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            onLayoutAnimateView()
-            onLayoutAnimateView = {}
-        }
-
-        binding.animateView.setOnTouchListener { _, event ->
-            val lim = 4 * binding.dotsView.scale
-
-            if (!binding.animateView.isInputEnabled()) false
-            else {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                        fromX = event.x
-                        fromY = event.y
-                        binding.animateView.clearParticle()
-                        throughDots.clear()
-                        binding.dotsView.setDotsState { false }
-                        binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, getDifficulty(level)))
-                        binding.animateView.addParticle(event.x, event.y)
-                        true
-                    }
-
-                    MotionEvent.ACTION_MOVE -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                            if (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0) vibrate()
-                        }
-                        throughDots.addAll(collision)
-                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
-                            binding.animateView.addParticle(event.x, event.y)
-                        }
-                        fromX = event.x
-                        fromY = event.y
-                        true
-                    }
-
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                            if (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0) vibrate()
-                        }
-                        throughDots.addAll(collision)
-                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
-                        binding.animateView.apply {
-                            setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
-                            showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
-                        }
-                        if (paths.size >= getDifficulty(level)) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
-                        true
-                    }
-                    else -> true
-                }
-            }
-        }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        realm.close()
+    override fun onBackPressed() {
+        finish()
     }
 
-    private fun getDifficulty(level: Int): Int =
-            when (level) {
-                in 0..1 -> 1
-                2 -> 2
-                in 3..5 -> 3
-                in 6..7 -> 4
-                8 -> 5
-                else -> 0
-            }
-
-    private fun getAllowableTime(level: Int): Long =
-            when (level) {
-                in 0..2 -> 20000L
-                in 3..8 -> 20000L - 1000L * (level - 2)
-                else -> 0L
-            }
-
-    private fun setRightButton(buttonText: String, predicate: (View) -> Unit) {
-        binding.buttonRight.apply {
-            text = buttonText
-            setOnClickListener { predicate(it) }
-            visibility = View.VISIBLE
-        }
+    internal fun transitionForheckAnswer(results: List<Result>, allowableTime: Long) {
+        val fragment = CheckAnswerFragment.newInstance(results, allowableTime)
+        supportFragmentManager.beginTransaction()
+                .replace(R.id.container, fragment, CheckAnswerFragment.tag)
+                .addToBackStack(CheckAnswerFragment.tag)
+                .commit()
     }
 
-    private fun hideRightButton() {
-        binding.buttonRight.apply {
-            visibility = View.INVISIBLE
-            setOnClickListener(null)
-        }
-    }
+    internal fun getMode(): Mode = mode
 
-    private fun setLeftButton(buttonText: String, predicate: (View) -> Unit) {
-        binding.buttonLeft.apply {
-            text = buttonText
-            setOnClickListener { predicate(it) }
-            visibility = View.VISIBLE
-        }
-    }
+    internal fun onRetry() = supportFragmentManager.popBackStack()
 
-    private fun hideLeftButton() {
-        binding.buttonLeft.apply {
-            visibility = View.INVISIBLE
-            setOnClickListener(null)
-        }
-    }
-
-    private fun showSequence(questions: List<Shaper>, onComplete: () -> Unit = {}) {
-        this.questions.apply {
-            clear()
-            addAll(questions)
-        }
-
-        if (questions.isNotEmpty()) {
-            val difficulty = getDifficulty(level)
-            binding.animateView
-                    .setGrainAlphaModeIntoQuestion(
-                            Pair(difficulty + 1 - questions.size, difficulty),
-                            getAllowableTime(level),
-                            { showSequence(questions.drop(1), onComplete) },
-                            { binding.dotsView.visibility = View.INVISIBLE },
-                            { checkAnswer() }
-                    )
-            showShaper(questions.first())
-        } else onComplete()
-    }
-
-    private fun showShaper(shaper: Shaper) {
-        binding.animateView.showPaths(
-                shaper.dots.convertDotsListToPaths().getNormalizedPaths().mapToPointPathsFromDotPaths(binding.dotsView.getDots())
-        ).apply { Timber.d("showing shaper id: ${shaper.id}, name: ${shaper.name}, dots: ${shaper.dots}") }
-    }
-
-    private fun getSequence(id: Long? = null): List<Shaper> {
-        fun getLevel(): Int =
-                if (receivedLevel > -1) receivedLevel else ((max - min + 1) * Math.random() + min).toInt()
-
-        level = getLevel().apply { Timber.d("level: $this") }
-        val difficulty = getDifficulty(level).apply { Timber.d("difficulty: $this") }
-        return when (difficulty) {
-            1 -> {
-                realm.where(Shaper::class.java).count().let {
-                    realm.where(Shaper::class.java)
-                            .equalTo("id", id ?: (Math.random() * it).toLong())
-                            .findFirst()?.let { listOf(it) } ?: listOf()
-                }
-            }
-
-            in 2..5 -> {
-                realm.where(Sequence::class.java)
-                        .equalTo("size", difficulty)
-                        .let { sequences ->
-                            val first = sequences.findFirst()?.id
-                            val last = sequences.findAll().lastOrNull()?.id
-
-                            if (first == null || last == null) return listOf()
-                            else sequences.equalTo("id", id ?: (Math.random() * (last - first) + first).toLong())
-                                    .findAll().firstOrNull()?.message?.toList()
-                            } ?: listOf()
-            }
-
-            else -> listOf()
-        }
-    }
-
-    private fun checkAnswer(remainingTime: Long = -1L) { // TODO: 答え合わせ画面の実装・遷移 -> 同ActivityでのViewのVisibilityの切り替えで対応
-
-    }
+    internal fun onNext() = startActivity(MainActivity.createIntent(this, mode))
 /*
     internal inner class MyView(context: Context) : SurfaceView(context), SurfaceHolder.Callback, Runnable {
         var thread: Thread? = null
