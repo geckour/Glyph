@@ -114,7 +114,7 @@ class MainFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         hideLeftButton()
-        hideRightButton()
+        setRightButton("NEXT") { mainActivity.onNext() }
 
         binding.animateView.resetInitTime()
 
@@ -257,9 +257,10 @@ class MainFragment: Fragment() {
                     .setGrainAlphaModeIntoQuestion(
                             Pair(difficulty + 1 - questions.size, difficulty),
                             getAllowableTime(level),
-                            { showSequence(questions.drop(1), onComplete) },
-                            { binding.dotsView.visibility = View.INVISIBLE },
-                            { checkAnswer() }
+                            onStartNextQ = { showSequence(questions.drop(1), onComplete) },
+                            onStartInput = { setRightButton("BYPASSS") { binding.animateView.setGrainAlphaModeIntoPrepareAnswer() } },
+                            onPrepareAnswer = { binding.dotsView.visibility = View.INVISIBLE },
+                            onTransitionToCheckAnswer = { checkAnswer() }
                     )
             showShaper(questions.first())
         } else onComplete()

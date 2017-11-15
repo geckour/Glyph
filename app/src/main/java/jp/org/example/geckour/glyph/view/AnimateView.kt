@@ -43,6 +43,7 @@ class AnimateView: View {
     private var onFadeStart: () -> Unit = {}
     private var _onStartNextQ: () -> Unit = {}
     private var onStartNextQ: () -> Unit = {}
+    private var onStartInput: () -> Unit = {}
     private var onPrepareAnswer: () -> Unit = {}
     private var onTransitionToCheckAnswer: () -> Unit = {}
     private var grainAlpha = 0
@@ -141,6 +142,8 @@ class AnimateView: View {
 
                 State.INPUT -> {
                     if (inputStartTime > -1L) {
+                        onStartInput()
+                        onStartInput = {}
                         if (now - inputStartTime > allowableTime) setGrainAlphaModeIntoPrepareAnswer(true)
 
                         drawQuestionProgress(it)
@@ -473,11 +476,12 @@ class AnimateView: View {
         this.state = state
     }
 
-    fun setGrainAlphaModeIntoQuestion(progress: Pair<Int, Int>, allowableTime: Long, onStartNextQ: () -> Unit = {}, onPrepareAnswer: () -> Unit, onTransitionToCheckAnswer: () -> Unit = {}) {
+    fun setGrainAlphaModeIntoQuestion(progress: Pair<Int, Int>, allowableTime: Long, onStartNextQ: () -> Unit = {}, onStartInput: () -> Unit, onPrepareAnswer: () -> Unit, onTransitionToCheckAnswer: () -> Unit = {}) {
         this.progress = progress
         this.allowableTime = allowableTime
         _onStartNextQ = onStartNextQ
         this.onStartNextQ = _onStartNextQ
+        this.onStartInput = onStartInput
         this.onPrepareAnswer = onPrepareAnswer
         this.onTransitionToCheckAnswer = onTransitionToCheckAnswer
 
