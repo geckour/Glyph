@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">Glyph</string>
+
+    <string name="label_main">Hack</string>
+    <string name="label_dict">Dictionary</string>
+    <string name="label_opt">Options</string>
+
     <string name="hello_world">Hello world!</string>
     <string name="min_level">0</string>
     <string name="max_level">8</string>
     <string name="bonus_hack">HACKING BONUS:</string>
     <string name="bonus_speed">SPEED BONUS:</string>
 
+    <string name="bonus_value">%1$d%%</string>
+    <string name="count_hack">HACK:%1$d</string>
 </resources>

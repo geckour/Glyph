@@ -16,3 +16,11 @@
 #   public *;
 #}
 -dontwarn kotlin.**
+
+-keep class com.facebook.stetho.** { *; }
+-dontwarn com.facebook.stetho.**
+
+-dontwarn android.databinding.**
+
+-dontwarn jp.org.example.geckour.glyph.**
+-keep class jp.org.example.geckour.glyph.** { *; }

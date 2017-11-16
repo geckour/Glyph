@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:background="@color/background">
+
+        <jp.org.example.geckour.glyph.view.DotsView
+            android:id="@+id/dotsView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/dialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/bg_dialog"
+            android:paddingBottom="@dimen/dialog_padding_vertical"
+            android:paddingLeft="@dimen/dialog_padding_horizontal"
+            android:paddingRight="@dimen/dialog_padding_horizontal"
+            android:paddingTop="@dimen/dialog_padding_vertical"
+            android:textColor="@color/dialog_text"
+            android:textSize="@dimen/dialog_text"
+            android:visibility="gone"
+            app:fontFamily="@font/coda_regular"
+            tools:fontFamily="@font/coda_regular"
+            tools:text="NO KEY"/>
+
+        <jp.org.example.geckour.glyph.view.AnimateView
+            android:id="@+id/animateView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/uiView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:id="@+id/button_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/button"
+                android:paddingLeft="@dimen/button_padding"
+                android:paddingRight="@dimen/button_padding"
+                android:textColor="@color/button_text"
+                android:textSize="20sp"
+                app:fontFamily="@font/coda_regular"
+                tools:fontFamily="@font/coda_regular"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="RIGHT"/>
+
+            <Button
+                android:id="@+id/button_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/button"
+                android:paddingLeft="@dimen/button_padding"
+                android:paddingRight="@dimen/button_padding"
+                android:textColor="@color/button_text"
+                android:textSize="20sp"
+                app:fontFamily="@font/coda_regular"
+                tools:fontFamily="@font/coda_regular"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:text="LEFT"/>
+        </android.support.constraint.ConstraintLayout>
+    </RelativeLayout>
+</layout>

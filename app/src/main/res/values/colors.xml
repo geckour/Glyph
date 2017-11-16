@@ -5,4 +5,5 @@
     <color name="button">#5002ffc5</color>
     <color name="button_pressed">#b002ffc5</color>
     <color name="button_text">#9cf6f6</color>
+    <color name="dialog_text">#f0a328</color>
 </resources>

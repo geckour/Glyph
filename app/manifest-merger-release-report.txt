@@ -53,7 +53,7 @@ ADDED from AndroidManifest.xml:18:9
 		ADDED from AndroidManifest.xml:19:20
 	android:name
 		ADDED from AndroidManifest.xml:18:20
-activity#jp.org.example.geckour.glyph.SplashActivity
+activity#jp.org.example.geckour.glyph.Activity.SplashActivity
 ADDED from AndroidManifest.xml:21:9
 	android:screenOrientation
 		ADDED from AndroidManifest.xml:23:13
@@ -71,7 +71,7 @@ category#android.intent.category.LAUNCHER
 ADDED from AndroidManifest.xml:28:17
 	android:name
 		ADDED from AndroidManifest.xml:28:27
-activity#jp.org.example.geckour.glyph.MyActivity
+activity#jp.org.example.geckour.glyph.Activity.MyActivity
 ADDED from AndroidManifest.xml:32:9
 	android:screenOrientation
 		ADDED from AndroidManifest.xml:34:13
@@ -81,7 +81,7 @@ ADDED from AndroidManifest.xml:32:9
 		ADDED from AndroidManifest.xml:35:13
 	android:name
 		ADDED from AndroidManifest.xml:33:13
-activity#jp.org.example.geckour.glyph.Pref
+activity#jp.org.example.geckour.glyph.Activity.Pref
 ADDED from AndroidManifest.xml:38:9
 	android:screenOrientation
 		ADDED from AndroidManifest.xml:40:13
