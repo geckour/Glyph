@@ -10,3 +10,6 @@ device*.png
 device*.mp4
 *.apk
 /gradle/
+/app/signing/release.gradle
+google-services.json
+/app/release/output.json

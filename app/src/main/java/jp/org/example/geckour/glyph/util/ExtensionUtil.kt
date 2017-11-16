@@ -119,4 +119,14 @@ fun Fragment.vibrate() {
 
 fun Long.toTimeStringPair(): Pair<String, String> = Pair((this / 1000).toString(), (this % 1000).format(2).take(2))
 
+fun Int.getDifficulty(): Int =
+        when (this) {
+            in 0..1 -> 1
+            2 -> 2
+            in 3..5 -> 3
+            in 6..7 -> 4
+            8 -> 5
+            else -> 0
+        }
+
 fun Number.format(disit: Int): String = String.format("%0${disit}d", this)

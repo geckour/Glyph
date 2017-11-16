@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.gms.analytics.HitBuilders
+import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.coda
@@ -69,7 +71,7 @@ class MainFragment: Fragment() {
 
     private val questions: ArrayList<Shaper> = ArrayList()
     private val throughDots: ArrayList<Int> = ArrayList()
-    private val paths: ArrayList<List<Pair<Int, Int>>> = ArrayList()
+    private val paths: MutableList<List<Pair<Int, Int>>> = ArrayList()
     private val spentTimes: ArrayList<Long> = ArrayList()
 
     private var fromX = -1f
@@ -99,6 +101,10 @@ class MainFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         realm = Realm.getDefaultInstance()
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -166,7 +172,7 @@ class MainFragment: Fragment() {
                             binding.animateView.clearParticle()
                             throughDots.clear()
                             binding.dotsView.setDotsState { false }
-                            binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, getDifficulty(level)))
+                            binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, level.getDifficulty()))
                             binding.animateView.addParticle(event.x, event.y)
                             true
                         }
@@ -194,11 +200,21 @@ class MainFragment: Fragment() {
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                             paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
+
+                            setLeftButton("REDO") {
+                                paths.removeAt(paths.lastIndex)
+                                binding.dotsView.setDotsState { false }
+                                binding.animateView.clearParticle()
+                                binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size, level.getDifficulty()))
+
+                                if (paths.isEmpty()) hideLeftButton()
+                            }
+
                             binding.animateView.apply {
                                 setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
                                 showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
                             }
-                            if (paths.size >= getDifficulty(level)) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
+                            if (paths.size >= level.getDifficulty()) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
                             fromX = -1f
                             fromY = -1f
                             true
@@ -305,16 +321,6 @@ class MainFragment: Fragment() {
         }
     }
 
-    private fun getDifficulty(level: Int): Int =
-            when (level) {
-                in 0..1 -> 1
-                2 -> 2
-                in 3..5 -> 3
-                in 6..7 -> 4
-                8 -> 5
-                else -> 0
-            }
-
     private fun getAllowableTime(level: Int): Long =
             when (level) {
                 in 0..2 -> 20000L
@@ -356,7 +362,7 @@ class MainFragment: Fragment() {
 
     private fun showSequence(questions: List<Shaper> = this.questions, onComplete: () -> Unit = {}) {
         if (questions.isNotEmpty()) {
-            val difficulty = getDifficulty(level)
+            val difficulty = level.getDifficulty()
             binding.animateView
                     .setGrainAlphaModeIntoQuestion(
                             Pair(difficulty + 1 - questions.size, difficulty),
@@ -367,7 +373,11 @@ class MainFragment: Fragment() {
                                     binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
                                 }
                             },
-                            onPrepareAnswer = { binding.dotsView.visibility = View.INVISIBLE },
+                            onPrepareAnswer = {
+                                hideLeftButton()
+                                hideRightButton()
+                                binding.dotsView.visibility = View.INVISIBLE
+                            },
                             onTransitionToCheckAnswer = { checkAnswer() }
                     )
             showShaper(questions.first())
@@ -384,35 +394,83 @@ class MainFragment: Fragment() {
             }
         }
 
-    private fun getSequence(id: Long? = null): List<Shaper> {
+    private fun getSequence(id: Long? = null, mode: MainActivity.Mode? = null, level: Int? = null): List<Shaper> {
         fun getLevel(): Int = ((max - min + 1) * Math.random() + min).toInt()
 
-        level = mainActivity.level ?: getLevel().apply { Timber.d("level: $this") }
-        val difficulty = getDifficulty(level).apply { Timber.d("difficulty: $this") }
-        mainActivity.level = level
-        return when (difficulty) {
-            1 -> {
-                realm.where(DBShaper::class.java).count().let {
-                    realm.where(DBShaper::class.java)
-                            .equalTo("id", id ?: (Math.random() * it).toLong().apply { mainActivity.sequenceId = this })
-                            .findFirst()?.let { listOf(it.parse()) } ?: listOf()
+        this.level = level ?: mainActivity.level ?: getLevel().apply { Timber.d("level: $this") }
+        val difficulty = this.level.getDifficulty().apply { Timber.d("difficulty: $this") }
+        mainActivity.level = this.level
+
+        return when (mode ?: mainActivity.getMode()) {
+            MainActivity.Mode.NORMAL -> {
+                when (difficulty) {
+                    1 -> {
+                        realm.where(DBShaper::class.java).count().let {
+                            realm.where(DBShaper::class.java)
+                                    .findAll()
+                                    .toList()
+                                    .map { it.parse() }
+                                    .let {
+                                        listOf(it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
+                                    }
+                        }
+                    }
+
+                    in 2..5 -> {
+                        realm.where(Sequence::class.java)
+                                .equalTo("size", difficulty)
+                                .findAll()
+                                .toList()
+                                .map { it.message.toList().map { it.parse() } }
+                                .let {
+                                    it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
+                                }
+                    }
+
+                    else -> listOf()
                 }
             }
 
-            in 2..5 -> {
-                realm.where(Sequence::class.java)
-                        .equalTo("size", difficulty)
-                        .let { sequences ->
-                            val first = sequences.findFirst()?.id
-                            val last = sequences.findAll().lastOrNull()?.id
+            MainActivity.Mode.WEAKNESS -> {
+                when (difficulty) {
+                    1 -> {
+                        realm.where(DBShaper::class.java)
+                                .greaterThan("examCount", 0)
+                                .let {
+                                    val size = it.count().toInt()
+                                    if (size > 0) {
+                                        it.findAll().toList()
+                                                .sortedBy { it.correctCount.toDouble() / it.examCount }
+                                                .dropLast(size / 4)
+                                                .map { it.parse() }
+                                                .let {
+                                                    listOf(it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
+                                                }
+                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                }
+                    }
 
-                            if (first == null || last == null) return listOf()
-                            else sequences.equalTo("id", id ?: (Math.random() * (last - first) + first).toLong().apply { mainActivity.sequenceId = this })
-                                    .findAll().firstOrNull()?.message?.toList()
-                        }?.map { it.parse() } ?: listOf()
+                    in 2..5 -> {
+                        realm.where(Sequence::class.java)
+                                .equalTo("size", difficulty)
+                                .greaterThan("examCount", 0)
+                                .let { sequences ->
+                                    val size = sequences.count().toInt()
+                                    if (size > 0) {
+                                        sequences.findAll().toList()
+                                                .sortedBy { it.correctCount.toDouble() / it.examCount }
+                                                .dropLast(size / 4)
+                                                .map { it.message.toList().map { it.parse() } }
+                                                .let {
+                                                    it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
+                                                }
+                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                }
+                    }
+
+                    else -> listOf()
+                }
             }
-
-            else -> listOf()
         }
     }
 

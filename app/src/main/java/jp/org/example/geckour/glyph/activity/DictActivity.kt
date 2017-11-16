@@ -16,11 +16,11 @@ import jp.org.example.geckour.glyph.fragment.DictFragment
 class DictActivity : AppCompatActivity() {
 
     companion object {
+        private val tag = this::class.java.simpleName
+
         fun createIntent(activity: Activity): Intent =
                 Intent(activity, DictActivity::class.java)
     }
-
-    private val tag = this::class.java.simpleName
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +32,7 @@ class DictActivity : AppCompatActivity() {
                 .add(R.id.container, fragment, DictFragment.tag)
                 .commit()
 
-        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
+        val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
     }

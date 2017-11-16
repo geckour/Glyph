@@ -8,6 +8,8 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.gms.analytics.HitBuilders
+import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.coda
@@ -16,8 +18,10 @@ import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity
 import jp.org.example.geckour.glyph.activity.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.databinding.FragmentCheckAnswerBinding
+import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.fragment.model.Result
+import jp.org.example.geckour.glyph.util.getDifficulty
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 
 class CheckAnswerFragment: Fragment() {
@@ -79,6 +83,12 @@ class CheckAnswerFragment: Fragment() {
 
         results.addAll(arguments.getParcelableArrayList(ARGS_RESULTS))
         allowableTime = arguments.getLong(ARGS_ALLOWABLE_TIME)
+
+        recordScore()
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -104,6 +114,34 @@ class CheckAnswerFragment: Fragment() {
         super.onActivityCreated(savedInstanceState)
 
         injectResults()
+    }
+
+    private fun recordScore() {
+        mainActivity.level?.getDifficulty()?.let { difficulty ->
+            if (difficulty == 1) {
+                val shaper = realm.where(Shaper::class.java)
+                        .equalTo("id", mainActivity.sequenceId)
+                        .findFirst()
+
+                shaper?.let { s ->
+                    realm.executeTransaction {
+                        s.examCount++
+                        if (results.first().correct) s.correctCount++
+                    }
+                }
+            } else {
+                val sequence = realm.where(Sequence::class.java)
+                        .equalTo("id", mainActivity.sequenceId)
+                        .findFirst()
+
+                sequence?.let { seq ->
+                    realm.executeTransaction {
+                        seq.examCount++
+                        if (results.count { it.correct } == results.size) seq.correctCount++
+                    }
+                }
+            }
+        }
     }
 
     private fun injectResults() {

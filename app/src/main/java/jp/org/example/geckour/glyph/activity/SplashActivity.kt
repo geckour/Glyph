@@ -16,8 +16,12 @@ import jp.org.example.geckour.glyph.databinding.ActivitySplashBinding
 import timber.log.Timber
 
 class SplashActivity : Activity() {
+
+    companion object {
+        private val tag: String = this::class.java.simpleName
+    }
+
     private lateinit var binding: ActivitySplashBinding
-    private val tag: String = this::class.java.simpleName
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +51,7 @@ class SplashActivity : Activity() {
         binding.buttonDict.setOnClickListener { onClickDictionary() }
         binding.buttonWeak.setOnClickListener { onClickWeakness() }
 
-        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
+        val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
     }

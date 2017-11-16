@@ -310,13 +310,13 @@ class AnimateView: View {
     }
 
     private fun drawQuestionProgress(canvas: Canvas, numerator: Int? = null) {
-        val n = numerator ?: progress.first
-        if (n > -1) {
+        val n = (numerator ?: progress.first) - 1
+        if (n > -2) {
             when (state) {
                 State.QUESTION -> {
                     paint.colorFilter = PorterDuffColorFilter(Color.rgb(240, 150, 40), PorterDuff.Mode.SRC_ATOP)
                     hexagons.forEachIndexed { i, pointF ->
-                        if (i + 1 == n)
+                        if (i == n)
                             canvas.drawBitmap(strongHexImg, pointF.x, pointF.y, paint)
                         else
                             canvas.drawBitmap(weakHexImg, pointF.x, pointF.y, paint)
@@ -326,7 +326,7 @@ class AnimateView: View {
                 State.INPUT, State.FADEOUT, State.PREPARE_ANSWER -> {
                     paint.colorFilter = PorterDuffColorFilter(Color.rgb(2, 255, 197), PorterDuff.Mode.SRC_ATOP)
                     hexagons.forEachIndexed { i, pointF ->
-                        when (i + 1) {
+                        when (i) {
                             in 0..(n - 1) -> canvas.drawBitmap(normalHexImg, pointF.x, pointF.y, paint)
                             n -> canvas.drawBitmap(strongHexImg, pointF.x, pointF.y, paint)
                             else -> canvas.drawBitmap(weakHexImg, pointF.x, pointF.y, paint)

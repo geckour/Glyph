@@ -29,11 +29,7 @@ class App: Application() {
         var coda: Typeface? = null
     }
 
-    enum class TrackerName {
-        APP_TRACKER, // Tracker used only in this app.
-        GLOBAL_TRACKER, // Tracker used by all the apps from a company. eg: roll-up tracking.
-        ECOMMERCE_TRACKER // Tracker used by all ecommerce transactions from a company.
-    }
+    private var tracker: Tracker? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -44,6 +40,7 @@ class App: Application() {
         Stetho.initializeWithDefaults(this)
 
         Realm.init(this)
+        Realm.setDefaultConfiguration(RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().build())
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
         coda = ResourcesCompat.getFont(this, R.font.coda_regular)
@@ -51,22 +48,9 @@ class App: Application() {
         injectInitialData()
     }
 
-    private var mTrackers = HashMap<TrackerName, Tracker>()
-
     @Synchronized
-    internal fun getTracker(trackerId: TrackerName): Tracker? {
-        if (!mTrackers.containsKey(trackerId)) {
-            val analytics = GoogleAnalytics.getInstance(this)
-            val t = when(trackerId) {
-                TrackerName.APP_TRACKER -> analytics.newTracker(R.xml.app_tracker)
-                TrackerName.GLOBAL_TRACKER -> analytics.newTracker(R.xml.global_tracker)
-                else -> analytics.newTracker(R.xml.ecommerce_tracker)
-            }
-            t.enableAdvertisingIdCollection(true)
-            mTrackers.put(trackerId, t)
-        }
-        return mTrackers[trackerId]
-    }
+    internal fun getDefaultTracker(): Tracker? =
+            tracker ?: GoogleAnalytics.getInstance(this).newTracker(R.xml.global_tracker)
 
     private fun injectInitialData() {
         RealmConfiguration.Builder().initialData { realm ->

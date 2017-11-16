@@ -2,10 +2,8 @@ package jp.org.example.geckour.glyph.view
 
 import android.content.Context
 import android.graphics.*
-import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.View
-import com.bumptech.glide.Glide
 import jp.org.example.geckour.glyph.*
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.util.*

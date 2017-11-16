@@ -11,5 +11,9 @@ open class Sequence(
 
         var size: Int = 0,
 
-        var message: RealmList<Shaper> = RealmList()
+        var message: RealmList<Shaper> = RealmList(),
+
+        var correctCount: Long = 0,
+
+        var examCount: Long = 0
 ): RealmObject()

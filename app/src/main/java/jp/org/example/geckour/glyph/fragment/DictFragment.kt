@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.gms.analytics.HitBuilders
+import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.R
@@ -19,7 +21,7 @@ import timber.log.Timber
 class DictFragment: Fragment() {
 
     companion object {
-        val tag = this::class.java.simpleName
+        val tag: String = this::class.java.simpleName
 
         fun newInstance(): DictFragment = DictFragment()
     }
@@ -38,6 +40,10 @@ class DictFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         realm = Realm.getDefaultInstance()
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {

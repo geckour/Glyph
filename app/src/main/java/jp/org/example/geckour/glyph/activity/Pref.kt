@@ -20,6 +20,7 @@ import java.util.*
 class Pref : PreferenceActivity() {
 
     companion object {
+        private val tag: String = this::class.java.simpleName
         fun createIntent(activity: Activity): Intent =
                 Intent(activity, Pref::class.java)
 
@@ -148,8 +149,8 @@ class Pref : PreferenceActivity() {
         serviceIntent.`package` = "com.android.vending"
         bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE)
 
-        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
-        t?.setScreenName("PreferenceActivity")
+        val t: Tracker? = (application as App).getDefaultTracker()
+        t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
 
     }

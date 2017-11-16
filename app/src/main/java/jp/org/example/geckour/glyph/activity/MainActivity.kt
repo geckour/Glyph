@@ -17,13 +17,13 @@ import jp.org.example.geckour.glyph.fragment.model.Result
 
 class MainActivity : AppCompatActivity() {
 
-    enum class Mode { // TODO: Modeのハンドル
+    enum class Mode {
         NORMAL,
         WEAKNESS
     }
 
     companion object {
-        val tag = this::class.java.simpleName
+        val tag: String = this::class.java.simpleName
 
         fun createIntent(activity: Activity, mode: Mode): Intent =
                 Intent(activity, MainActivity::class.java).apply {
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
 
         if (intent.hasExtra(ARGS_MODE)) mode = intent.getSerializableExtra(ARGS_MODE) as Mode
 
-        val t: Tracker? = (application as App).getTracker(App.TrackerName.APP_TRACKER)
+        val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
     }
