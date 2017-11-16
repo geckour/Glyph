@@ -13,6 +13,7 @@ import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.util.*
+import jp.org.example.geckour.glyph.view.AnimateView
 import timber.log.Timber
 
 class DictFragment: Fragment() {
@@ -55,50 +56,56 @@ class DictFragment: Fragment() {
         hideRightButton()
 
         binding.animateView.setGrainAlphaModeIntoDictionary()
+
         binding.animateView.setOnTouchListener { _, event ->
             val lim = 4 * binding.dotsView.scale
 
-            if (!binding.animateView.isInputEnabled()) false
-            else {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                        fromX = event.x
-                        fromY = event.y
-                        binding.animateView.clearParticle()
-                        throughDots.clear()
-                        binding.dotsView.setDotsState { false }
-                        binding.animateView.resetShaperName()
-                        binding.animateView.addParticle(event.x, event.y)
-                        true
-                    }
+            when (binding.animateView.getInputState()) {
+                AnimateView.InputState.DISABLED -> false
 
-                    MotionEvent.ACTION_MOVE -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                            if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
-                        }
-                        throughDots.addAll(collision)
-                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                AnimateView.InputState.ENABLED -> {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                            fromX = event.x
+                            fromY = event.y
+                            binding.animateView.clearParticle()
+                            throughDots.clear()
+                            binding.dotsView.setDotsState { false }
+                            binding.animateView.resetShaperName()
                             binding.animateView.addParticle(event.x, event.y)
+                            true
                         }
-                        fromX = event.x
-                        fromY = event.y
-                        true
-                    }
 
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                            if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                        MotionEvent.ACTION_MOVE -> {
+                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                            }
+                            throughDots.addAll(collision)
+                            binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                            if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                                binding.animateView.addParticle(event.x, event.y)
+                            }
+                            fromX = event.x
+                            fromY = event.y
+                            true
                         }
-                        throughDots.addAll(collision)
-                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        val path = throughDots.convertDotsListToPaths().getNormalizedPaths()
-                        binding.animateView.setShaperName(getShapers(path).map { it.name })
-                        binding.animateView.apply { showPaths(path.mapToPointPathsFromDotPaths(binding.dotsView.getDots())) }
-                        true
+
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                            }
+                            throughDots.addAll(collision)
+                            binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                            val path = throughDots.convertDotsListToPaths().getNormalizedPaths()
+                            binding.animateView.setShaperName(getShapers(path).map { it.name })
+                            binding.animateView.apply { showPaths(path.mapToPointPathsFromDotPaths(binding.dotsView.getDots())) }
+                            true
+                        }
+                        else -> true
                     }
-                    else -> true
                 }
+
+                AnimateView.InputState.COMMAND -> false
             }
         }
     }

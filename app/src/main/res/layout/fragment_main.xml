@@ -14,6 +14,23 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
+        <TextView
+            android:id="@+id/dialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/bg_dialog"
+            android:paddingBottom="@dimen/dialog_padding_vertical"
+            android:paddingLeft="@dimen/dialog_padding_horizontal"
+            android:paddingRight="@dimen/dialog_padding_horizontal"
+            android:paddingTop="@dimen/dialog_padding_vertical"
+            android:textColor="@color/dialog_text"
+            android:textSize="@dimen/dialog_text"
+            android:visibility="gone"
+            app:fontFamily="@font/coda_regular"
+            tools:fontFamily="@font/coda_regular"
+            tools:text="NO KEY"/>
+
         <jp.org.example.geckour.glyph.view.AnimateView
             android:id="@+id/animateView"
             android:layout_width="match_parent"
@@ -58,10 +75,5 @@
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="LEFT"/>
         </android.support.constraint.ConstraintLayout>
-
-        <jp.org.example.geckour.glyph.view.OverlayView
-            android:id="@+id/overlayView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
     </RelativeLayout>
 </layout>

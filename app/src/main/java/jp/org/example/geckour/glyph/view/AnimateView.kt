@@ -7,6 +7,7 @@ import android.view.View
 import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
+import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 import jp.org.example.geckour.glyph.view.model.Particle
 import jp.org.example.geckour.glyph.view.model.Particle.Companion.grainImg
@@ -22,6 +23,7 @@ class AnimateView: View {
 
     enum class State {
         DEFAULT,
+        WAIT_COMMAND,
         QUESTION,
         PREPARE_INPUT,
         INPUT,
@@ -31,14 +33,27 @@ class AnimateView: View {
         INVISIBLE
     }
 
+    enum class InputState {
+        ENABLED,
+        DISABLED,
+        COMMAND
+    }
+
     private val paint = Paint()
-    private val drawAnswerLength: Long by lazy { 1200L } // TODO: COMPLEXモードか否かで切り替え
+    private val drawAnswerLength: Long by lazy {
+        when (command) {
+            DBInitialData.Shaper.COMPLEX -> 600L
+            DBInitialData.Shaper.SIMPLE -> 2400L
+            else -> 1200L
+        }
+    }
 
     private var state = State.DEFAULT
-    private var inputEnabled = false
+    private var command: DBInitialData.Shaper? = null
     private var showName = true
     private val shaperName: ArrayList<String> = ArrayList()
     private val locus: ArrayList<Particle> = ArrayList()
+    private var onTimeUpForCommand: () -> Unit = { false }
     private var _onFadeStart: () -> Unit = {}
     private var onFadeStart: () -> Unit = {}
     private var _onStartNextQ: () -> Unit = {}
@@ -49,7 +64,8 @@ class AnimateView: View {
     private var grainAlpha = 0
 
     private val scale: Float by lazy { height.toFloat() / 1280 }
-    private val marginTime: Long = 900
+    private val commandWaitTime: Long = 2000L
+    private val marginTime: Long = 900L
     private var initTime = System.currentTimeMillis()
     private var now = initTime
     private var allowableTime = -1L
@@ -110,6 +126,11 @@ class AnimateView: View {
         
         canvas?.let {
             when (state) {
+                State.WAIT_COMMAND -> {
+                    if (elapsedTime > commandWaitTime) onTimeUpForCommand()
+                    drawParticle(it)
+                }
+
                 State.QUESTION -> {
                     if (now - initTime > marginTime) {
                         timeInQ = (elapsedTime % drawAnswerLength).apply {
@@ -338,8 +359,6 @@ class AnimateView: View {
         }
     }
 
-    fun isInputEnabled() = this.inputEnabled
-
     fun showPaths(paths: List<Pair<PointF, PointF>>) {
         clearParticle()
 
@@ -372,6 +391,8 @@ class AnimateView: View {
     private fun calcGrainAlpha(mode: State = state): Int =
             when (mode) {
                 State.DEFAULT -> 255
+
+                State.WAIT_COMMAND -> 255
 
                 State.QUESTION -> {
                     if (now - initTime > marginTime) {
@@ -414,12 +435,12 @@ class AnimateView: View {
 
     private fun getFlashColor(onFinish: () -> Unit): Int {
         if (referenceTime > -1L) {
-            val pre = 10
-            val main = 670
+            val pre = 10L
+            val main = 670L
             val whole = pre + main
 
             if (elapsedTime > -1L) {
-                val seq: Long = elapsedTime / main
+                val seq: Long = elapsedTime / main + if(command == DBInitialData.Shaper.COMPLEX) 1 else 0
                 val timeInSeq: Long = elapsedTime % whole
                 return when (seq) {
                     0L -> {
@@ -476,6 +497,23 @@ class AnimateView: View {
         this.state = state
     }
 
+    fun getInputState(): InputState =
+            when (this.state) {
+                State.INPUT, State.FADEOUT, State.DICTIONARY -> InputState.ENABLED
+                State.WAIT_COMMAND -> InputState.COMMAND
+                else -> InputState.DISABLED
+            }
+
+    fun setCommand(command: DBInitialData.Shaper) {
+        this.command = command
+    }
+
+    fun setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand: () -> Unit) {
+        this.onTimeUpForCommand = onTimeUpForCommand
+        setState(State.WAIT_COMMAND)
+        referenceTime = now
+    }
+
     fun setGrainAlphaModeIntoQuestion(progress: Pair<Int, Int>, allowableTime: Long, onStartNextQ: () -> Unit = {}, onStartInput: () -> Unit, onPrepareAnswer: () -> Unit, onTransitionToCheckAnswer: () -> Unit = {}) {
         this.progress = progress
         this.allowableTime = allowableTime
@@ -486,7 +524,6 @@ class AnimateView: View {
         this.onTransitionToCheckAnswer = onTransitionToCheckAnswer
 
         setState(State.QUESTION)
-        inputEnabled = false
         referenceTime = now
     }
 
@@ -494,14 +531,12 @@ class AnimateView: View {
         clearParticle()
 
         setState(State.PREPARE_INPUT)
-        inputEnabled = false
 
         referenceTime = now
     }
 
     fun setGrainAlphaModeIntoInput(progress: Pair<Int, Int>) {
         setState(State.INPUT)
-        inputEnabled = true
         if (inputStartTime < 0L) inputStartTime = now
         this.progress = progress
     }
@@ -511,26 +546,22 @@ class AnimateView: View {
         _onFadeStart = onFadeStart
         this.onFadeStart = _onFadeStart
         referenceTime = now
-        inputEnabled = true
     }
 
     fun setGrainAlphaModeIntoPrepareAnswer(timeUp: Boolean = false) {
         setState(State.PREPARE_ANSWER)
         spentTime = if (timeUp) allowableTime else now - inputStartTime
         referenceTime = now
-        inputEnabled = false
     }
 
     fun setGrainAlphaModeIntoDictionary() {
         setState(State.DICTIONARY)
-        inputEnabled = true
     }
 
     @Deprecated("This method is redundant.")
     fun resetGrainAlphaMode() {
         setState(State.DEFAULT)
         referenceTime = -1L
-        inputEnabled = false
 
         onFadeStart = {}
     }
@@ -542,7 +573,7 @@ class AnimateView: View {
 
     fun clearParticle() = synchronized(locus) { locus.clear() }
 
-    private fun getDebugMessage() = "$elapsedTime, $state, inputEnabled: $inputEnabled, alpha:$grainAlpha"
+    private fun getDebugMessage() = "$elapsedTime, $state, alpha:$grainAlpha"
 
     private fun drawDebugMessage(canvas: Canvas, message: String = getDebugMessage()) =
             canvas.drawText(message, 20f, 60f, paint.apply {

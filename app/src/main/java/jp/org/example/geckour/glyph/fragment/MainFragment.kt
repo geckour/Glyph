@@ -13,15 +13,27 @@ import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
+import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 import jp.org.example.geckour.glyph.fragment.model.Result
 import jp.org.example.geckour.glyph.util.*
+import jp.org.example.geckour.glyph.view.AnimateView
 import jp.org.example.geckour.glyph.view.model.Shaper
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.delay
 import timber.log.Timber
 import kotlin.concurrent.thread
 
 class MainFragment: Fragment() {
+
+    enum class Command {
+        COMPLEX,
+        SIMPLE,
+        MORE,
+        LESS,
+        NONE
+    }
 
     companion object {
         val tag: String = this::class.java.simpleName
@@ -44,6 +56,17 @@ class MainFragment: Fragment() {
     private var gameMode: Int = 0
     private var doVibrate: Boolean = false
 
+    private val commandMaster: List<Shaper> by lazy {
+        realm.where(DBShaper::class.java)
+                .equalTo("name", DBInitialData.Shaper.COMPLEX.displayName)
+                .or().equalTo("name", DBInitialData.Shaper.SIMPLE.displayName)
+                .or().equalTo("name", DBInitialData.Shaper.MORE.displayName)
+                .or().equalTo("name", DBInitialData.Shaper.LESS.displayName)
+                .findAll()
+                .toList()
+                .map { it.parse() }
+    }
+
     private val questions: ArrayList<Shaper> = ArrayList()
     private val throughDots: ArrayList<Int> = ArrayList()
     private val paths: ArrayList<List<Pair<Int, Int>>> = ArrayList()
@@ -52,15 +75,25 @@ class MainFragment: Fragment() {
     private var fromX = -1f
     private var fromY = -1f
 
-    private val onLayoutAnimateView: () -> Unit = {
-        showSequence {
-            // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
-            binding.animateView.apply {
-                clearParticle()
-                setGrainAlphaModeIntoPrepareInput()
+    private val onLayoutAnimateView: () -> Unit = { // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
+        binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
+    }
+
+    private val onTimeUpForCommand: () -> Unit = {
+        if (getTouchStatus() == MotionEvent.ACTION_UP) {
+            hideDialog()
+            binding.animateView.clearParticle()
+            binding.dotsView.setDotsState { false }
+            showSequence {
+                binding.animateView.apply {
+                    clearParticle()
+                    setGrainAlphaModeIntoPrepareInput()
+                }
             }
         }
     }
+
+    private val jobs: ArrayList<Job> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,55 +155,123 @@ class MainFragment: Fragment() {
         binding.animateView.setOnTouchListener { _, event ->
             val lim = 4 * binding.dotsView.scale
 
-            if (!binding.animateView.isInputEnabled()) false
-            else {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                        fromX = event.x
-                        fromY = event.y
-                        binding.animateView.clearParticle()
-                        throughDots.clear()
-                        binding.dotsView.setDotsState { false }
-                        binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, getDifficulty(level)))
-                        binding.animateView.addParticle(event.x, event.y)
-                        true
-                    }
+            when (binding.animateView.getInputState()) {
+                AnimateView.InputState.DISABLED -> false
 
-                    MotionEvent.ACTION_MOVE -> {
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                            if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
-                        }
-                        throughDots.addAll(collision)
-                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                AnimateView.InputState.ENABLED -> {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                            fromX = event.x
+                            fromY = event.y
+                            binding.animateView.clearParticle()
+                            throughDots.clear()
+                            binding.dotsView.setDotsState { false }
+                            binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, getDifficulty(level)))
                             binding.animateView.addParticle(event.x, event.y)
+                            true
                         }
-                        fromX = event.x
-                        fromY = event.y
-                        true
-                    }
 
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                        addCurrentSpentTime()
+                        MotionEvent.ACTION_MOVE -> {
+                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                            }
+                            throughDots.addAll(collision)
+                            binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                            if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                                binding.animateView.addParticle(event.x, event.y)
+                            }
+                            fromX = event.x
+                            fromY = event.y
+                            true
+                        }
 
-                        val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                            if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                            addCurrentSpentTime()
+
+                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                            }
+                            throughDots.addAll(collision)
+                            binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                            paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
+                            binding.animateView.apply {
+                                setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
+                                showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
+                            }
+                            if (paths.size >= getDifficulty(level)) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
+                            fromX = -1f
+                            fromY = -1f
+                            true
                         }
-                        throughDots.addAll(collision)
-                        binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                        paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
-                        binding.animateView.apply {
-                            setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
-                            showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
-                        }
-                        if (paths.size >= getDifficulty(level)) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
-                        true
+                        else -> true
                     }
-                    else -> true
+                }
+
+                AnimateView.InputState.COMMAND -> {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                            fromX = event.x
+                            fromY = event.y
+                            binding.animateView.clearParticle()
+                            throughDots.clear()
+                            binding.dotsView.setDotsState { false }
+                            hideDialog()
+                            binding.animateView.addParticle(event.x, event.y)
+                            true
+                        }
+
+                        MotionEvent.ACTION_MOVE -> {
+                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                            }
+                            throughDots.addAll(collision)
+                            binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+                            if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
+                                binding.animateView.addParticle(event.x, event.y)
+                            }
+                            fromX = event.x
+                            fromY = event.y
+                            true
+                        }
+
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
+                            }
+                            throughDots.addAll(collision)
+                            binding.dotsView.setDotsState(collision.map { Pair(it, true) })
+
+                            val path = throughDots.convertDotsListToPaths().getNormalizedPaths()
+                            binding.animateView.showPaths(path.mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
+                            commandMaster.forEach {
+                                Timber.d("command master: $it")
+                                if (it.match(path)) {
+                                    val command = DBInitialData.Shaper.valueOf(it.name)
+                                    binding.animateView.setCommand(command)
+                                    showDialog(command)
+                                }
+                            }
+                            binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
+
+                            fromX = -1f
+                            fromY = -1f
+                            true
+                        }
+
+                        else -> true
+                    }
                 }
             }
         }
+
+        showDialog("COMMAND CHANNEL OPEN…")
     }
+
+    private fun getTouchStatus(): Int =
+            when {
+                fromX > 0f || fromY > 0f -> MotionEvent.ACTION_DOWN
+                else -> MotionEvent.ACTION_UP
+            }
 
     override fun onResume() {
         super.onResume()
@@ -261,7 +362,11 @@ class MainFragment: Fragment() {
                             Pair(difficulty + 1 - questions.size, difficulty),
                             getAllowableTime(level),
                             onStartNextQ = { showSequence(questions.drop(1), onComplete) },
-                            onStartInput = { setRightButton("BYPASS") { binding.animateView.setGrainAlphaModeIntoPrepareAnswer() } },
+                            onStartInput = {
+                                setRightButton("BYPASS") {
+                                    binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
+                                }
+                            },
                             onPrepareAnswer = { binding.dotsView.visibility = View.INVISIBLE },
                             onTransitionToCheckAnswer = { checkAnswer() }
                     )
@@ -321,4 +426,41 @@ class MainFragment: Fragment() {
                     },
                     getAllowableTime(level)
             )
+
+    private fun showDialog(command: DBInitialData.Shaper) {
+        val message =
+                when (command) {
+                    DBInitialData.Shaper.COMPLEX -> "COMPLEX HACK"
+                    DBInitialData.Shaper.SIMPLE -> "SIMPLE HACK"
+                    DBInitialData.Shaper.MORE -> "REQUEST KEY"
+                    DBInitialData.Shaper.LESS -> "NO KEY"
+                    else -> ""
+                }
+
+        if (message.isNotBlank()) showDialog(message)
+    }
+
+    private fun showDialog(message: String) {
+        if (message.isNotBlank()) {
+            binding.dialog.apply {
+                val id: Long = (tag as? Long)?.plus(1) ?: 0
+                tag = id
+                text = message
+                visibility = View.VISIBLE
+
+                ui(jobs) {
+                    delay(1000)
+                    if ((tag as? Long) == id) hideDialog()
+                }
+            }
+        }
+    }
+
+    private fun hideDialog() {
+        binding.dialog.visibility = View.GONE
+        if (getTouchStatus() != MotionEvent.ACTION_DOWN) {
+            binding.dotsView.setDotsState { false }
+            binding.animateView.clearParticle()
+        }
+    }
 }
