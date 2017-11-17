@@ -10,7 +10,6 @@ import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 import jp.org.example.geckour.glyph.view.model.Particle
-import jp.org.example.geckour.glyph.view.model.Particle.Companion.grainImg
 import timber.log.Timber
 import kotlin.concurrent.thread
 
@@ -104,9 +103,9 @@ class AnimateView: View {
 
         if (height > 0) {
             val grainDiam = (26.0 * scale).toInt()
-            grainImg = BitmapFactory.decodeResource(resources, R.drawable.particle).let {
+            Particle.init(BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
                 Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
-            }
+            })
 
             thread {
                 while (true) {

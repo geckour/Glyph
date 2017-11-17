@@ -12,33 +12,40 @@ class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Phas
     companion object {
         private val PI2 = Math.PI * 2
 
-        lateinit var grainImg: Bitmap
-        private val grainImgWithAlpha: Bitmap by lazy { grainImg.copy(Bitmap.Config.ARGB_8888, true) }
+        private lateinit var grainPixelsMaster: List<Int>
+        private lateinit var grainImg: Bitmap
+
+        fun init(grainImg: Bitmap) {
+            this.grainImg = grainImg
+            grainPixelsMaster = grainImg.let {
+                val w = grainImg.width
+                val h = grainImg.height
+                IntArray(w * h)
+                        .apply { it.getPixels(this, 0, w, 0, 0, w, h) }
+                        .toList()
+            }
+        }
 
         fun setGrainAlpha(alpha: Int) {
-            if (alpha < 0 || alpha > 255) return
+            if (alpha !in 0..255) return
 
             val w = grainImg.width
             val h = grainImg.height
             val subAlpha = 255 - alpha
 
-            val pixels = IntArray(w * h).apply { grainImg.getPixels(this, 0, w, 0, 0, w, h) }
-
-            pixels.forEachIndexed { i, pixel ->
-                val oldAlpha = Color.alpha(pixel)
-                val newAlpha = oldAlpha - subAlpha
-                pixels[i] =
+            grainImg.setPixels(
+                    grainPixelsMaster.map {
+                        val oldAlpha = Color.alpha(it)
+                        val newAlpha = oldAlpha - subAlpha
                         (when {
                             newAlpha < 0 -> 0
                             newAlpha > 255 -> 255
                             else -> newAlpha
-                        } shl 24) + (pixel and 0x00ffffff)
-            }
-
-            grainImgWithAlpha.setPixels(pixels, 0, w, 0, 0, w, h)
+                        } shl 24) + (it and 0x00ffffff)
+                    }.toIntArray(), 0, w, 0, 0, w, h)
         }
     }
-    
+
     private val grains: ArrayList<Grain> =
             ArrayList<Grain>().apply {
                 (0..2).forEach {
@@ -114,7 +121,7 @@ class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Phas
     private fun draw(canvas: Canvas, paint: Paint) {
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.ADD)
         grains.forEach {
-            canvas.drawBitmap(grainImgWithAlpha, it.x - grainR, it.y - grainR, paint)
+            canvas.drawBitmap(grainImg, it.x - grainR, it.y - grainR, paint)
         }
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     }
