@@ -21,7 +21,7 @@ import timber.log.Timber
 class DictFragment: Fragment() {
 
     companion object {
-        val tag: String = this::class.java.simpleName
+        val tag: String = DictFragment::class.java.simpleName
 
         fun newInstance(): DictFragment = DictFragment()
     }

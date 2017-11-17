@@ -20,7 +20,7 @@ import java.util.*
 class Pref : PreferenceActivity() {
 
     companion object {
-        private val tag: String = this::class.java.simpleName
+        private val tag: String = Pref::class.java.simpleName
         fun createIntent(activity: Activity): Intent =
                 Intent(activity, Pref::class.java)
 

@@ -16,7 +16,7 @@ import jp.org.example.geckour.glyph.fragment.DictFragment
 class DictActivity : AppCompatActivity() {
 
     companion object {
-        private val tag = this::class.java.simpleName
+        private val tag = DictActivity::class.java.simpleName
 
         fun createIntent(activity: Activity): Intent =
                 Intent(activity, DictActivity::class.java)

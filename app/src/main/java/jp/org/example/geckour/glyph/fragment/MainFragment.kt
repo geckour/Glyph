@@ -29,16 +29,8 @@ import kotlin.concurrent.thread
 
 class MainFragment: Fragment() {
 
-    enum class Command {
-        COMPLEX,
-        SIMPLE,
-        MORE,
-        LESS,
-        NONE
-    }
-
     companion object {
-        val tag: String = this::class.java.simpleName
+        val tag: String = MainFragment::class.java.simpleName
 
         fun newInstance(): MainFragment = MainFragment()
 
@@ -260,7 +252,6 @@ class MainFragment: Fragment() {
                             val path = throughDots.convertDotsListToPaths().getNormalizedPaths()
                             binding.animateView.showPaths(path.mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
                             commandMaster.forEach {
-                                Timber.d("command master: $it")
                                 if (it.match(path)) {
                                     val command = DBInitialData.Shaper.valueOf(it.name)
                                     binding.animateView.setCommand(command)
@@ -477,7 +468,7 @@ class MainFragment: Fragment() {
     private fun addCurrentSpentTime() = spentTimes.add(System.currentTimeMillis() - binding.animateView.getInputStartTime() - spentTimes.sum())
 
     private fun checkAnswer() =
-            mainActivity.transitionForheckAnswer(
+            mainActivity.transitionForCheckAnswer(
                     questions.mapIndexed { i, q ->
                         if (i < paths.size) Result(q.id, q.match(paths[i]), spentTimes[i])
                         else Result(q.id, false, 0L)

@@ -103,7 +103,7 @@ class AnimateView: View {
         super.onLayout(changed, left, top, right, bottom)
 
         if (height > 0) {
-            val grainDiam = (32.0 * scale).toInt()
+            val grainDiam = (26.0 * scale).toInt()
             grainImg = BitmapFactory.decodeResource(resources, R.drawable.particle).let {
                 Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
             }
@@ -379,7 +379,7 @@ class AnimateView: View {
 
                 var totalLength = 0f
                 while (totalLength <= length) {
-                    addParticle(p.x, p.y, 1)
+                    addParticle(p.x, p.y, Particle.Phase.CONVERGING)
                     p.set(p.x + dX.toFloat(), p.y + dY.toFloat())
 
                     totalLength += dL
@@ -437,6 +437,7 @@ class AnimateView: View {
         if (referenceTime > -1L) {
             val pre = 10L
             val main = 670L
+            val final = 400L
             val whole = pre + main
 
             if (elapsedTime > -1L) {
@@ -461,18 +462,18 @@ class AnimateView: View {
                                 }
                         Color.argb(alpha.toInt(), 220, 175, 50)
                     }
-                    2L -> {
+                    else -> {
                         val alpha =
                                 if (timeInSeq < pre) {
                                     255.0 * timeInSeq / pre
                                 } else {
                                     255.0
                                 }
-                        Color.argb(alpha.toInt(), 255, 255, 255)
-                    }
-                    else -> {
-                        onFinish()
-                        Color.TRANSPARENT
+                        if (timeInSeq < final) Color.argb(alpha.toInt(), 255, 255, 255)
+                        else {
+                            onFinish()
+                            Color.TRANSPARENT
+                        }
                     }
                 }
             }
@@ -566,7 +567,7 @@ class AnimateView: View {
         onFadeStart = {}
     }
 
-    fun addParticle(x: Float, y: Float, phase: Int? = null) =
+    fun addParticle(x: Float, y: Float, phase: Particle.Phase? = null) =
             if (width > 0)
                 synchronized(locus) {locus.add(Particle(x, y, width, phase)) }
             else false

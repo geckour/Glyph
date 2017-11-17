@@ -27,7 +27,7 @@ import jp.org.example.geckour.glyph.util.toTimeStringPair
 class CheckAnswerFragment: Fragment() {
 
     companion object {
-        val tag: String = this::class.java.simpleName
+        val tag: String = CheckAnswerFragment::class.java.simpleName
 
         private val ARGS_RESULTS = "results"
         private val ARGS_ALLOWABLE_TIME = "allowableTime"

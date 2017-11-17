@@ -2,9 +2,16 @@ package jp.org.example.geckour.glyph.view.model
 
 import android.graphics.*
 
-class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Int?) {
+class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Phase?) {
+
+    enum class Phase {
+        NOT_CONVERGING,
+        CONVERGING
+    }
 
     companion object {
+        private val PI2 = Math.PI * 2
+
         lateinit var grainImg: Bitmap
         private val grainImgWithAlpha: Bitmap by lazy { grainImg.copy(Bitmap.Config.ARGB_8888, true) }
 
@@ -32,92 +39,81 @@ class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Int?
         }
     }
     
-    private val grains: ArrayList<Grain> = ArrayList(List(3) { Grain(x, y) })
-            .apply {
-                if (phase == 0) (0..2).forEach {
-                    addAll(List(3) { Grain(x, y, this[it].start) })
+    private val grains: ArrayList<Grain> =
+            ArrayList<Grain>().apply {
+                (0..2).forEach {
+                    val master = Grain(x, y)
+                    add(master)
+                    addAll(List(3) { Grain(x, y, master.start) })
                 }
             }
     private val moveUntil: Long = 320
     private var initTime: Long = System.currentTimeMillis()
     private var elapsedTime: Long = 0
-    private var v = 0.15
+    private var o = 0.15
     private val grainR = grainImg.width ushr 1
 
-    private fun phase(): Int = if (elapsedTime > moveUntil) 1 else 0
+    private fun phase(): Phase = if (elapsedTime > moveUntil) Phase.CONVERGING else Phase.NOT_CONVERGING
 
     fun move(canvas: Canvas, paint: Paint) {
         elapsedTime = (System.currentTimeMillis() - initTime)
 
         when (phase ?: phase()) {
-            0 -> { //収束前
+            Phase.NOT_CONVERGING -> { //収束前
                 grains.forEach {
                     val param = (moveUntil - elapsedTime).toFloat() / moveUntil
-                    it.x = it.end.x + it.diff.x * param
-                    it.y = it.end.y + it.diff.y * param
+                    it.x = it.end.x + it.distance.x * param
+                    it.y = it.end.y + it.distance.y * param
                 }
             }
-            1 -> { //収束後
-                grains.filterNot { it.isOrigin }.apply { grains.removeAll(this) }
+            Phase.CONVERGING -> { //収束後
+                if (grains.size > 3) grains.filter { !it.isOrigin }.apply { grains.removeAll(this) }
 
                 grains.forEach {
                     val param = Math.cos(it.paramAngle)
-                    it.x += (Math.cos(it.baseAngle) * it.circleR * param).toFloat()
-                    it.y += (Math.sin(it.baseAngle) * it.circleR * param).toFloat()
-                    it.paramAngle += v
+                    it.x = it.end.x + (Math.cos(it.baseAngle) * it.circleR * param).toFloat()
+                    it.y = it.end.y + (Math.sin(it.baseAngle) * it.circleR * param).toFloat()
+                    it.paramAngle += o
                 }
             }
         }
         draw(canvas, paint)
     }
 
-    inner class Grain(var x: Float, var y: Float, val start: PointF = PointF(-1f, -1f)) {
-        val end = PointF()
-        val isOrigin = start.x < 0 || start.y < 0
-        val diff = PointF()
-        private val pi2 = Math.PI * 2.0
-        var paramAngle = Math.random() * pi2
-        val baseAngle = Math.random() * pi2
-        val circleR = Math.random() * 0.5 + 0.7
+    inner class Grain(var x: Float, var y: Float, basis: PointF? = null) {
+
+        val start: PointF = basis ?: PointF(x, y)
+        val end = PointF(x, y)
+        val isOrigin = basis == null
+        val distance = PointF()
+        val baseAngle = PI2 * Math.random()
+        var paramAngle = PI2 * Math.random()
+        val circleR = canvasWidth * 0.0005 * Math.random() * 4.0 + 5.0
 
         init {
-            val margin = Math.random() * canvasWidth * 0.025
+            val margin = Math.random() * canvasWidth * 0.02
             
-            var blurR: Double
-            var blurA: Double = Math.random() * pi2
+            val blurR = canvasWidth * 0.1 * (Math.random() * 0.7 + 0.3) + margin
+            val blurA = PI2 * Math.random()
+
+            //収束への出発点
+            start.x += (blurR * Math.cos(blurA)).toFloat()
+            start.y += (blurR * Math.sin(blurA)).toFloat()
+
             if (isOrigin) {
-                //収束への出発点
-                blurR = canvasWidth * 0.4 * Math.random() + margin
-                start.x = x + (blurR * Math.cos(blurA)).toFloat()
-                start.y = y + (blurR * Math.sin(blurA)).toFloat()
-
                 //収束点
-                blurR = margin
-                blurA = Math.random() * pi2
-                end.x = x + (blurR * Math.cos(blurA)).toFloat()
-                end.y = y + (blurR * Math.sin(blurA)).toFloat()
-            } else {
-                //収束への出発点
-                blurR = canvasWidth * 0.2 * Math.random()
-                start.x += (blurR * Math.cos(blurA)).toFloat()
-                start.y += (blurR * Math.sin(blurA)).toFloat()
-
-                //収束点
-                end.set(x, y)
+                end.x += (margin * Math.cos(blurA)).toFloat()
+                end.y += (margin * Math.sin(blurA)).toFloat()
             }
 
             //収束までの距離
-            diff.x = end.x - start.x
-            diff.y = end.y - start.y
-
-            x = end.x
-            y = end.y
+            distance.set(end.x - start.x, end.y - start.y)
         }
     }
 
     private fun draw(canvas: Canvas, paint: Paint) {
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.ADD)
-        grains.filter { it.isOrigin }.forEach {
+        grains.forEach {
             canvas.drawBitmap(grainImgWithAlpha, it.x - grainR, it.y - grainR, paint)
         }
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)

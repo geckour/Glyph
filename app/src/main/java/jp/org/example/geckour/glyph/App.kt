@@ -18,7 +18,6 @@ import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
 import timber.log.Timber.DebugTree
 import timber.log.Timber
-import java.util.HashMap
 
 
 class App: Application() {

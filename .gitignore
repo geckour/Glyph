@@ -13,3 +13,5 @@ device*.mp4
 /app/signing/release.gradle
 google-services.json
 /app/release/output.json
+app.iml
+gradlew

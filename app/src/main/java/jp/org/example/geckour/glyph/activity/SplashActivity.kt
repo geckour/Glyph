@@ -18,7 +18,7 @@ import timber.log.Timber
 class SplashActivity : Activity() {
 
     companion object {
-        private val tag: String = this::class.java.simpleName
+        private val tag: String = SplashActivity::class.java.simpleName
     }
 
     private lateinit var binding: ActivitySplashBinding
