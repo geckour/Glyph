@@ -64,8 +64,6 @@ class DictFragment: Fragment() {
         binding.animateView.setGrainAlphaModeIntoDictionary()
 
         binding.animateView.setOnTouchListener { _, event ->
-            val lim = 4 * binding.dotsView.scale
-
             when (binding.animateView.getInputState()) {
                 AnimateView.InputState.DISABLED -> false
 
@@ -88,9 +86,7 @@ class DictFragment: Fragment() {
                             }
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                            if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
-                                binding.animateView.addParticle(event.x, event.y)
-                            }
+                            binding.animateView.addParticle(event.x, event.y)
                             fromX = event.x
                             fromY = event.y
                             true

@@ -22,6 +22,8 @@ import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.fragment.model.Result
 import jp.org.example.geckour.glyph.util.getDifficulty
+import jp.org.example.geckour.glyph.util.getMutableImageWithShaper
+import jp.org.example.geckour.glyph.util.parse
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 
 class CheckAnswerFragment: Fragment() {
@@ -54,27 +56,7 @@ class CheckAnswerFragment: Fragment() {
     private val shaperImg: Bitmap by lazy {
         BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal)
     }
-
-    private val dotsPoint: Array<PointF> = Array(11) {
-        val c = when (it) {
-            1 -> 1
-            2 -> 3
-            3 -> 4
-            4 -> 6
-            in 5..10 -> it
-            else -> 0
-        }
-
-        val uAngle = Math.PI / 3.0
-
-        if (it == 0) PointF(0f, 0f)
-        else {
-            PointF(
-                    (Math.cos(uAngle * (c - 0.5)) * (if (it < 5) 0.5 else 1.0)).toFloat(),
-                    (Math.sin(uAngle * (c - 0.5)) * (if (it < 5) 0.5 else 1.0)).toFloat()
-            )
-        }
-    }
+    private lateinit var shaperImgMutable: Bitmap
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,14 +128,16 @@ class CheckAnswerFragment: Fragment() {
 
     private fun injectResults() {
         results.forEachIndexed { i, result ->
-            val shaper = realm.where(Shaper::class.java).equalTo("id", result.shaperId).findFirst()
+            val shaper = realm.where(Shaper::class.java).equalTo("id", result.shaperId).findFirst()?.parse()
             val tintColor = if (result.correct) Color.rgb(2, 255, 197) else Color.RED
 
             shaper?.let {
+                shaperImgMutable = shaperImg.getMutableImageWithShaper(it)
+
                 when (i) {
                     0 -> {
                         binding.shaper1.apply {
-                            setImageBitmap(getShaperImage(it))
+                            setImageBitmap(shaperImgMutable)
                             if (version > 20) imageTintList = ColorStateList.valueOf(tintColor)
                             else setColorFilter(tintColor)
                             visibility = View.VISIBLE
@@ -171,7 +155,7 @@ class CheckAnswerFragment: Fragment() {
 
                     1 -> {
                         binding.shaper2.apply {
-                            setImageBitmap(getShaperImage(it))
+                            setImageBitmap(shaperImgMutable)
                             if (version > 20) imageTintList = ColorStateList.valueOf(tintColor)
                             else setColorFilter(tintColor)
                             visibility = View.VISIBLE
@@ -189,7 +173,7 @@ class CheckAnswerFragment: Fragment() {
 
                     2 -> {
                         binding.shaper3.apply {
-                            setImageBitmap(getShaperImage(it))
+                            setImageBitmap(shaperImgMutable)
                             if (version > 20) imageTintList = ColorStateList.valueOf(tintColor)
                             else setColorFilter(tintColor)
                             visibility = View.VISIBLE
@@ -207,7 +191,7 @@ class CheckAnswerFragment: Fragment() {
 
                     3 -> {
                         binding.shaper4.apply {
-                            setImageBitmap(getShaperImage(it))
+                            setImageBitmap(shaperImgMutable)
                             if (version > 20) imageTintList = ColorStateList.valueOf(tintColor)
                             else setColorFilter(tintColor)
                             visibility = View.VISIBLE
@@ -225,7 +209,7 @@ class CheckAnswerFragment: Fragment() {
 
                     4 -> {
                         binding.shaper5.apply {
-                            setImageBitmap(getShaperImage(it))
+                            setImageBitmap(shaperImgMutable)
                             if (version > 20) imageTintList = ColorStateList.valueOf(tintColor)
                             else setColorFilter(tintColor)
                             visibility = View.VISIBLE
@@ -252,32 +236,6 @@ class CheckAnswerFragment: Fragment() {
         }
         binding.bonusHackValue = calcHackBonus()
         binding.bonusSpeedValue = calcSpeedBonus()
-    }
-
-    private fun getShaperImage(shaper: Shaper): Bitmap {
-        val copyImg = shaperImg.copy(shaperImg.config, true)
-        val paint = Paint().apply {
-            color = Color.BLACK
-            style = Paint.Style.STROKE
-            strokeWidth = 30f * mainActivity.scale
-            strokeJoin = Paint.Join.BEVEL
-        }
-
-        Canvas(copyImg).drawPath(
-                shaper.dots
-                        .map { dotsPoint[it] }
-                        .let {
-                            Path().apply {
-                                it.forEachIndexed { i, pointF ->
-                                    if (i < 1) moveTo((pointF.x * 0.4f + 0.5f) * copyImg.width, (pointF.y * 0.4f + 0.5f) * copyImg.height)
-                                    else lineTo((pointF.x * 0.4f + 0.5f) * copyImg.width, (pointF.y * 0.4f + 0.5f) * copyImg.height)
-                                }
-                                if (shaper.dots.first() == shaper.dots.last()) close()
-                            }
-                        }, paint
-        )
-
-        return copyImg
     }
 
     private fun calcHackBonus(): Int =

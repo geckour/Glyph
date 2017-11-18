@@ -25,7 +25,6 @@ import jp.org.example.geckour.glyph.view.model.Shaper
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import timber.log.Timber
-import kotlin.concurrent.thread
 
 class MainFragment: Fragment() {
 
@@ -68,10 +67,6 @@ class MainFragment: Fragment() {
 
     private var fromX = -1f
     private var fromY = -1f
-
-    private val onLayoutAnimateView: () -> Unit = { // onLayout後に実行しないとwidthが取れないのでaddParticleが呼ばれない
-        binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
-    }
 
     private val onTimeUpForCommand: () -> Unit = {
         if (getTouchStatus() == MotionEvent.ACTION_UP) {
@@ -151,8 +146,6 @@ class MainFragment: Fragment() {
         binding.animateView.resetInitTime()
 
         binding.animateView.setOnTouchListener { _, event ->
-            val lim = 4 * binding.dotsView.scale
-
             when (binding.animateView.getInputState()) {
                 AnimateView.InputState.DISABLED -> false
 
@@ -175,9 +168,7 @@ class MainFragment: Fragment() {
                             }
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                            if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
-                                binding.animateView.addParticle(event.x, event.y)
-                            }
+                            binding.animateView.addParticle(event.x, event.y)
                             fromX = event.x
                             fromY = event.y
                             true
@@ -234,9 +225,7 @@ class MainFragment: Fragment() {
                             }
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                            if (event.x + lim < fromX || fromX + lim < event.x || event.y + lim < fromY || fromY + lim < event.y) {
-                                binding.animateView.addParticle(event.x, event.y)
-                            }
+                            binding.animateView.addParticle(event.x, event.y)
                             fromX = event.x
                             fromY = event.y
                             true
@@ -270,7 +259,7 @@ class MainFragment: Fragment() {
                 }
             }
         }
-
+        binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
         showDialog("COMMAND CHANNEL OPEN…")
     }
 
@@ -285,16 +274,6 @@ class MainFragment: Fragment() {
 
         paths.clear()
         spentTimes.clear()
-
-        thread {
-            while (true) {
-                if (binding.animateView.width > 0) {
-                    onLayoutAnimateView()
-                    return@thread
-                }
-                Thread.sleep(10)
-            }
-        }
     }
 
     override fun onDestroy() {
@@ -402,7 +381,7 @@ class MainFragment: Fragment() {
                                     .toList()
                                     .map { it.parse() }
                                     .let {
-                                        listOf(it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
+                                        listOf(it[id?.toInt() ?: (Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
                                     }
                         }
                     }
@@ -414,7 +393,7 @@ class MainFragment: Fragment() {
                                 .toList()
                                 .map { it.message.toList().map { it.parse() } }
                                 .let {
-                                    it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
+                                    it[id?.toInt() ?: (Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
                                 }
                     }
 
@@ -425,9 +404,9 @@ class MainFragment: Fragment() {
             MainActivity.Mode.WEAKNESS -> {
                 when (difficulty) {
                     1 -> {
-                        realm.where(DBShaper::class.java)
-                                .greaterThan("examCount", 0)
-                                .let {
+                        realm.where(DBShaper::class.java).let {
+                            if (id == null) {
+                                it.greaterThan("examCount", 0).let {
                                     val size = it.count().toInt()
                                     if (size > 0) {
                                         it.findAll().toList()
@@ -437,26 +416,36 @@ class MainFragment: Fragment() {
                                                 .let {
                                                     listOf(it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
                                                 }
-                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                    } else getSequence(id = id, mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
                                 }
+                            } else {
+                                listOf(it.findAll().map { it.parse() }[id.toInt()])
+                            }
+                        }
                     }
 
                     in 2..5 -> {
                         realm.where(Sequence::class.java)
                                 .equalTo("size", difficulty)
-                                .greaterThan("examCount", 0)
-                                .let { sequences ->
-                                    val size = sequences.count().toInt()
-                                    if (size > 0) {
-                                        sequences.findAll().toList()
-                                                .sortedBy { it.correctCount.toDouble() / it.examCount }
-                                                .dropLast(size / 4)
-                                                .map { it.message.toList().map { it.parse() } }
-                                                .let {
-                                                    it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
-                                                }
-                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                .let {
+                                    if (id == null) {
+                                        it.greaterThan("examCount", 0).let { sequences ->
+                                            val size = sequences.count().toInt()
+                                            if (size > 0) {
+                                                sequences.findAll().toList()
+                                                        .sortedBy { it.correctCount.toDouble() / it.examCount }
+                                                        .dropLast(size / 4)
+                                                        .map { it.message.toList().map { it.parse() } }
+                                                        .let {
+                                                            it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
+                                                        }
+                                            } else getSequence(id = id, mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                        }
+                                    } else {
+                                        it.findAll().map { it.message.toList().map { it.parse() } }[id.toInt()]
+                                    }
                                 }
+
                     }
 
                     else -> listOf()

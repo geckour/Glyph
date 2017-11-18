@@ -5,6 +5,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import jp.org.example.geckour.glyph.App.Companion.coda
+import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.db.DBInitialData
@@ -52,7 +53,7 @@ class AnimateView: View {
     private var showName = true
     private val shaperName: ArrayList<String> = ArrayList()
     private val locus: ArrayList<Particle> = ArrayList()
-    private var onTimeUpForCommand: () -> Unit = { false }
+    private var onTimeUpForCommand: () -> Unit = {}
     private var _onFadeStart: () -> Unit = {}
     private var onFadeStart: () -> Unit = {}
     private var _onStartNextQ: () -> Unit = {}
@@ -62,7 +63,6 @@ class AnimateView: View {
     private var onTransitionToCheckAnswer: () -> Unit = {}
     private var grainAlpha = 0
 
-    private val scale: Float by lazy { height.toFloat() / 1280 }
     private val commandWaitTime: Long = 2000L
     private val marginTime: Long = 900L
     private var initTime = System.currentTimeMillis()
@@ -79,6 +79,21 @@ class AnimateView: View {
     private val hexMargin: Float by lazy { width * 0.02f }
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
+    private val grainImg: Bitmap by lazy {
+        val grainDiam = (26.0 * scale).toInt()
+        BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
+            Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
+        }
+    }
+    private val grainPixelsMaster: List<Int> by lazy {
+        grainImg.let {
+            val w = grainImg.width
+            val h = grainImg.height
+            IntArray(w * h)
+                    .apply { it.getPixels(this, 0, w, 0, 0, w, h) }
+                    .toList()
+        }
+    }
     private val strongHexImg: Bitmap by lazy {
         val hexWidth = (width * 0.1f).toInt()
         BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
@@ -101,18 +116,13 @@ class AnimateView: View {
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        if (height > 0) {
-            val grainDiam = (26.0 * scale).toInt()
-            Particle.init(BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
-                Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
-            })
-
-            thread {
-                while (true) {
-                    postInvalidate()
-                    try {
-                        Thread.sleep(10)
-                    } catch (e: Exception) { Timber.e(e) }
+        thread {
+            while (true) {
+                if (height > 0) postInvalidate()
+                try {
+                    Thread.sleep(10)
+                } catch (e: Exception) {
+                    Timber.e(e)
                 }
             }
         }
@@ -225,6 +235,25 @@ class AnimateView: View {
         }
     }
 
+    private fun setGrainAlpha(alpha: Int) {
+        if (alpha !in 0..255) return
+
+        val w = grainImg.width
+        val h = grainImg.height
+        val subAlpha = 255 - alpha
+
+        grainImg.setPixels(
+                grainPixelsMaster.map {
+                    val oldAlpha = Color.alpha(it)
+                    val newAlpha = oldAlpha - subAlpha
+                    (when {
+                        newAlpha < 0 -> 0
+                        newAlpha > 255 -> 255
+                        else -> newAlpha
+                    } shl 24) + (it and 0x00ffffff)
+                }.toIntArray(), 0, w, 0, 0, w, h)
+    }
+
     fun resetInitTime(initTime: Long? = null): Long {
         this.initTime = initTime ?: now
         return this.initTime
@@ -291,7 +320,7 @@ class AnimateView: View {
 
     private fun drawParticle(canvas: Canvas) {
         grainAlpha = calcGrainAlpha()
-        Particle.setGrainAlpha(grainAlpha)
+        setGrainAlpha(grainAlpha)
 
         synchronized(locus) {
             for (particle in locus) {
@@ -436,11 +465,11 @@ class AnimateView: View {
         if (referenceTime > -1L) {
             val pre = 10L
             val main = 670L
-            val final = 400L
             val whole = pre + main
+            val final = 250L // Must be less than whole
 
             if (elapsedTime > -1L) {
-                val seq: Long = elapsedTime / main + if(command == DBInitialData.Shaper.COMPLEX) 1 else 0
+                val seq: Long = elapsedTime / whole + if(command == DBInitialData.Shaper.COMPLEX) 1 else 0
                 val timeInSeq: Long = elapsedTime % whole
                 return when (seq) {
                     0L -> {
@@ -461,7 +490,7 @@ class AnimateView: View {
                                 }
                         Color.argb(alpha.toInt(), 220, 175, 50)
                     }
-                    else -> {
+                    2L -> {
                         val alpha =
                                 if (timeInSeq < pre) {
                                     255.0 * timeInSeq / pre
@@ -474,6 +503,7 @@ class AnimateView: View {
                             Color.TRANSPARENT
                         }
                     }
+                    else -> { Color.TRANSPARENT }
                 }
             }
         }
@@ -566,12 +596,22 @@ class AnimateView: View {
         onFadeStart = {}
     }
 
-    fun addParticle(x: Float, y: Float, phase: Particle.Phase? = null) =
-            if (width > 0)
-                synchronized(locus) {locus.add(Particle(x, y, width, phase)) }
-            else false
+    private fun satisfyToAddParticle(x: Float, y: Float): Boolean =
+        Particle.last.let { (time, point) ->
+            width > 0 && (time < 0L || Math.abs(PointF.length(x - point.x, y - point.y) / (now - time)) > 0.5)
+        }
 
-    fun clearParticle() = synchronized(locus) { locus.clear() }
+    fun addParticle(x: Float, y: Float, phase: Particle.Phase? = null) {
+        if (satisfyToAddParticle(x, y)) {
+            synchronized(locus) { locus.add(Particle(x, y, grainImg, width, phase)) }
+            Particle.last = Pair(now, PointF(x, y))
+        } else Particle.last = Particle.last.copy(first = now)
+    }
+
+    fun clearParticle() = synchronized(locus) {
+        locus.clear()
+        Particle.last = Pair(-1L, PointF())
+    }
 
     private fun getDebugMessage() = "$elapsedTime, $state, alpha:$grainAlpha"
 

@@ -25,6 +25,7 @@ class App: Application() {
     companion object {
         val version = Build.VERSION.SDK_INT
         lateinit var sp: SharedPreferences
+        var scale: Float = -1f
         var coda: Typeface? = null
     }
 

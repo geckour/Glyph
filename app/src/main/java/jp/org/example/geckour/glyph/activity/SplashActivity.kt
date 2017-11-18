@@ -9,6 +9,7 @@ import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.coda
+import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.App.Companion.sp
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity.Companion.hacks
@@ -26,6 +27,8 @@ class SplashActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_splash)
+
+        if (binding.root.height > 0) scale = binding.root.height.toFloat() / 1280
 
         if (sp.getString("min_level", null) == null) {
             sp.edit()?.putString("min_level", "0")?.apply()

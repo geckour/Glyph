@@ -2,7 +2,7 @@ package jp.org.example.geckour.glyph.view.model
 
 import android.graphics.*
 
-class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Phase?) {
+class Particle(x: Float, y: Float, private val grainImg: Bitmap, val canvasWidth: Int, private val phase: Phase?) {
 
     enum class Phase {
         NOT_CONVERGING,
@@ -12,38 +12,7 @@ class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Phas
     companion object {
         private val PI2 = Math.PI * 2
 
-        private lateinit var grainPixelsMaster: List<Int>
-        private lateinit var grainImg: Bitmap
-
-        fun init(grainImg: Bitmap) {
-            this.grainImg = grainImg
-            grainPixelsMaster = grainImg.let {
-                val w = grainImg.width
-                val h = grainImg.height
-                IntArray(w * h)
-                        .apply { it.getPixels(this, 0, w, 0, 0, w, h) }
-                        .toList()
-            }
-        }
-
-        fun setGrainAlpha(alpha: Int) {
-            if (alpha !in 0..255) return
-
-            val w = grainImg.width
-            val h = grainImg.height
-            val subAlpha = 255 - alpha
-
-            grainImg.setPixels(
-                    grainPixelsMaster.map {
-                        val oldAlpha = Color.alpha(it)
-                        val newAlpha = oldAlpha - subAlpha
-                        (when {
-                            newAlpha < 0 -> 0
-                            newAlpha > 255 -> 255
-                            else -> newAlpha
-                        } shl 24) + (it and 0x00ffffff)
-                    }.toIntArray(), 0, w, 0, 0, w, h)
-        }
+        var last: Pair<Long, PointF> = Pair(-1L, PointF())
     }
 
     private val grains: ArrayList<Grain> =
@@ -55,9 +24,9 @@ class Particle(x: Float, y: Float, val canvasWidth: Int, private val phase: Phas
                 }
             }
     private val moveUntil: Long = 320
-    private var initTime: Long = System.currentTimeMillis()
+    private val initTime: Long = System.currentTimeMillis()
     private var elapsedTime: Long = 0
-    private var o = 0.15
+    private val o = 0.15
     private val grainR = grainImg.width ushr 1
 
     private fun phase(): Phase = if (elapsedTime > moveUntil) Phase.CONVERGING else Phase.NOT_CONVERGING

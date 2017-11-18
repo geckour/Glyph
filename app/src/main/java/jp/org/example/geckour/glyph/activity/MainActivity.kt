@@ -41,8 +41,6 @@ class MainActivity : AppCompatActivity() {
     internal var level: Int? = null
     internal var sequenceId: Long? = null
 
-    internal val scale: Float by lazy { binding.container.height.toFloat() / 1280 }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

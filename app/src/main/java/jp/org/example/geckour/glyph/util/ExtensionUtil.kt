@@ -1,11 +1,12 @@
 package jp.org.example.geckour.glyph.util
 
 import android.content.Context
-import android.graphics.PointF
+import android.graphics.*
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
+import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.view.model.Shaper
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
@@ -115,6 +116,54 @@ fun Fragment.vibrate() {
         in 23..25 -> activity.getSystemService(Vibrator::class.java).vibrate(30)
         else -> activity.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(30L, 255))
     }
+}
+
+fun Bitmap.getMutableImageWithShaper(shaper: Shaper): Bitmap {
+    val copy = this.copy(this.config, true)
+
+    val paint = Paint().apply {
+        color = Color.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = 30f * App.scale
+        strokeJoin = Paint.Join.BEVEL
+    }
+
+    val dotsPoint: Array<PointF> = Array(11) {
+        val c = when (it) {
+            1 -> 1
+            2 -> 3
+            3 -> 4
+            4 -> 6
+            in 5..10 -> it
+            else -> 0
+        }
+
+        val uAngle = Math.PI / 3.0
+
+        if (it == 0) PointF(0f, 0f)
+        else {
+            PointF(
+                    (Math.cos(uAngle * (c - 0.5)) * (if (it < 5) 0.5 else 1.0)).toFloat(),
+                    (Math.sin(uAngle * (c - 0.5)) * (if (it < 5) 0.5 else 1.0)).toFloat()
+            )
+        }
+    }
+
+    Canvas(copy).drawPath(
+            shaper.dots
+                    .map { dotsPoint[it] }
+                    .let {
+                        Path().apply {
+                            it.forEachIndexed { i, pointF ->
+                                if (i < 1) moveTo((pointF.x * 0.4f + 0.5f) * copy.width, (pointF.y * 0.4f + 0.5f) * copy.height)
+                                else lineTo((pointF.x * 0.4f + 0.5f) * copy.width, (pointF.y * 0.4f + 0.5f) * copy.height)
+                            }
+                            if (shaper.dots.first() == shaper.dots.last()) close()
+                        }
+                    }, paint
+    )
+
+    return copy
 }
 
 fun Long.toTimeStringPair(): Pair<String, String> = Pair((this / 1000).toString(), (this % 1000).format(2).take(2))
