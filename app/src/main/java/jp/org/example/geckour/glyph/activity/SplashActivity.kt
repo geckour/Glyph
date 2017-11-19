@@ -1,20 +1,19 @@
 package jp.org.example.geckour.glyph.activity
 
 import android.app.Activity
-import android.content.Intent
+import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
 import android.os.Bundle
+import android.preference.PreferenceManager
 
 import com.google.android.gms.analytics.HitBuilders
 import com.google.android.gms.analytics.Tracker
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.App.Companion.scale
-import jp.org.example.geckour.glyph.App.Companion.sp
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.databinding.ActivitySplashBinding
-import timber.log.Timber
 
 class SplashActivity : Activity() {
 
@@ -23,6 +22,7 @@ class SplashActivity : Activity() {
     }
 
     private lateinit var binding: ActivitySplashBinding
+    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,13 +30,7 @@ class SplashActivity : Activity() {
 
         if (binding.root.height > 0) scale = binding.root.height.toFloat() / 1280
 
-        if (sp.getString("min_level", null) == null) {
-            sp.edit()?.putString("min_level", "0")?.apply()
-        }
-        if (sp.getString("max_level", null) == null) {
-            sp.edit()?.putString("max_level", "8")?.apply()
-        }
-        if (sp.getInt("countView", -1) != -1) {
+        if (sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)) {
             sp.edit()?.putInt("viewCount", 1)?.apply()
         }
 
@@ -64,26 +58,15 @@ class SplashActivity : Activity() {
         hacks = 0
     }
 
-
-
     private fun onClickHack() =
         startActivity(MainActivity.createIntent(this, MainActivity.Mode.NORMAL))
 
     private fun onClickSetting() =
-        startActivityForResult(Pref.createIntent(this), 0)
+        startActivity(PrefActivity.createIntent(this))
 
     private fun onClickDictionary() =
         startActivity(DictActivity.createIntent(this))
 
     private fun onClickWeakness() =
         startActivity(MainActivity.createIntent(this, MainActivity.Mode.WEAKNESS))
-
-    public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        //Pref.javaからの戻り値の場合
-        if (requestCode == 0) {
-            if (resultCode == Activity.RESULT_OK) {
-                Timber.d("Setting is changed.")
-            }
-        }
-    }
 }

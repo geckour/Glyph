@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="title"
+            type="String" />
+
+        <variable
+            name="message"
+            type="String" />
+    </data>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:paddingEnd="20dp"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp">
+
+        <TextView
+            android:id="@+id/dialog_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:paddingBottom="12dp"
+            android:paddingTop="12dp"
+            android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
+            android:textColor="@color/colorAccent"
+            app:layout_constraintEnd_toStartOf="@+id/spinner"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:text="@{title}"
+            tools:text="Title"/>
+
+        <TextView
+            android:id="@+id/dialog_message"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:maxLines="5"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="@color/preferenceTextSecondary"
+            app:layout_constraintEnd_toEndOf="@+id/dialog_title"
+            app:layout_constraintStart_toStartOf="@+id/dialog_title"
+            app:layout_constraintTop_toBottomOf="@+id/dialog_title"
+            app:text="@{message}"
+            tools:text="Message Message Message Message Message Message Message"/>
+
+        <android.support.v7.widget.AppCompatSpinner
+            android:id="@+id/spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@+id/dialog_message"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/dialog_message"/>
+
+    </android.support.constraint.ConstraintLayout>
+</layout>

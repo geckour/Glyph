@@ -1,7 +1,9 @@
 package jp.org.example.geckour.glyph.fragment
 
+import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -12,6 +14,7 @@ import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.R
+import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.util.*
@@ -28,6 +31,7 @@ class DictFragment: Fragment() {
 
     private lateinit var binding: FragmentMainBinding
     private lateinit var realm: Realm
+    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
 
     private val throughDots: ArrayList<Int> = ArrayList()
 
@@ -49,7 +53,7 @@ class DictFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
 
-        doVibrate = App.sp.getBoolean("doVibrate", false)
+        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
         Timber.d("doVibrate: $doVibrate")
 
         return binding.root

@@ -24,7 +24,6 @@ class App: Application() {
 
     companion object {
         val version = Build.VERSION.SDK_INT
-        lateinit var sp: SharedPreferences
         var scale: Float = -1f
         var coda: Typeface? = null
     }
@@ -42,7 +41,6 @@ class App: Application() {
         Realm.init(this)
         Realm.setDefaultConfiguration(RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().build())
 
-        sp = PreferenceManager.getDefaultSharedPreferences(this)
         coda = ResourcesCompat.getFont(this, R.font.coda_regular)
 
         injectInitialData()

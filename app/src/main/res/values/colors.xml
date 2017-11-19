@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background">#000000</color>
-    <color name="dots">#ffffff</color>
-    <color name="button">#5002ffc5</color>
-    <color name="button_pressed">#b002ffc5</color>
+    <color name="colorPrimary">#181818</color>
+    <color name="colorPrimaryDark">#101010</color>
+    <color name="colorAccent">#9cf6f6</color>
+
+    <color name="preferenceTextPrimary">#9cf6f6</color>
+    <color name="preferenceTextSecondary">#e0ffffff</color>
+    <color name="dialogBackground">#202020</color>
+    <color name="background">@android:color/black</color>
     <color name="button_text">#9cf6f6</color>
     <color name="dialog_text">#f0a328</color>
 </resources>

@@ -1,44 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <ListPreference
-        android:key="gamemode"
-        android:title="Game mode"
-        android:entries="@array/gamemode_entries"
-        android:entryValues="@array/gamemode_values"
-        android:defaultValue="0"
-        android:order="0" />
-    <SwitchPreference
-        android:key="doVibrate"
-        android:title="Vibration"
-        android:switchTextOn="ON"
-        android:switchTextOff="OFF"
-        android:order="1" />
-    <SwitchPreference
-        android:key="showCountView"
-        android:title="Count Hacks"
-        android:switchTextOn="ON"
-        android:switchTextOff="OFF"
-        android:order="2" />
-    <EditTextPreference
-        android:key="min_level"
-        android:title="Minimum Portal level"
-        android:summary="@string/min_level"
-        android:dialogTitle="Minimum value:0"
-        android:inputType="number"
-        android:digits="012345678"
-        android:order="3" />
-    <EditTextPreference
-        android:key="max_level"
-        android:title="Maximum Portal level"
-        android:summary="@string/max_level"
-        android:dialogTitle="Maximum value:8"
-        android:inputType="number"
-        android:digits="012345678"
-        android:order="4" />
-    <PreferenceScreen
-        android:key="donate"
-        android:title="Donate"
-        android:summary="Donate to author for his better Ingress life"
-        android:order="5" />
-</PreferenceScreen>
+<android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:tools="http://schemas.android.com/tools">
+
+    <PreferenceCategory android:title="GENERAL">
+
+        <ListPreference
+            android:key="gamemode"
+            android:title="GAME MODE"
+            android:entries="@array/gamemode_entries"
+            android:entryValues="@array/gamemode_values"
+            android:summary="Set mode how to show sequence"
+            android:defaultValue="0" />
+
+        <SwitchPreferenceCompat
+            android:key="doVibrate"
+            android:title="VIBRATION"
+            android:switchTextOn="ON"
+            android:switchTextOff="OFF"
+            android:summary="Vibrate when your locus pass through the point" />
+
+        <SwitchPreferenceCompat
+            android:key="showCountView"
+            android:title="COUNT HACKS"
+            android:switchTextOn="ENABLED"
+            android:switchTextOff="DISABLED"
+            android:summary="Count the number of hack and show it with result" />
+
+        <EditTextPreference
+            android:key="min_level"
+            android:title="MINIMUM PORTAL LEVEL"
+            android:dialogTitle="value range: 0 to 8"
+            android:dialogMessage="Set minimum portal level to choose sequence"
+            android:inputType="number"
+            android:digits="012345678"
+            tools:summary="Minimum portal level to choose sequence: 0" />
+
+        <EditTextPreference
+            android:key="max_level"
+            android:title="MAXIMUM PORTAL LEVEL"
+            android:dialogTitle="value range: 0 to 8"
+            android:dialogMessage="Set maximum portal level to choose sequence"
+            android:inputType="number"
+            android:digits="012345678"
+            tools:summary="Maximum portal level to choose sequence: 8" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="OTHERS">
+
+        <PreferenceScreen
+            android:key="donate"
+            android:title="DONATE"
+            android:summary="Donate to author for his better Ingress life" />
+    </PreferenceCategory>
+</android.support.v7.preference.PreferenceScreen>

@@ -5,4 +5,17 @@
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar" />
 
+    <style name="AppThemeDark" parent="Theme.AppCompat">
+        <item name="android:windowBackground">@color/colorPrimary</item>
+
+        <!-- AppBar background color -->
+        <item name="colorPrimary">@android:color/black</item>
+    </style>
+
+    <style name="AppThemeDark.Dialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:background">@color/dialogBackground</item>
+    </style>
+
+    <style name="AppThemeDark.NoActionBar" parent="Theme.AppCompat.NoActionBar" />
+
 </resources>

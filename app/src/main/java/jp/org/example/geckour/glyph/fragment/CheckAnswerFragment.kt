@@ -1,9 +1,11 @@
 package jp.org.example.geckour.glyph.fragment
 
+import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.databinding.DataBindingUtil
 import android.graphics.*
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +19,7 @@ import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity
 import jp.org.example.geckour.glyph.activity.MainActivity.Companion.hacks
+import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.FragmentCheckAnswerBinding
 import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
@@ -45,6 +48,7 @@ class CheckAnswerFragment: Fragment() {
 
     private lateinit var binding: FragmentCheckAnswerBinding
     private lateinit var realm: Realm
+    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
 
     private val mainActivity: MainActivity by lazy { activity as MainActivity }
 
@@ -76,7 +80,7 @@ class CheckAnswerFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_check_answer, container, false)
 
-        showCount = App.sp.getBoolean("showCountView", false)
+        showCount = sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)
 
         return binding.root
     }

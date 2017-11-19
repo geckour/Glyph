@@ -1,7 +1,9 @@
 package jp.org.example.geckour.glyph.fragment
 
+import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -14,6 +16,7 @@ import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.MainActivity
+import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
 import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.db.model.Sequence
@@ -41,6 +44,7 @@ class MainFragment: Fragment() {
 
     private lateinit var binding: FragmentMainBinding
     private lateinit var realm: Realm
+    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
 
     private var min = 0
     private var max = 8
@@ -97,27 +101,27 @@ class MainFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         if (savedInstanceState == null) {
             try {
-                min = Integer.parseInt(App.sp.getString("min_level", "0"))
+                min = if (sp.contains(PrefActivity.Key.LEVEL_MIN.name)) sp.getInt(PrefActivity.Key.LEVEL_MIN.name, 0) else 0
                 Timber.d("min: $min")
             } catch (e: Exception) {
                 Timber.e("Can't translate minimum-level to Int.")
             }
 
             try {
-                max = Integer.parseInt(App.sp.getString("max_level", "8"))
+                max = if (sp.contains(PrefActivity.Key.LEVEL_MAX.name)) sp.getInt(PrefActivity.Key.LEVEL_MAX.name, 8) else 8
                 Timber.d("max: $max")
             } catch (e: Exception) {
                 Timber.e("Can't translate maximum-level to Int.")
             }
 
             try {
-                gameMode = App.sp.getString("gamemode", "0").toInt()
-                Timber.d("gamemode: $gameMode")
+                gameMode = if (sp.contains(PrefActivity.Key.GAME_MODE.name)) sp.getInt(PrefActivity.Key.GAME_MODE.name, 0) else 0
+                Timber.d("gameMode: $gameMode")
             } catch (e: Exception) {
                 Timber.e("Can't translate game mode to Int.")
             }
 
-            doVibrate = App.sp.getBoolean("doVibrate", false)
+            doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
             Timber.d("doVibrate: $doVibrate")
 
             questions.apply {
