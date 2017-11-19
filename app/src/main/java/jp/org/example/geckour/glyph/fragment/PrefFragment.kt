@@ -76,7 +76,12 @@ class PrefFragment : Fragment() {
 
         binding.elementVibration?.apply {
             elementWidget?.widgetSwitch?.apply {
+                val default = false
                 visibility = View.VISIBLE
+                isChecked =
+                        sp.contains(PrefActivity.Key.VIBRATE.name).apply {
+                            if (!this) sp.edit().putBoolean(PrefActivity.Key.VIBRATE.name, default).apply()
+                        } && sp.getBoolean(PrefActivity.Key.VIBRATE.name, default)
                 setOnCheckedChangeListener { _, bool ->
                     sp.edit().putBoolean(PrefActivity.Key.VIBRATE.name, bool).apply()
                 }
@@ -85,7 +90,12 @@ class PrefFragment : Fragment() {
 
         binding.elementCountHack?.apply {
             elementWidget?.widgetSwitch?.apply {
+                val default = false
                 visibility = View.VISIBLE
+                isChecked =
+                        sp.contains(PrefActivity.Key.SHOW_COUNT.name).apply {
+                            if (!this) sp.edit().putBoolean(PrefActivity.Key.SHOW_COUNT.name, default).apply()
+                        } && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, default)
                 setOnCheckedChangeListener { _, bool ->
                     sp.edit().putBoolean(PrefActivity.Key.SHOW_COUNT.name, bool).apply()
                 }
