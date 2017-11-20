@@ -2,7 +2,7 @@ package jp.org.example.geckour.glyph.view.model
 
 import android.graphics.*
 
-class Particle(x: Float, y: Float, private val grainImg: Bitmap, val canvasWidth: Int, private val phase: Phase?) {
+class Particle(val x: Float, val y: Float, private val grainImg: Bitmap, val canvasWidth: Int, private val phase: Phase?) {
 
     enum class Phase {
         NOT_CONVERGING,
@@ -11,9 +11,9 @@ class Particle(x: Float, y: Float, private val grainImg: Bitmap, val canvasWidth
 
     companion object {
         private val PI2 = Math.PI * 2
-
-        var last: Pair<Long, PointF> = Pair(-1L, PointF())
     }
+
+    var drawn: Boolean = false
 
     private val grains: ArrayList<Grain> =
             ArrayList<Grain>().apply {

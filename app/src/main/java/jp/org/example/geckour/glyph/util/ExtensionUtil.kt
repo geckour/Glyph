@@ -7,6 +7,7 @@ import android.os.Vibrator
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import jp.org.example.geckour.glyph.App
+import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.view.model.Shaper
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
@@ -52,13 +53,11 @@ inline fun <T> Iterable<T>.takeWhileIndexed(predicate: (Int, T) -> Boolean): Lis
 fun <T, R> Pair<T, R>.inverse(): Pair<R, T> = Pair(this.second, this.first)
 
 fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(dots: Array<PointF>): List<Pair<PointF, PointF>> =
-        dots.let {
-            map { path ->
-                if (path.first in 0..it.size)
-                    Pair(PointF(it[path.first].x, it[path.first].y), PointF(it[path.second].x, it[path.second].y))
-                else null
-            }
-        }.filterNotNull()
+        this.mapNotNull { dotPath ->
+            if (dotPath.first in 0..dots.lastIndex && dotPath.second in 0..dots.lastIndex)
+                Pair(PointF(dots[dotPath.first].x, dots[dotPath.first].y), PointF(dots[dotPath.second].x, dots[dotPath.second].y))
+            else null
+        }
 
 fun List<Int>.convertDotsListToPaths(): List<Pair<Int, Int>> =
         when {
@@ -75,30 +74,29 @@ fun List<Int>.convertDotsListToPaths(): List<Pair<Int, Int>> =
             }
         }
 
-fun List<Pair<Int, Int>>.getNormalizedPaths(initialIndex: Int = 0): List<Pair<Int, Int>> {
-    return if (this.size > 1 && initialIndex < this.lastIndex) {
-        ArrayList(this.subList(0, initialIndex + 1)).apply {
-            addAll(
-                    this@getNormalizedPaths.subList(initialIndex + 1, this@getNormalizedPaths.size)
-                            .filter { it != this@getNormalizedPaths[initialIndex] && it != this@getNormalizedPaths[initialIndex].inverse() }
-            )
-        }.getNormalizedPaths(initialIndex + 1)
-    } else this
-}
+fun List<Pair<Int, Int>>.getNormalizedPaths(initialIndex: Int = 0): List<Pair<Int, Int>> =
+        if (this.size > 1 && initialIndex < this.lastIndex) {
+            ArrayList(this.subList(0, initialIndex + 1)).apply {
+                addAll(
+                        this@getNormalizedPaths.subList(initialIndex + 1, this@getNormalizedPaths.size)
+                                .filter { it != this@getNormalizedPaths[initialIndex] && it != this@getNormalizedPaths[initialIndex].inverse() }
+                )
+            }.getNormalizedPaths(initialIndex + 1)
+        } else this
 
 fun DBShaper.match(path: List<Pair<Int, Int>>): Boolean {
-    val shaperPath = this.dots.convertDotsListToPaths()
-    return if (path.size == shaperPath.size) {
-        shaperPath.size == shaperPath.count { path.contains(it) || path.contains(it.inverse()) }
+    val glyphPath = this.dots.convertDotsListToPaths()
+    return if (path.size == glyphPath.size) {
+        glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
     } else false
 }
 
 fun DBShaper.parse(): Shaper = Shaper(this.id, this.name, this.dots.toList())
 
 fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
-    val shaperPath = this.dots.convertDotsListToPaths()
-    return if (path.size == shaperPath.size) {
-        shaperPath.size == shaperPath.count { path.contains(it) || path.contains(it.inverse()) }
+    val glyphPath = this.dots.convertDotsListToPaths()
+    return if (path.size == glyphPath.size) {
+        glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
     } else false
 }
 
@@ -124,7 +122,7 @@ fun Bitmap.getMutableImageWithShaper(shaper: Shaper): Bitmap {
     val paint = Paint().apply {
         color = Color.BLACK
         style = Paint.Style.STROKE
-        strokeWidth = 30f * App.scale
+        strokeWidth = 34f * scale
         strokeJoin = Paint.Join.BEVEL
     }
 

@@ -284,6 +284,7 @@ class MainFragment: Fragment() {
         super.onDestroy()
 
         realm.close()
+        clearJobs(jobs)
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {

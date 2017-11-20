@@ -28,7 +28,9 @@ class SplashActivity : Activity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_splash)
 
-        if (binding.root.height > 0) scale = binding.root.height.toFloat() / 1280
+        binding.root.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+            if (view.width > 0) scale = view.width.toFloat() / 1000
+        }
 
         if (sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)) {
             sp.edit()?.putInt("viewCount", 1)?.apply()

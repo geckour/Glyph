@@ -62,6 +62,7 @@ class AnimateView: View {
     private var onPrepareAnswer: () -> Unit = {}
     private var onTransitionToCheckAnswer: () -> Unit = {}
     private var grainAlpha = 0
+    private val particleInterval = 22.0 * scale
 
     private val commandWaitTime: Long = 2000L
     private val marginTime: Long = 900L
@@ -80,7 +81,7 @@ class AnimateView: View {
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
     private val grainImg: Bitmap by lazy {
-        val grainDiam = (26.0 * scale).toInt()
+        val grainDiam = (30.0 * scale).toInt()
         BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
             Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
         }
@@ -390,27 +391,16 @@ class AnimateView: View {
     fun showPaths(paths: List<Pair<PointF, PointF>>) {
         clearParticle()
 
-        val interval = 20.0 * scale
-        paths.forEach {
-            val diffX = it.second.x - it.first.x
-            val diffY = it.second.y - it.first.y
-            val length = Math.sqrt((diffX * diffX + diffY * diffY).toDouble()).toFloat()
-            val uVx = diffX / length
-            val uVy = diffY / length
-
-            val p = PointF(it.first.x, it.first.y)
+        paths.forEach { path ->
+            val lenX = (path.second.x - path.first.x).toDouble()
+            val lenY = (path.second.y - path.first.y).toDouble()
+            val distance = Math.sqrt((Math.pow(lenX, 2.0) + Math.pow(lenY, 2.0))).toFloat()
+            val dX = particleInterval * lenX / distance
+            val dY = particleInterval * lenY / distance
 
             synchronized(locus) {
-                val dX = uVx * interval
-                val dY = uVy * interval
-                val dL = Math.sqrt(dX * dX + dY * dY).toFloat()
-
-                var totalLength = 0f
-                while (totalLength <= length) {
-                    addParticle(p.x, p.y, Particle.Phase.CONVERGING)
-                    p.set(p.x + dX.toFloat(), p.y + dY.toFloat())
-
-                    totalLength += dL
+                (0 until (distance / particleInterval).toInt()).forEach {
+                    addParticle((path.first.x + dX * it).toFloat(), (path.first.y + dY * it).toFloat(), Particle.Phase.CONVERGING)
                 }
             }
         }
@@ -596,22 +586,25 @@ class AnimateView: View {
         onFadeStart = {}
     }
 
-    private fun satisfyToAddParticle(x: Float, y: Float): Boolean =
-        Particle.last.let { (time, point) ->
-            width > 0 && (time < 0L || Math.abs(PointF.length(x - point.x, y - point.y) / (now - time)) > 0.5)
-        }
-
     fun addParticle(x: Float, y: Float, phase: Particle.Phase? = null) {
-        if (satisfyToAddParticle(x, y)) {
-            synchronized(locus) { locus.add(Particle(x, y, grainImg, width, phase)) }
-            Particle.last = Pair(now, PointF(x, y))
-        } else Particle.last = Particle.last.copy(first = now)
+        locus.lastOrNull { !it.drawn }?.let { last ->
+            val lenX = (x - last.x).toDouble()
+            val lenY = (y - last.y).toDouble()
+            val distance = Math.sqrt(Math.pow(lenX, 2.0) + Math.pow(lenY, 2.0))
+            val dX = particleInterval * lenX / distance
+            val dY = particleInterval * lenY / distance
+
+            synchronized(locus) {
+                (1..(distance / particleInterval).toInt()).forEach {
+                    locus.add(Particle((last.x + dX * it).toFloat(), (last.y + dY * it).toFloat(), grainImg, width, phase).apply { drawn = true })
+                    last.drawn = true
+                }
+                locus.last().drawn = false
+            }
+        } ?: synchronized(locus) { locus.add(Particle(x, y, grainImg, width, phase)) }
     }
 
-    fun clearParticle() = synchronized(locus) {
-        locus.clear()
-        Particle.last = Pair(-1L, PointF())
-    }
+    fun clearParticle() = synchronized(locus) { locus.clear() }
 
     private fun getDebugMessage() = "$elapsedTime, $state, alpha:$grainAlpha"
 

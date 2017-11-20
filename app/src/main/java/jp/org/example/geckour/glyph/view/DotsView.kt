@@ -41,12 +41,11 @@ class DotsView: View {
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        offsetWidth = (right - left) / 2f
-        offsetHeight = (bottom - top) / 2f
-        scale = offsetHeight * 2 / 1280
+        offsetWidth = (right - left) * 0.5f
+        offsetHeight = (bottom - top) * 0.5f
 
-        radius = offsetWidth * 0.4f
-        dotDiam = (radius / 3.0).toInt()
+        radius = offsetWidth * 0.45f
+        dotDiam = (offsetWidth * 0.15).toInt()
 
         val uAngle = Math.PI / 3.0
 
@@ -117,14 +116,14 @@ class DotsView: View {
 
     fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float, onCollision: (List<Int>) -> Unit = {}): List<Int> {
         val collisionDots: ArrayList<Int> = ArrayList()
-        val tol = 28 * scale
+        val tol = dotDiam
         for (i in 0..10) {
             if (fromX == toX && fromY == toY) {
                 //円の方程式にて当たり判定
                 val diffX = fromX - dots[i].x
                 val diffY = fromY - dots[i].y
-                val r = offsetWidth * 0.8 / 12 + tol
-                if (diffX * diffX + diffY * diffY < r * r) {
+
+                if (diffX * diffX + diffY * diffY < tol * tol) {
                     isThrough[i] = true
                     collisionDots.add(i)
                 }
@@ -134,8 +133,8 @@ class DotsView: View {
                 val b = toX - fromX
                 val c = fromX * toY - toX * fromY
                 val d = (a * dots[i].x + b * dots[i].y + c) / Math.sqrt((a * a + b * b).toDouble())
-                val lim = offsetWidth * 0.8 / 10 + tol
-                if (-lim <= d && d <= lim) {
+
+                if (-tol <= d && d <= tol) {
                     //線分への垂線と半径
                     val diffFromX = fromX - dots[i].x
                     val diffToX = toX - dots[i].x
@@ -151,7 +150,7 @@ class DotsView: View {
                         //内積
                         isThrough[i] = true
                         collisionDots.add(i)
-                    } else if (dA < lim || dB < lim) {
+                    } else if (dA < tol || dB < tol) {
                         isThrough[i] = true
                         collisionDots.add(i)
                     }
