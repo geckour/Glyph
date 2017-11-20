@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="data"
+            type="jp.org.example.geckour.glyph.fragment.model.Statistics.Data" />
+    </data>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/sequence_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="marquee"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
+            app:fontFamily="@font/coda_regular"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:text="@{data.name}"
+            tools:fontFamily="@font/coda_regular"
+            tools:text="SEQUENCE"/>
+
+        <ImageView
+            android:id="@+id/sequence_img_1"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/sequence_name"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            android:tint="@color/textSecondary"/>
+
+        <ImageView
+            android:id="@+id/sequence_img_2"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintBottom_toBottomOf="@id/sequence_img_1"
+            app:layout_constraintStart_toEndOf="@id/sequence_img_1"
+            app:layout_constraintTop_toTopOf="@id/sequence_img_1"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            android:tint="@color/textSecondary"/>
+
+        <ImageView
+            android:id="@+id/sequence_img_3"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/sequence_img_1"
+            app:layout_constraintStart_toEndOf="@id/sequence_img_2"
+            app:layout_constraintTop_toTopOf="@id/sequence_img_1"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            android:tint="@color/textSecondary"/>
+
+        <ImageView
+            android:id="@+id/sequence_img_4"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/sequence_img_1"
+            app:layout_constraintStart_toEndOf="@id/sequence_img_3"
+            app:layout_constraintTop_toTopOf="@id/sequence_img_1"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            android:tint="@color/textSecondary"/>
+
+        <ImageView
+            android:id="@+id/sequence_img_5"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/sequence_img_1"
+            app:layout_constraintStart_toEndOf="@id/sequence_img_4"
+            app:layout_constraintTop_toTopOf="@id/sequence_img_1"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            android:tint="@color/textSecondary"/>
+
+        <TextView
+            android:id="@+id/label_percentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/sequence_name"
+            app:layout_constraintTop_toBottomOf="@+id/sequence_img_1"
+            app:text="@{@string/label_stats_percentage}"
+            tools:text="Correctly answered rate:"/>
+
+        <TextView
+            android:id="@+id/value_percentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/label_percentage"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"
+            app:text='@{data.totalCount > 0 ? @string/value_stats_percentage((double)data.correctCount * 100.0 / data.totalCount) : "-"}'
+            tools:text="52.21%"/>
+
+        <TextView
+            android:id="@+id/value_correct"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/value_percentage"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"
+            app:text="@{String.valueOf(data.correctCount)}"
+            tools:text="13"/>
+
+        <TextView
+            android:id="@+id/value_separator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="/"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/value_correct"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"/>
+
+        <TextView
+            android:id="@+id/value_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/value_separator"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"
+            app:text="@{String.valueOf(data.totalCount)}"
+            tools:text="23"/>
+
+        <LinearLayout
+            android:id="@+id/root_individual"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/guideline"
+            app:layout_constraintTop_toBottomOf="@id/label_percentage"
+            android:visibility="gone">
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0.8dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/colorPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/root_individual"/>
+
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.075"/>
+    </android.support.constraint.ConstraintLayout>
+</layout>

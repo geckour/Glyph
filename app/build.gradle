@@ -52,6 +52,7 @@ dependencies {
     implementation "com.android.support:cardview-v7:$android_support_version"
     implementation "com.android.support:recyclerview-v7:$android_support_version"
     implementation "com.android.support:support-v4:$android_support_version"
+    implementation "com.android.support:design:$android_support_version"
     implementation 'com.google.android.gms:play-services-analytics:11.6.0'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"

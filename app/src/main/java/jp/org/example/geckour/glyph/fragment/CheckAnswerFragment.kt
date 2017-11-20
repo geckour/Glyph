@@ -102,6 +102,12 @@ class CheckAnswerFragment: Fragment() {
         injectResults()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        realm.close()
+    }
+
     private fun recordScore() {
         mainActivity.level?.getDifficulty()?.let { difficulty ->
             if (difficulty == 1) {
@@ -125,6 +131,18 @@ class CheckAnswerFragment: Fragment() {
                         seq.examCount++
                         if (results.count { it.correct } == results.size) seq.correctCount++
                     }
+                    results.forEach { result ->
+                        val shaper = realm.where(Shaper::class.java)
+                                .equalTo("id", result.id)
+                                .findFirst()
+
+                        shaper?.let { s ->
+                            realm.executeTransaction {
+                                s.examCount++
+                                if (result.correct) s.correctCount++
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -132,7 +150,7 @@ class CheckAnswerFragment: Fragment() {
 
     private fun injectResults() {
         results.forEachIndexed { i, result ->
-            val shaper = realm.where(Shaper::class.java).equalTo("id", result.shaperId).findFirst()?.parse()
+            val shaper = realm.where(Shaper::class.java).equalTo("id", result.id).findFirst()?.parse()
             val tintColor = if (result.correct) Color.rgb(2, 255, 197) else Color.RED
 
             shaper?.let {

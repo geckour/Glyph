@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="data"
+            type="jp.org.example.geckour.glyph.fragment.model.Statistics.Data" />
+    </data>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp">
+
+        <ImageView
+            android:id="@+id/shaper_img"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            android:tint="@color/textSecondary"/>
+
+        <TextView
+            android:id="@+id/shaper_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
+            app:fontFamily="@font/coda_regular"
+            app:layout_constraintStart_toEndOf="@+id/shaper_img"
+            app:layout_constraintTop_toTopOf="@+id/shaper_img"
+            app:text="@{data.name}"
+            tools:fontFamily="@font/coda_regular"
+            tools:text="SHAPER"/>
+
+        <TextView
+            android:id="@+id/label_percentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/shaper_name"
+            app:layout_constraintTop_toBottomOf="@+id/shaper_name"
+            app:text="@{@string/label_stats_percentage}"
+            tools:text="Correctly answered rate:"/>
+
+        <TextView
+            android:id="@+id/value_percentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/label_percentage"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"
+            app:text='@{data.totalCount > 0 ? @string/value_stats_percentage((double)data.correctCount * 100.0 / data.totalCount) : "-"}'
+            tools:text="52.21%"/>
+
+        <TextView
+            android:id="@+id/value_correct"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/value_percentage"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"
+            app:text="@{String.valueOf(data.correctCount)}"
+            tools:text="13"/>
+
+        <TextView
+            android:id="@+id/value_separator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="/"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/value_correct"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"/>
+
+        <TextView
+            android:id="@+id/value_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_percentage"
+            app:layout_constraintStart_toEndOf="@+id/value_separator"
+            app:layout_constraintTop_toTopOf="@+id/label_percentage"
+            app:text="@{String.valueOf(data.totalCount)}"
+            tools:text="23"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0.8dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/colorPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/label_percentage"/>
+    </android.support.constraint.ConstraintLayout>
+</layout>

@@ -10,5 +10,9 @@ data class Shaper(
 
         val name: String,
 
-        val dots: List<Int>
+        val dots: List<Int>,
+
+        val correctCount: Long,
+
+        val examCount: Long
 ): Parcelable

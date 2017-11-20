@@ -26,29 +26,33 @@ class SplashActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_splash)
 
-        binding.root.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-            if (view.width > 0) scale = view.width.toFloat() / 1000
+        if (savedInstanceState == null) {
+            binding = DataBindingUtil.setContentView(this, R.layout.activity_splash)
+
+            binding.root.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+                if (view.width > 0) scale = view.width.toFloat() / 1000
+            }
+
+            if (sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)) {
+                sp.edit()?.putInt("viewCount", 1)?.apply()
+            }
+
+            listOf(
+                    binding.buttonHack,
+                    binding.buttonOpt,
+                    binding.buttonDict,
+                    binding.buttonWeak
+            ).forEach {
+                it.typeface = coda
+            }
+
+            binding.buttonHack.setOnClickListener { onClickHack() }
+            binding.buttonWeak.setOnClickListener { onClickWeakness() }
+            binding.buttonStats.setOnClickListener { onClickStatistics() }
+            binding.buttonDict.setOnClickListener { onClickDictionary() }
+            binding.buttonOpt.setOnClickListener { onClickSetting() }
         }
-
-        if (sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)) {
-            sp.edit()?.putInt("viewCount", 1)?.apply()
-        }
-
-        listOf(
-                binding.buttonHack,
-                binding.buttonOpt,
-                binding.buttonDict,
-                binding.buttonWeak
-        ).forEach {
-            it.typeface = coda
-        }
-
-        binding.buttonHack.setOnClickListener { onClickHack() }
-        binding.buttonOpt.setOnClickListener { onClickSetting() }
-        binding.buttonDict.setOnClickListener { onClickDictionary() }
-        binding.buttonWeak.setOnClickListener { onClickWeakness() }
 
         val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)
@@ -63,12 +67,15 @@ class SplashActivity : Activity() {
     private fun onClickHack() =
         startActivity(MainActivity.createIntent(this, MainActivity.Mode.NORMAL))
 
-    private fun onClickSetting() =
-        startActivity(PrefActivity.createIntent(this))
+    private fun onClickWeakness() =
+            startActivity(MainActivity.createIntent(this, MainActivity.Mode.WEAKNESS))
+
+    private fun onClickStatistics() =
+            startActivity(StatsActivity.createIntent(this))
 
     private fun onClickDictionary() =
-        startActivity(DictActivity.createIntent(this))
+            startActivity(DictActivity.createIntent(this))
 
-    private fun onClickWeakness() =
-        startActivity(MainActivity.createIntent(this, MainActivity.Mode.WEAKNESS))
+    private fun onClickSetting() =
+        startActivity(PrefActivity.createIntent(this))
 }

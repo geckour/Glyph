@@ -5,6 +5,10 @@
     <string name="label_main">Hack</string>
     <string name="label_dict">Dictionary</string>
     <string name="label_opt">Options</string>
+    <string name="label_stats">Statistics</string>
+
+    <string name="label_stats_percentage">Correctly answered rate:</string>
+    <string name="value_stats_percentage">%1$.2f%%</string>
 
     <string name="bonus_hack">HACKING BONUS:</string>
     <string name="bonus_speed">SPEED BONUS:</string>

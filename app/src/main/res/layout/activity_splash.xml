@@ -30,6 +30,22 @@
             app:layout_constraintEnd_toEndOf="parent"/>
 
         <Button
+            android:id="@+id/button_stats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button"
+            android:paddingLeft="@dimen/button_padding"
+            android:paddingRight="@dimen/button_padding"
+            android:text="STATS"
+            android:textColor="@color/button_text"
+            android:textSize="20sp"
+            app:fontFamily="@font/coda_regular"
+            app:layout_constraintBottom_toTopOf="@+id/guideline_half_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/guideline_half_vertical"
+            tools:fontFamily="@font/coda_regular"/>
+
+        <Button
             android:id="@+id/button_weak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

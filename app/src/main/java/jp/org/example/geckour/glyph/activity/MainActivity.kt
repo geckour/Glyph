@@ -44,18 +44,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        actionBar?.hide()
+        if (savedInstanceState == null) {
+            binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+            hacks++
 
-        hacks++
+            val fragment = MainFragment.newInstance()
+            supportFragmentManager.beginTransaction()
+                    .replace(R.id.container, fragment, MainFragment.tag)
+                    .commit()
 
-        val fragment = MainFragment.newInstance()
-        supportFragmentManager.beginTransaction()
-                .replace(R.id.container, fragment, MainFragment.tag)
-                .commit()
-
-        if (intent.hasExtra(ARGS_MODE)) mode = intent.getSerializableExtra(ARGS_MODE) as Mode
+            if (intent.hasExtra(ARGS_MODE)) mode = intent.getSerializableExtra(ARGS_MODE) as Mode
+        }
 
         val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)

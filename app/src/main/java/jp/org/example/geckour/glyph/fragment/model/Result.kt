@@ -5,7 +5,7 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class Result(
-        val shaperId: Long,
+        val id: Long,
         val correct: Boolean,
         val spentTime: Long
 ): Parcelable

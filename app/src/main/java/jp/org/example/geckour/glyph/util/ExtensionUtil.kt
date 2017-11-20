@@ -7,7 +7,6 @@ import android.os.Vibrator
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import jp.org.example.geckour.glyph.App
-import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.view.model.Shaper
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
@@ -91,7 +90,7 @@ fun DBShaper.match(path: List<Pair<Int, Int>>): Boolean {
     } else false
 }
 
-fun DBShaper.parse(): Shaper = Shaper(this.id, this.name, this.dots.toList())
+fun DBShaper.parse(): Shaper = Shaper(this.id, this.name, this.dots.toList(), this.correctCount, this.examCount)
 
 fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
     val glyphPath = this.dots.convertDotsListToPaths()
@@ -116,7 +115,7 @@ fun Fragment.vibrate() {
     }
 }
 
-fun Bitmap.getMutableImageWithShaper(shaper: Shaper): Bitmap {
+fun Bitmap.getMutableImageWithShaper(shaper: Shaper, scale: Float = App.scale): Bitmap {
     val copy = this.copy(this.config, true)
 
     val paint = Paint().apply {

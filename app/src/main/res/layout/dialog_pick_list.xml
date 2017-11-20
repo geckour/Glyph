@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:maxLines="5"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="@color/preferenceTextSecondary"
+            android:textColor="@color/textSecondary"
             app:layout_constraintEnd_toEndOf="@+id/dialog_title"
             app:layout_constraintStart_toStartOf="@+id/dialog_title"
             app:layout_constraintTop_toBottomOf="@+id/dialog_title"

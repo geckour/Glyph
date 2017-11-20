@@ -25,12 +25,15 @@ class DictActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        val fragment = DictFragment.newInstance()
-        supportFragmentManager.beginTransaction()
-                .add(R.id.container, fragment, DictFragment.tag)
-                .commit()
+        if (savedInstanceState == null) {
+            binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
+            val fragment = DictFragment.newInstance()
+            supportFragmentManager.beginTransaction()
+                    .add(R.id.container, fragment, DictFragment.tag)
+                    .commit()
+        }
 
         val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)

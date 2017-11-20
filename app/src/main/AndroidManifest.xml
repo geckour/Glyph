@@ -40,6 +40,10 @@
             android:label="@string/label_dict"
             android:theme="@style/AppThemeDark.NoActionBar"
             android:noHistory="true" />
+
+        <activity
+            android:name=".activity.StatsActivity"
+            android:label="@string/label_stats" />
     </application>
 
 </manifest>
