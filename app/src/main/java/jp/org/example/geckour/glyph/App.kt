@@ -1,10 +1,8 @@
 package jp.org.example.geckour.glyph
 
 import android.app.Application
-import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Build
-import android.preference.PreferenceManager
 import android.support.v4.content.res.ResourcesCompat
 import com.facebook.stetho.Stetho
 import com.google.android.gms.analytics.GoogleAnalytics
@@ -43,14 +41,14 @@ class App: Application() {
 
         coda = ResourcesCompat.getFont(this, R.font.coda_regular)
 
-        injectInitialData()
+        injectInitialDBData()
     }
 
     @Synchronized
     internal fun getDefaultTracker(): Tracker? =
             tracker ?: GoogleAnalytics.getInstance(this).newTracker(R.xml.global_tracker)
 
-    private fun injectInitialData() {
+    private fun injectInitialDBData() {
         RealmConfiguration.Builder().initialData { realm ->
             shapers.forEachIndexed { i, shaper ->
                 realm.createObject(Shaper::class.java, i).apply {

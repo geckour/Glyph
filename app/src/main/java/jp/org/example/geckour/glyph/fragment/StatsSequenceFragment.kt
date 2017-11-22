@@ -1,8 +1,6 @@
 package jp.org.example.geckour.glyph.fragment
 
 import android.databinding.DataBindingUtil
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater

@@ -9,10 +9,14 @@ import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.db.DBInitialData
+import jp.org.example.geckour.glyph.util.async
+import jp.org.example.geckour.glyph.util.clearJobs
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 import jp.org.example.geckour.glyph.view.model.Particle
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
 import timber.log.Timber
-import kotlin.concurrent.thread
 
 class AnimateView: View {
 
@@ -80,53 +84,28 @@ class AnimateView: View {
     private val hexMargin: Float by lazy { width * 0.02f }
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
-    private val grainImg: Bitmap by lazy {
-        val grainDiam = (30.0 * scale).toInt()
-        BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
-            Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
-        }
-    }
-    private val grainPixelsMaster: List<Int> by lazy {
-        grainImg.let {
-            val w = grainImg.width
-            val h = grainImg.height
-            IntArray(w * h)
-                    .apply { it.getPixels(this, 0, w, 0, 0, w, h) }
-                    .toList()
-        }
-    }
-    private val strongHexImg: Bitmap by lazy {
-        val hexWidth = (width * 0.1f).toInt()
-        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
-            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
-        }
-    }
-    private val normalHexImg: Bitmap by lazy {
-        val hexWidth = (width * 0.1f).toInt()
-        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal).let {
-            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
-        }
-    }
-    private val weakHexImg: Bitmap by lazy {
-        val hexWidth = (width * 0.1f).toInt()
-        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_weak).let {
-            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
-        }
-    }
+    private lateinit var grainImg: Bitmap
+    private lateinit var strongHexImg: Bitmap
+    private lateinit var normalHexImg: Bitmap
+    private lateinit var weakHexImg: Bitmap
+
+    private val jobs: ArrayList<Job> = ArrayList()
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        thread {
+        jobs.add(launch {
+            async { initResources() }.await()
+
             while (true) {
-                if (height > 0) postInvalidate()
                 try {
-                    Thread.sleep(10)
+                    if (height > 0) postInvalidate()
+                    delay(10)
                 } catch (e: Exception) {
                     Timber.e(e)
                 }
             }
-        }
+        })
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -236,23 +215,40 @@ class AnimateView: View {
         }
     }
 
-    private fun setGrainAlpha(alpha: Int) {
-        if (alpha !in 0..255) return
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
 
-        val w = grainImg.width
-        val h = grainImg.height
-        val subAlpha = 255 - alpha
+        recycleResources()
+        clearJobs(jobs)
+    }
 
-        grainImg.setPixels(
-                grainPixelsMaster.map {
-                    val oldAlpha = Color.alpha(it)
-                    val newAlpha = oldAlpha - subAlpha
-                    (when {
-                        newAlpha < 0 -> 0
-                        newAlpha > 255 -> 255
-                        else -> newAlpha
-                    } shl 24) + (it and 0x00ffffff)
-                }.toIntArray(), 0, w, 0, 0, w, h)
+    private fun initResources() {
+        val grainDiam = (30.0 * scale).toInt()
+        grainImg =
+                BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
+                    Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
+                }
+
+        val hexWidth = (width * 0.1f).toInt()
+        strongHexImg =
+                BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
+                    Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+                }
+        normalHexImg =
+                BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal).let {
+                    Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+                }
+        weakHexImg =
+                BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_weak).let {
+                    Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+                }
+    }
+
+    private fun recycleResources() {
+        grainImg.recycle()
+        strongHexImg.recycle()
+        normalHexImg.recycle()
+        weakHexImg.recycle()
     }
 
     fun resetInitTime(initTime: Long? = null): Long {
@@ -320,14 +316,13 @@ class AnimateView: View {
     }
 
     private fun drawParticle(canvas: Canvas) {
-        grainAlpha = calcGrainAlpha()
-        setGrainAlpha(grainAlpha)
-
+        paint.alpha = calcGrainAlpha().apply { grainAlpha = this }
         synchronized(locus) {
             for (particle in locus) {
                 particle.move(canvas, paint)
             }
         }
+        paint.alpha = 255
     }
 
     private fun getHexagonPosition(index: Int): PointF {

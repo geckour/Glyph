@@ -5,7 +5,6 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import jp.org.example.geckour.glyph.*
-import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.util.*
 import kotlinx.coroutines.experimental.Job
