@@ -35,7 +35,7 @@ fun ui(managerList: ArrayList<Job>, onError: (Throwable) -> Unit = {}, block: su
 
 fun clearJobs(managerList: ArrayList<Job>) =
         managerList.apply {
-            forEach { it.cancel() }
+            forEach { if (!it.isCompleted) it.cancel() }
             clear()
         }
 
