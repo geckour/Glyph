@@ -44,22 +44,30 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (savedInstanceState == null) {
-            binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        if (savedInstanceState == null) {
             hacks++
+
+            if (intent.hasExtra(ARGS_MODE)) mode = intent.getSerializableExtra(ARGS_MODE) as Mode
 
             val fragment = MainFragment.newInstance()
             supportFragmentManager.beginTransaction()
                     .replace(R.id.container, fragment, MainFragment.tag)
                     .commit()
-
-            if (intent.hasExtra(ARGS_MODE)) mode = intent.getSerializableExtra(ARGS_MODE) as Mode
+        } else {
+            mode = savedInstanceState.getSerializable(ARGS_MODE) as Mode
         }
 
         val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(tag)
         t?.send(HitBuilders.ScreenViewBuilder().build())
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+
+        outState?.putSerializable(ARGS_MODE, mode)
     }
 
     override fun onBackPressed() {

@@ -69,24 +69,20 @@ class CheckAnswerFragment: Fragment() {
 
         results.addAll(arguments.getParcelableArrayList(ARGS_RESULTS))
         allowableTime = arguments.getLong(ARGS_ALLOWABLE_TIME)
-
-        recordScore()
-
-        val t: Tracker? = (activity.application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_check_answer, container, false)
 
-        showCount = sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)
-
         return binding.root
     }
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        showCount = sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)
+
+        recordScore()
 
         setLeftButton("RETRY") {
             mainActivity.onRetry()
@@ -94,10 +90,10 @@ class CheckAnswerFragment: Fragment() {
         setRightButton("NEXT") {
             mainActivity.onNext()
         }
-    }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
 
         injectResults()
     }

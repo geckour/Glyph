@@ -37,11 +37,9 @@ class App: Application() {
         Stetho.initializeWithDefaults(this)
 
         Realm.init(this)
-        Realm.setDefaultConfiguration(RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().build())
+        injectInitialDBData()
 
         coda = ResourcesCompat.getFont(this, R.font.coda_regular)
-
-        injectInitialDBData()
     }
 
     @Synchronized
@@ -49,22 +47,22 @@ class App: Application() {
             tracker ?: GoogleAnalytics.getInstance(this).newTracker(R.xml.global_tracker)
 
     private fun injectInitialDBData() {
-        RealmConfiguration.Builder().initialData { realm ->
-            shapers.forEachIndexed { i, shaper ->
-                realm.createObject(Shaper::class.java, i).apply {
-                    name = shaper.first.displayName
-                    dots = shaper.second
-                }
-            }
+        RealmConfiguration.Builder()
+                .deleteRealmIfMigrationNeeded()
+                .initialData { realm ->
+                    shapers.forEachIndexed { i, shaper ->
+                        realm.createObject(Shaper::class.java, i).apply {
+                            name = shaper.first.displayName
+                            dots = shaper.second
+                        }
+                    }
 
-            sequences.forEachIndexed { i, sequence ->
-                realm.createObject(Sequence::class.java, i).apply {
-                    size = sequence.size
-                    message = sequence.mapTo(RealmList()) { realm.where(Shaper::class.java).equalTo("name", it.displayName).findFirstAsync() }
-                }
-            }
-        }.build().apply {
-            Realm.setDefaultConfiguration(this)
-        }
+                    sequences.forEachIndexed { i, sequence ->
+                        realm.createObject(Sequence::class.java, i).apply {
+                            size = sequence.size
+                            message = sequence.mapTo(RealmList()) { realm.where(Shaper::class.java).equalTo("name", it.displayName).findFirstAsync() }
+                        }
+                    }
+                }.build().apply { Realm.setDefaultConfiguration(this) }
     }
 }

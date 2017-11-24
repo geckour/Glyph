@@ -9,10 +9,17 @@
         android:clickable="false"
         android:background="@color/background">
 
+        <View
+            android:id="@+id/flashView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+
         <jp.org.example.geckour.glyph.view.DotsView
             android:id="@+id/dotsView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            />
 
         <TextView
             android:id="@+id/dialog"
@@ -75,5 +82,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="LEFT"/>
         </android.support.constraint.ConstraintLayout>
+
     </RelativeLayout>
 </layout>

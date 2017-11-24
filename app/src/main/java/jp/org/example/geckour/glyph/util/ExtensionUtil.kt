@@ -9,35 +9,31 @@ import android.support.v7.app.AppCompatActivity
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.App.Companion.version
 import jp.org.example.geckour.glyph.view.model.Shaper
+import kotlinx.coroutines.experimental.*
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.android.UI
-import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.CoroutineContext
 
+
+private const val VIBRATE_LENGTH: Long = 1L
 
 fun <T> async(context: CoroutineContext = CommonPool, block: suspend CoroutineScope.() -> T) =
         kotlinx.coroutines.experimental.async(context, block = block)
 
-fun ui(managerList: ArrayList<Job>, onError: (Throwable) -> Unit = {}, block: suspend CoroutineScope.() -> Unit) =
-        launch(UI) {
-            try {
-                block()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                onError(e)
-            }
-        }.apply {
-            managerList.add(this)
-        }
+fun ArrayList<Job>.insertUILaunch(onError: Throwable.() -> Unit = { printStackTrace() }, block: suspend CoroutineScope.() -> Unit) =
+        uiLaunch(onError, block).apply { this@insertUILaunch.add(this@apply) }
 
-fun clearJobs(managerList: ArrayList<Job>) =
-        managerList.apply {
-            forEach { if (!it.isCompleted) it.cancel() }
-            clear()
-        }
+fun <T> uiLaunch(onError: Throwable.() -> Unit = { printStackTrace() }, block: suspend CoroutineScope.() -> T) =
+        launch(UI) { try { block() } catch (e: Exception) { onError(e) } }
+
+fun ArrayList<Job>.clearJobs() {
+    forEach { try { if (it.isActive) it.cancel() } catch (e: CancellationException) {} }
+    clear()
+}
+
+fun Job.clear() { try { if (isActive) cancel() } catch (e: CancellationException) {} }
+
+fun Job.kick() { if (!this.isActive) this.start() }
 
 inline fun <T> Iterable<T>.takeWhileIndexed(predicate: (Int, T) -> Boolean): List<T> {
     val list = ArrayList<T>()
@@ -101,17 +97,17 @@ fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
 
 fun AppCompatActivity.vibrate() {
     when (version) {
-        in 0..22 -> (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(30)
-        in 23..25 -> this.getSystemService(Vibrator::class.java).vibrate(30)
-        else -> this.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(30L, 255))
+        in 0..22 -> (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(VIBRATE_LENGTH)
+        in 23..25 -> this.getSystemService(Vibrator::class.java).vibrate(VIBRATE_LENGTH)
+        else -> this.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(VIBRATE_LENGTH, 255))
     }
 }
 
 fun Fragment.vibrate() {
     when (version) {
-        in 0..22 -> (activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(30)
-        in 23..25 -> activity.getSystemService(Vibrator::class.java).vibrate(30)
-        else -> activity.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(30L, 255))
+        in 0..22 -> (activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(VIBRATE_LENGTH)
+        in 23..25 -> activity.getSystemService(Vibrator::class.java).vibrate(VIBRATE_LENGTH)
+        else -> activity.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(VIBRATE_LENGTH, 255))
     }
 }
 

@@ -30,32 +30,28 @@ class StatsShaperFragment: Fragment() {
     private lateinit var adapter: StatsFragmentRecyclerAdapter
     private val realm: Realm = Realm.getDefaultInstance()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        adapter = StatsFragmentRecyclerAdapter((activity as StatsActivity).bitmap)
-
-        val t: Tracker? = (activity.application as App).getDefaultTracker()
-        t?.setScreenName(StatsShaperFragment.tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
-    }
-
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_statistics, container, false)
 
         return binding.root
     }
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
 
+        adapter = StatsFragmentRecyclerAdapter((activity as StatsActivity).bitmap)
         binding.recyclerView.adapter = adapter
+
         realm.where(Shaper::class.java).findAll().toList()
                 .map {
                     it.parse().let {
                         Statistics(Statistics.Data(it.id, it.name, it.correctCount, it.examCount), listOf())
                     }
                 }.let { adapter.addItems(it) }
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(StatsShaperFragment.tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onDestroy() {

@@ -75,12 +75,10 @@ class DotsView: View {
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        clearJobs(jobList)
+        jobList.clearJobs()
     }
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawColor(if (version >= 23) resources.getColor(R.color.background, null) else resources.getColor(R.color.background))
-
         isThrough.forEachIndexed { i, b ->
             if (b) {
                 canvas.drawBitmap(dotBitmapTrue, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint)

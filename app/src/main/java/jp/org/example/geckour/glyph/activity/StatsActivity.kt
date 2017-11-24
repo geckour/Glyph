@@ -32,12 +32,10 @@ class StatsActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (savedInstanceState == null) {
-            binding = DataBindingUtil.setContentView(this, R.layout.activity_statistics)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_statistics)
 
-            binding.viewPager.adapter = StatsFragmentPagerAdapter(supportFragmentManager)
-            binding.tab.setupWithViewPager(binding.viewPager)
-        }
+        binding.viewPager.adapter = StatsFragmentPagerAdapter(supportFragmentManager)
+        binding.tab.setupWithViewPager(binding.viewPager)
 
         val t: Tracker? = (application as App).getDefaultTracker()
         t?.setScreenName(StatsActivity.tag)

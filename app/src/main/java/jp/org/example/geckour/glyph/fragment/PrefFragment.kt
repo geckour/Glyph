@@ -11,6 +11,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.android.vending.billing.IInAppBillingService
+import com.google.android.gms.analytics.HitBuilders
+import com.google.android.gms.analytics.Tracker
+import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.FragmentPreferenceBinding
@@ -37,21 +40,17 @@ class PrefFragment : Fragment() {
 
     private var billingService: IInAppBillingService? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val serviceIntent = Intent("com.android.vending.billing.InAppBillingService.BIND").apply { `package` = "com.android.vending" }
-        activity.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
-    }
-
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_preference, container, false)
 
         return binding.root
     }
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        val serviceIntent = Intent("com.android.vending.billing.InAppBillingService.BIND").apply { `package` = "com.android.vending" }
+        activity.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
 
         binding.elementMode?.apply {
             val default = 0
@@ -145,6 +144,10 @@ class PrefFragment : Fragment() {
         }
 
         binding.elementDonate?.root?.setOnClickListener { onClickDonate() }
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onDestroy() {

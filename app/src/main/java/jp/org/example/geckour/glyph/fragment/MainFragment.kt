@@ -2,6 +2,7 @@ package jp.org.example.geckour.glyph.fragment
 
 import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
+import android.graphics.Color
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.v4.app.Fragment
@@ -25,6 +26,8 @@ import jp.org.example.geckour.glyph.fragment.model.Result
 import jp.org.example.geckour.glyph.util.*
 import jp.org.example.geckour.glyph.view.AnimateView
 import jp.org.example.geckour.glyph.view.model.Shaper
+import kotlinx.coroutines.experimental.CancellationException
+import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import timber.log.Timber
@@ -74,6 +77,7 @@ class MainFragment: Fragment() {
 
     private val onTimeUpForCommand: () -> Unit = {
         if (getTouchStatus() == MotionEvent.ACTION_UP) {
+            clearFlash()
             hideDialog()
             binding.animateView.clearParticle()
             binding.dotsView.setDotsState { false }
@@ -82,48 +86,51 @@ class MainFragment: Fragment() {
                     clearParticle()
                     setGrainAlphaModeIntoPrepareInput()
                 }
+                showFlashForNoticeInputStart()
             }
         }
     }
 
-    private val jobs: ArrayList<Job> = ArrayList()
+    private var dialogJob: Job? = null
+    private var flashJob: Deferred<Unit>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         realm = Realm.getDefaultInstance()
-
-        val t: Tracker? = (activity.application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        binding.animateView.resetInitTime()
+
+        binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
+        showDialog("COMMAND CHANNEL OPEN…")
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        min = if (sp.contains(PrefActivity.Key.LEVEL_MIN.name)) sp.getInt(PrefActivity.Key.LEVEL_MIN.name, 0) else 0
+        Timber.d("min: $min")
+
+        max = if (sp.contains(PrefActivity.Key.LEVEL_MAX.name)) sp.getInt(PrefActivity.Key.LEVEL_MAX.name, 8) else 8
+        Timber.d("max: $max")
+
+        gameMode = if (sp.contains(PrefActivity.Key.GAME_MODE.name)) sp.getInt(PrefActivity.Key.GAME_MODE.name, 0) else 0
+        Timber.d("gameMode: $gameMode")
+
+        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
+        Timber.d("doVibrate: $doVibrate")
+
         if (savedInstanceState == null) {
-            try {
-                min = if (sp.contains(PrefActivity.Key.LEVEL_MIN.name)) sp.getInt(PrefActivity.Key.LEVEL_MIN.name, 0) else 0
-                Timber.d("min: $min")
-            } catch (e: Exception) {
-                Timber.e("Can't translate minimum-level to Int.")
-            }
-
-            try {
-                max = if (sp.contains(PrefActivity.Key.LEVEL_MAX.name)) sp.getInt(PrefActivity.Key.LEVEL_MAX.name, 8) else 8
-                Timber.d("max: $max")
-            } catch (e: Exception) {
-                Timber.e("Can't translate maximum-level to Int.")
-            }
-
-            try {
-                gameMode = if (sp.contains(PrefActivity.Key.GAME_MODE.name)) sp.getInt(PrefActivity.Key.GAME_MODE.name, 0) else 0
-                Timber.d("gameMode: $gameMode")
-            } catch (e: Exception) {
-                Timber.e("Can't translate game mode to Int.")
-            }
-
-            doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
-            Timber.d("doVibrate: $doVibrate")
-
             questions.apply {
                 clear()
                 addAll(getSequence(mainActivity.sequenceId))
@@ -135,19 +142,6 @@ class MainFragment: Fragment() {
                 addAll(savedInstanceState.getParcelableArrayList(STATE_ARGS_QUESTIONS))
             }
         }
-
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
-
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        hideLeftButton()
-        setRightButton("NEXT") { mainActivity.onNext() }
-
-        binding.animateView.resetInitTime()
 
         binding.animateView.setOnTouchListener { _, event ->
             when (binding.animateView.getInputState()) {
@@ -202,6 +196,7 @@ class MainFragment: Fragment() {
                                 showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
                             }
                             if (paths.size >= level.getDifficulty()) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
+
                             fromX = -1f
                             fromY = -1f
                             true
@@ -213,6 +208,10 @@ class MainFragment: Fragment() {
                 AnimateView.InputState.COMMAND -> {
                     when (event.action) {
                         MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                            if (binding.animateView.command == null) {
+                                clearFlash()
+                                flashJob = async { showFlash(0.59f) }
+                            }
                             fromX = event.x
                             fromY = event.y
                             binding.animateView.clearParticle()
@@ -247,8 +246,10 @@ class MainFragment: Fragment() {
                             commandMaster.forEach {
                                 if (it.match(path)) {
                                     val command = DBInitialData.Shaper.valueOf(it.name)
-                                    binding.animateView.setCommand(command)
+                                    binding.animateView.command = command
                                     showDialog(command)
+                                    clearFlash()
+                                    flashJob = async { showFlash(0.59f) }
                                 }
                             }
                             binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
@@ -263,8 +264,13 @@ class MainFragment: Fragment() {
                 }
             }
         }
-        binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
-        showDialog("COMMAND CHANNEL OPEN…")
+
+        hideLeftButton()
+        setRightButton("NEXT") { mainActivity.onNext() }
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     private fun getTouchStatus(): Int =
@@ -284,7 +290,7 @@ class MainFragment: Fragment() {
         super.onDestroy()
 
         realm.close()
-        clearJobs(jobs)
+        dialogJob?.clear()
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
@@ -298,10 +304,74 @@ class MainFragment: Fragment() {
 
     private fun getAllowableTime(level: Int): Long =
             when (level) {
-                in 0..2 -> 20000L
-                in 3..8 -> 20000L - 1000L * (level - 2)
+                in 0..3 -> 20000L
+                in 4..8 -> 20000L - 1000L * (level - 3)
                 else -> 0L
             }
+
+    private fun setFlashColorWithAlpha(maxAlpha: Float, elapsedTime: Long, final: Boolean, onFinish: () -> Unit = {}) {
+        val colorFlash: Int = 0xffdcaf32.toInt()
+        val pre = 10L
+        val main = 670L
+        val whole = pre + main
+        val finalTime = 250L
+
+        if (elapsedTime > -1L) {
+            binding.flashView.apply {
+                setBackgroundColor(if (final) Color.WHITE else colorFlash)
+                alpha =
+                        if (final) {
+                            if (elapsedTime < finalTime) 1f
+                            else {
+                                onFinish()
+                                0f
+                            }
+                        } else {
+                            when (elapsedTime) {
+                                in 0..pre -> maxAlpha * elapsedTime / pre
+
+                                in pre..whole -> maxAlpha * (1 - (elapsedTime - pre).toFloat() / main)
+
+                                else -> {
+                                    onFinish()
+                                    0f
+                                }
+                            }
+                        }
+            }
+        }
+    }
+
+    private fun clearFlash() {
+        flashJob?.cancel()
+        binding.flashView.apply { setBackgroundColor(Color.TRANSPARENT) }
+    }
+
+    private suspend fun showFlash(maxAlpha: Float, final: Boolean = false) {
+        var finish = false
+        val referenceTime: Long = System.currentTimeMillis()
+
+        while (!finish) {
+            try {
+                val elapsedTime = System.currentTimeMillis() - referenceTime
+                uiLaunch { setFlashColorWithAlpha(maxAlpha, elapsedTime, final) { finish = true } }
+                delay(10L)
+            } catch (e: CancellationException) { finish = true } catch (e: Exception) { Timber.e(e) }
+        }
+    }
+
+    private fun showFlashForNoticeInputStart() {
+        async {
+            if (binding.animateView.command != DBInitialData.Shaper.COMPLEX) flashJob = async { showFlash(0.59f) }
+            flashJob?.await()
+            flashJob = async {showFlash(0.78f) }
+            flashJob?.await()
+            flashJob = async { showFlash(1f, true) }
+            flashJob?.await()
+            uiLaunch { clearFlash() }
+            async { binding.animateView.setGrainAlphaModeIntoInput(Pair(0, level.getDifficulty())) }
+        }
+    }
 
     private fun setRightButton(buttonText: String, predicate: (View) -> Unit) {
         binding.buttonRight.apply {
@@ -491,10 +561,10 @@ class MainFragment: Fragment() {
                 text = message
                 visibility = View.VISIBLE
 
-                ui(jobs) {
+                uiLaunch {
                     delay(1000)
                     if ((tag as? Long) == id) hideDialog()
-                }
+                }.apply { dialogJob = this }
             }
         }
     }

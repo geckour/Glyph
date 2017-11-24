@@ -44,17 +44,17 @@ class DictFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         realm = Realm.getDefaultInstance()
-
-        val t: Tracker? = (activity.application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
 
-        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
-        Timber.d("doVibrate: $doVibrate")
+        binding.dotsView.visibility = View.INVISIBLE
+
+        binding.animateView.apply {
+            setOnResourcesReady { binding.dotsView.visibility = View.VISIBLE }
+            setGrainAlphaModeIntoDictionary()
+        }
 
         return binding.root
     }
@@ -64,8 +64,13 @@ class DictFragment: Fragment() {
 
         hideLeftButton()
         hideRightButton()
+    }
 
-        binding.animateView.setGrainAlphaModeIntoDictionary()
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
+        Timber.d("doVibrate: $doVibrate")
 
         binding.animateView.setOnTouchListener { _, event ->
             when (binding.animateView.getInputState()) {
@@ -114,6 +119,10 @@ class DictFragment: Fragment() {
                 AnimateView.InputState.COMMAND -> false
             }
         }
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     private fun setRightButton(buttonText: String, predicate: (View) -> Unit) {

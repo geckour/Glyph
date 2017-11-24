@@ -10,12 +10,13 @@ import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.util.async
-import jp.org.example.geckour.glyph.util.clearJobs
+import jp.org.example.geckour.glyph.util.clear
 import jp.org.example.geckour.glyph.util.toTimeStringPair
+import jp.org.example.geckour.glyph.util.uiLaunch
 import jp.org.example.geckour.glyph.view.model.Particle
+import kotlinx.coroutines.experimental.CancellationException
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
 import timber.log.Timber
 
 class AnimateView: View {
@@ -53,7 +54,7 @@ class AnimateView: View {
     }
 
     private var state = State.DEFAULT
-    private var command: DBInitialData.Shaper? = null
+    var command: DBInitialData.Shaper? = null
     private var showName = true
     private val shaperName: ArrayList<String> = ArrayList()
     private val locus: ArrayList<Particle> = ArrayList()
@@ -89,23 +90,21 @@ class AnimateView: View {
     private lateinit var normalHexImg: Bitmap
     private lateinit var weakHexImg: Bitmap
 
-    private val jobs: ArrayList<Job> = ArrayList()
+    private var ready: Boolean = false
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
+    private var onResourcesReady: suspend () -> Unit = {}
 
-        jobs.add(launch {
-            async { initResources() }.await()
+    private val job: Job = async {
+        ready = async { initResources() }.await()
+        uiLaunch { onResourcesReady() }
 
-            while (true) {
-                try {
-                    if (height > 0) postInvalidate()
-                    delay(10)
-                } catch (e: Exception) {
-                    Timber.e(e)
-                }
-            }
-        })
+        var cancelled = false
+        while (!cancelled) {
+            try {
+                if (height > 0) postInvalidate()
+                delay(10)
+            } catch (e: CancellationException) { cancelled = true } catch (e: Exception) { Timber.e(e) }
+        }
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -113,10 +112,11 @@ class AnimateView: View {
 
         now = System.currentTimeMillis()
         
-        canvas?.let {
+        if (ready) canvas?.let {
             when (state) {
                 State.WAIT_COMMAND -> {
                     if (elapsedTime > commandWaitTime) onTimeUpForCommand()
+                    drawRemain(it, allowableTime)
                     drawParticle(it)
                 }
 
@@ -135,6 +135,7 @@ class AnimateView: View {
                         }
 
                         drawQuestionProgress(it)
+                        drawRemain(it, 0L)
                         if (showName) drawShaperName(it)
                         drawParticle(it)
                     } else {
@@ -143,12 +144,7 @@ class AnimateView: View {
                     }
                 }
 
-                State.PREPARE_INPUT -> {
-                    it.drawRect(0.0f, 0.0f, width.toFloat(), height.toFloat(), paint.apply {
-                        color = getFlashColor { setGrainAlphaModeIntoInput(progress.copy(first = 0)) }
-                        style = Paint.Style.FILL
-                    })
-                }
+                State.PREPARE_INPUT -> { drawRemain(it, 0L) }
 
                 State.INPUT -> {
                     if (inputStartTime > -1L) {
@@ -219,17 +215,19 @@ class AnimateView: View {
         super.onDetachedFromWindow()
 
         recycleResources()
-        clearJobs(jobs)
+        job.clear()
     }
 
-    private fun initResources() {
+    fun setOnResourcesReady(onResourcesReady: suspend () -> Unit) { this.onResourcesReady = onResourcesReady }
+
+    private fun initResources(): Boolean {
         val grainDiam = (30.0 * scale).toInt()
         grainImg =
                 BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
                     Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
                 }
 
-        val hexWidth = (width * 0.1f).toInt()
+        val hexWidth = (100 * scale).toInt()
         strongHexImg =
                 BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
                     Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
@@ -242,6 +240,8 @@ class AnimateView: View {
                 BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_weak).let {
                     Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
                 }
+
+        return true
     }
 
     private fun recycleResources() {
@@ -262,14 +262,6 @@ class AnimateView: View {
 
     private fun drawRemain(canvas: Canvas, elapsedTime: Long) {
         val remainTime = allowableTime - elapsedTime
-
-        fun Paint.setForRemainInputTime(align: Paint.Align = Paint.Align.CENTER) =
-                this.apply {
-                    textSize = remainingHeight * 0.2f
-                    color = Color.rgb(220, 190, 50)
-                    textAlign = align
-                    typeface = coda
-                }
 
         fun getBarRect(): RectF {
             val halfWidth = width * 0.35f * remainTime / allowableTime
@@ -296,18 +288,25 @@ class AnimateView: View {
 
         fun drawRemainInputTimeBar() {
             canvas.drawRect(getBarRect(), paint.apply {
+                style = Paint.Style.FILL
                 color = Color.rgb(220, 190, 50)
             })
         }
 
         fun drawRemainInputTime() {
-            val rect = getRemainInputTimeCenterRect(paint.setForRemainInputTime())
+            paint.apply {
+                textSize = remainingHeight * 0.2f
+                color = Color.rgb(220, 190, 50)
+                typeface = coda
+            }
+
+            val rect = getRemainInputTimeCenterRect(paint)
             val timeStringPair = remainTime.toTimeStringPair()
 
             canvas.apply {
-                drawText(timeStringPair.first, rect.left.toFloat(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.RIGHT))
-                drawText(":", rect.exactCenterX(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.CENTER))
-                drawText(timeStringPair.second, rect.right.toFloat(), rect.exactCenterY(), paint.setForRemainInputTime(Paint.Align.LEFT))
+                drawText(timeStringPair.first, rect.left.toFloat(), rect.exactCenterY(), paint.apply { textAlign = Paint.Align.RIGHT })
+                drawText(":", rect.exactCenterX(), rect.exactCenterY(), paint.apply { textAlign = Paint.Align.CENTER })
+                drawText(timeStringPair.second, rect.right.toFloat(), rect.exactCenterY(),paint.apply { textAlign = Paint.Align.LEFT })
             }
         }
 
@@ -316,7 +315,7 @@ class AnimateView: View {
     }
 
     private fun drawParticle(canvas: Canvas) {
-        paint.alpha = calcGrainAlpha().apply { grainAlpha = this }
+        paint.alpha = getGrainAlpha().apply { grainAlpha = this }
         synchronized(locus) {
             for (particle in locus) {
                 particle.move(canvas, paint)
@@ -401,7 +400,7 @@ class AnimateView: View {
         }
     }
 
-    private fun calcGrainAlpha(mode: State = state): Int =
+    private fun getGrainAlpha(mode: State = state): Int =
             when (mode) {
                 State.DEFAULT -> 255
 
@@ -446,55 +445,6 @@ class AnimateView: View {
                 else -> 0
             }
 
-    private fun getFlashColor(onFinish: () -> Unit): Int {
-        if (referenceTime > -1L) {
-            val pre = 10L
-            val main = 670L
-            val whole = pre + main
-            val final = 250L // Must be less than whole
-
-            if (elapsedTime > -1L) {
-                val seq: Long = elapsedTime / whole + if(command == DBInitialData.Shaper.COMPLEX) 1 else 0
-                val timeInSeq: Long = elapsedTime % whole
-                return when (seq) {
-                    0L -> {
-                        val alpha =
-                                if (timeInSeq < pre) {
-                                    150.0 * timeInSeq / pre
-                                } else {
-                                    150 * (1 - (timeInSeq - pre).toDouble() / main)
-                                }
-                        Color.argb(alpha.toInt(), 220, 175, 50)
-                    }
-                    1L -> {
-                        val alpha =
-                                if (timeInSeq < pre) {
-                                    200.0 * timeInSeq / pre
-                                } else {
-                                    200 * (1 - (timeInSeq - pre).toDouble() / main)
-                                }
-                        Color.argb(alpha.toInt(), 220, 175, 50)
-                    }
-                    2L -> {
-                        val alpha =
-                                if (timeInSeq < pre) {
-                                    255.0 * timeInSeq / pre
-                                } else {
-                                    255.0
-                                }
-                        if (timeInSeq < final) Color.argb(alpha.toInt(), 255, 255, 255)
-                        else {
-                            onFinish()
-                            Color.TRANSPARENT
-                        }
-                    }
-                    else -> { Color.TRANSPARENT }
-                }
-            }
-        }
-        return Color.TRANSPARENT
-    }
-
     fun setShaperName(names: List<String>) {
         this.shaperName.apply {
             clear()
@@ -518,10 +468,6 @@ class AnimateView: View {
                 State.WAIT_COMMAND -> InputState.COMMAND
                 else -> InputState.DISABLED
             }
-
-    fun setCommand(command: DBInitialData.Shaper) {
-        this.command = command
-    }
 
     fun setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand: () -> Unit) {
         this.onTimeUpForCommand = onTimeUpForCommand

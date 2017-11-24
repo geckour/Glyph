@@ -4,6 +4,9 @@ import android.app.Dialog
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
+import com.google.android.gms.analytics.HitBuilders
+import com.google.android.gms.analytics.Tracker
+import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.DialogPickNumberBinding
@@ -70,5 +73,13 @@ class LevelPickDialogFragment : DialogFragment() {
                 .setPositiveButton("OK") { _, _ -> onConfirm(binding.numberPicker.value) }
                 .setNegativeButton("CANCEL") { dialog, _ -> dialog.cancel() }.create()
 
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        val t: Tracker? = (activity.application as App).getDefaultTracker()
+        t?.setScreenName(tag)
+        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 }
