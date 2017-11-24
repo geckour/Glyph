@@ -47,14 +47,15 @@ class AnimateView: View {
     private val paint = Paint()
     private val drawAnswerLength: Long by lazy {
         when (command) {
-            DBInitialData.Shaper.COMPLEX -> 600L
-            DBInitialData.Shaper.SIMPLE -> 2400L
-            else -> 1200L
+            DBInitialData.Shaper.COMPLEX -> 460L
+            DBInitialData.Shaper.SIMPLE -> 2600L
+            else -> 1300L
         }
     }
 
     private var state = State.DEFAULT
     var command: DBInitialData.Shaper? = null
+        set(value) { if (value == DBInitialData.Shaper.COMPLEX || value == DBInitialData.Shaper.SIMPLE) field = value }
     private var showName = true
     private val shaperName: ArrayList<String> = ArrayList()
     private val locus: ArrayList<Particle> = ArrayList()
@@ -67,7 +68,7 @@ class AnimateView: View {
     private var onPrepareAnswer: () -> Unit = {}
     private var onTransitionToCheckAnswer: () -> Unit = {}
     private var grainAlpha = 0
-    private val particleInterval = 22.0 * scale
+    private val particleInterval = 20.0 * scale
 
     private val commandWaitTime: Long = 2000L
     private val marginTime: Long = 900L
@@ -76,7 +77,7 @@ class AnimateView: View {
     private var allowableTime = -1L
     private var referenceTime = -1L
     private var elapsedTime = -1L
-    get() = now - referenceTime
+        get() = now - referenceTime
     private var timeInQ = -1L
     private var inputStartTime = -1L
     private var spentTime = -1L
@@ -221,7 +222,7 @@ class AnimateView: View {
     fun setOnResourcesReady(onResourcesReady: suspend () -> Unit) { this.onResourcesReady = onResourcesReady }
 
     private fun initResources(): Boolean {
-        val grainDiam = (30.0 * scale).toInt()
+        val grainDiam = (35.0 * scale).toInt()
         grainImg =
                 BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
                     Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
@@ -396,6 +397,7 @@ class AnimateView: View {
                 }
             }
         }
+        synchronized(locus) { addParticle(paths.last().second.x, paths.last().second.y, Particle.Phase.CONVERGING) }
     }
 
     private fun getGrainAlpha(mode: State = state): Int =

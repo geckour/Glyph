@@ -12,7 +12,10 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp">
+        android:paddingLeft="8dp"
+        android:paddingTop="8dp"
+        android:paddingRight="8dp"
+        android:background="?attr/selectableItemBackground">
 
         <TextView
             android:id="@+id/sequence_name"
@@ -162,10 +165,11 @@
         </LinearLayout>
 
         <View
+            android:id="@+id/divider"
             android:layout_width="0dp"
-            android:layout_height="0.8dp"
+            android:layout_height="0.5dp"
             android:layout_marginTop="8dp"
-            android:background="@color/colorPrimary"
+            android:background="@color/divider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/root_individual"/>

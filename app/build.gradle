@@ -14,8 +14,8 @@ android {
         applicationId "jp.org.example.geckour.glyph"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 37
-        versionName "2.2.0"
+        versionCode 38
+        versionName "2.2.1"
 
         dataBinding.enabled = true
     }

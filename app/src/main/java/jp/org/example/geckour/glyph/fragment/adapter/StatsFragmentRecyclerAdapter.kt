@@ -109,6 +109,7 @@ class StatsFragmentRecyclerAdapter(private val bitmap: Bitmap): RecyclerView.Ada
                         val binding = DataBindingUtil.inflate<ItemStatsShaperBinding>(LayoutInflater.from(this.context), R.layout.item_stats_shaper, this, false)
                         binding.data = d
                         binding.shaperImg.setImageBitmap(bitmaps[i])
+                        if (i == data.lastIndex) binding.divider.visibility = View.GONE
                         addView(binding.root)
                     }
                     visibility = View.VISIBLE

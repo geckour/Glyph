@@ -6,6 +6,7 @@
 
     <color name="textPrimary">@color/colorAccent</color>
     <color name="textSecondary">#e0ffffff</color>
+    <color name="divider">#20ffffff</color>
     <color name="dialogBackground">#202020</color>
     <color name="background">@android:color/black</color>
     <color name="button_text">#9cf6f6</color>
