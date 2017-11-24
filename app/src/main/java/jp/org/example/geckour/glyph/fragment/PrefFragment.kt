@@ -75,7 +75,7 @@ class PrefFragment : Fragment() {
 
         binding.elementVibration?.apply {
             elementWidget?.widgetSwitch?.apply {
-                val default = false
+                val default = true
                 visibility = View.VISIBLE
                 isChecked =
                         sp.contains(PrefActivity.Key.VIBRATE.name).apply {

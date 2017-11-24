@@ -54,7 +54,7 @@ class MainFragment: Fragment() {
     private var level = 0
 
     private var gameMode: Int = 0
-    private var doVibrate: Boolean = false
+    private var doVibrate: Boolean = true
 
     private val commandMaster: List<Shaper> by lazy {
         realm.where(DBShaper::class.java)
@@ -127,7 +127,7 @@ class MainFragment: Fragment() {
         gameMode = if (sp.contains(PrefActivity.Key.GAME_MODE.name)) sp.getInt(PrefActivity.Key.GAME_MODE.name, 0) else 0
         Timber.d("gameMode: $gameMode")
 
-        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, false)
+        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, true)
         Timber.d("doVibrate: $doVibrate")
 
         if (savedInstanceState == null) {

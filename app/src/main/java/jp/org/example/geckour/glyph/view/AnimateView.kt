@@ -47,7 +47,7 @@ class AnimateView: View {
     private val paint = Paint()
     private val drawAnswerLength: Long by lazy {
         when (command) {
-            DBInitialData.Shaper.COMPLEX -> 460L
+            DBInitialData.Shaper.COMPLEX -> 440L
             DBInitialData.Shaper.SIMPLE -> 2600L
             else -> 1300L
         }
