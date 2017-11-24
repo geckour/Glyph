@@ -127,7 +127,7 @@ class MainFragment: Fragment() {
         gameMode = if (sp.contains(PrefActivity.Key.GAME_MODE.name)) sp.getInt(PrefActivity.Key.GAME_MODE.name, 0) else 0
         Timber.d("gameMode: $gameMode")
 
-        doVibrate = sp.contains(PrefActivity.Key.VIBRATE.name) && sp.getBoolean(PrefActivity.Key.VIBRATE.name, true)
+        if (sp.contains(PrefActivity.Key.VIBRATE.name)) doVibrate = sp.getBoolean(PrefActivity.Key.VIBRATE.name, true)
         Timber.d("doVibrate: $doVibrate")
 
         if (savedInstanceState == null) {
