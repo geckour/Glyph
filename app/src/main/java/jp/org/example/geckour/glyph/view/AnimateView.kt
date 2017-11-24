@@ -81,8 +81,8 @@ class AnimateView: View {
     private var inputStartTime = -1L
     private var spentTime = -1L
     private var progress: Pair<Int, Int> = Pair(0, 0)
-    private val hexWidth: Float by lazy { width * 0.1f }
-    private val hexMargin: Float by lazy { width * 0.02f }
+    private val hexWidth: Int = (scale * 110).toInt()
+    private val hexMargin: Float = hexWidth * (Math.cos(Math.PI / 6) - 1f).toFloat() * 0.5f
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
     private lateinit var grainImg: Bitmap
@@ -227,7 +227,6 @@ class AnimateView: View {
                     Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
                 }
 
-        val hexWidth = (100 * scale).toInt()
         strongHexImg =
                 BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
                     Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
@@ -258,45 +257,44 @@ class AnimateView: View {
 
     internal fun getInputStartTime(): Long = this.inputStartTime
 
-    private val remainingHeight: Float by lazy { height * 0.6f - (width * 0.4f + 0.1f / 3) }
+    private val remainingHeight: Float by lazy { height * 0.6f - width * 0.4875f }
 
     private fun drawRemain(canvas: Canvas, elapsedTime: Long) {
-        val remainTime = allowableTime - elapsedTime
+        val remainTime: Long = allowableTime - elapsedTime
 
         fun getBarRect(): RectF {
             val halfWidth = width * 0.35f * remainTime / allowableTime
-            val halfHeight = remainingHeight * 0.015f
-            val center = PointF(width.toFloat() / 2, remainingHeight * 0.75f)
+            val halfHeight = remainingHeight * 0.012f
+            val center = PointF(width * 0.5f, remainingHeight * 2f / 3)
 
             return RectF(center.x - halfWidth, center.y - halfHeight, center.x + halfWidth, center.y + halfHeight)
         }
 
         fun getRemainInputTimeCenterRect(paint: Paint, divider: String = ":"): Rect {
-            val center = Point((width.toDouble() / 2).toInt(), (remainingHeight * 0.625).toInt())
+            val baseCenter = Point(width ushr 1, (remainingHeight * (2f / 3 - 0.036)).toInt())
 
             return Rect().apply {
                 paint.getTextBounds(divider, 0, 1, this)
                 val halfWidth = width() ushr 1
-                val halfHeight = height() ushr 1
 
-                left = center.x - halfWidth
-                top = center.y - halfHeight
-                right = center.x + halfWidth
-                bottom = center.y + halfHeight
+                left = baseCenter.x - halfWidth
+                top = baseCenter.y - height()
+                right = baseCenter.x + halfWidth
+                bottom = baseCenter.y
             }
         }
 
         fun drawRemainInputTimeBar() {
             canvas.drawRect(getBarRect(), paint.apply {
                 style = Paint.Style.FILL
-                color = Color.rgb(220, 190, 50)
+                color = if (state == State.INPUT || state == State.FADEOUT) 0xfff5b316.toInt() else 0x70f5b316
             })
         }
 
         fun drawRemainInputTime() {
             paint.apply {
-                textSize = remainingHeight * 0.2f
-                color = Color.rgb(220, 190, 50)
+                textSize = remainingHeight * 0.15f
+                color = if (state == State.INPUT || state == State.FADEOUT) 0xfff0d916.toInt() else 0x70f0d916
                 typeface = coda
             }
 
@@ -327,8 +325,8 @@ class AnimateView: View {
     private fun getHexagonPosition(index: Int): PointF {
         val indexForCalc = index - (progress.second - 1) * 0.5f
         return PointF(
-                width * 0.5f - hexWidth * 0.5f + indexForCalc * (hexWidth + hexMargin),
-                remainingHeight * 0.125f - hexWidth * 0.5f
+                width * 0.5f + (hexWidth + hexMargin) * indexForCalc - hexWidth * 0.5f,
+                remainingHeight / 3 - hexWidth * 0.5f
         )
     }
 
@@ -368,11 +366,11 @@ class AnimateView: View {
         if (names.isEmpty()) return
 
         val fontSize = remainingHeight * 0.15f
-        val baseLine = remainingHeight * 0.125f + hexWidth * 0.5f + hexMargin + fontSize
-        val margin = remainingHeight * 0.02f
+        val baseLine = remainingHeight * (2f / 3 + 0.04f) + fontSize
+        val margin = remainingHeight * 0.026f
 
-        names.forEachIndexed { i, name ->
-            canvas.drawText(name, width.toFloat() / 2, baseLine + (fontSize + margin) * (names.lastIndex - i), paint.apply {
+        names.reversed().forEachIndexed { i, name ->
+            canvas.drawText(name, width.toFloat() / 2, baseLine - (fontSize + margin) * (names.lastIndex - i), paint.apply {
                 textAlign = Paint.Align.CENTER
                 color = Color.WHITE
                 style = Paint.Style.STROKE

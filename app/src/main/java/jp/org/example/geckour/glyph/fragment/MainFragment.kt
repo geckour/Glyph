@@ -210,7 +210,7 @@ class MainFragment: Fragment() {
                         MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                             if (binding.animateView.command == null) {
                                 clearFlash()
-                                flashJob = async { showFlash(0.59f) }
+                                flashJob = async { showFlash(0.78f) }
                             }
                             fromX = event.x
                             fromY = event.y
@@ -249,7 +249,7 @@ class MainFragment: Fragment() {
                                     binding.animateView.command = command
                                     showDialog(command)
                                     clearFlash()
-                                    flashJob = async { showFlash(0.59f) }
+                                    flashJob = async { showFlash(0.78f) }
                                 }
                             }
                             binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
@@ -310,7 +310,7 @@ class MainFragment: Fragment() {
             }
 
     private fun setFlashColorWithAlpha(maxAlpha: Float, elapsedTime: Long, final: Boolean, onFinish: () -> Unit = {}) {
-        val colorFlash: Int = 0xffdcaf32.toInt()
+        val colorFlash: Int = 0xfff0a328.toInt()
         val pre = 10L
         val main = 670L
         val whole = pre + main

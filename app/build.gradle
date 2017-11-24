@@ -25,7 +25,7 @@ android {
             if (releaseSettingGradleFile.exists()) {
                 apply from: releaseSettingGradleFile, to: android
             } else {
-                throw new GradleException("Missing ${releaseSettingGradleFile.getAbsolutePath()}. copy and update signing/release.gradle.example");
+                throw new GradleException("Missing ${releaseSettingGradleFile.getAbsolutePath()}. copy and update signing/release.gradle.example")
             }
         }
     }
