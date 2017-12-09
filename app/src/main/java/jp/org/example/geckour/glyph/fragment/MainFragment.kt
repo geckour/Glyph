@@ -479,48 +479,61 @@ class MainFragment: Fragment() {
             MainActivity.Mode.WEAKNESS -> {
                 when (difficulty) {
                     1 -> {
-                        realm.where(DBShaper::class.java).let {
+                        realm.where(DBShaper::class.java).let { shapers ->
                             if (id == null) {
-                                it.greaterThan("examCount", 0).let {
+                                shapers.greaterThan("examCount", 0).let {
                                     val size = it.count().toInt()
-                                    if (size > 0) {
+                                    if (size > shapers.count() * 0.8) {
                                         it.findAll().toList()
                                                 .sortedBy { it.correctCount.toDouble() / it.examCount }
-                                                .dropLast(size / 4)
+                                                .take(25)
                                                 .map { it.parse() }
                                                 .let {
-                                                    listOf(it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
+                                                    val index = (Math.random() * 15).toInt()
+                                                    val shaper =
+                                                            (if (index > it.lastIndex) {
+                                                                var shaperId: Long
+                                                                do {
+                                                                    shaperId = (Math.random() * size).toLong()
+                                                                } while (it.map { it.id }.contains(shaperId))
+                                                                shapers.findAll().filterNotNull()[shaperId.toInt()].parse()
+                                                            } else it[index]).apply { mainActivity.sequenceId = this.id }
+                                                    listOf(shaper)
                                                 }
-                                    } else getSequence(id = id, mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
                                 }
                             } else {
-                                listOf(it.findAll().map { it.parse() }[id.toInt()])
+                                listOf(shapers.findAll().map { it.parse() }[id.toInt()])
                             }
                         }
                     }
 
                     in 2..5 -> {
-                        realm.where(Sequence::class.java)
-                                .equalTo("size", difficulty)
-                                .let {
-                                    if (id == null) {
-                                        it.greaterThan("examCount", 0).let { sequences ->
-                                            val size = sequences.count().toInt()
-                                            if (size > 0) {
-                                                sequences.findAll().toList()
-                                                        .sortedBy { it.correctCount.toDouble() / it.examCount }
-                                                        .dropLast(size / 4)
-                                                        .map { it.message.toList().map { it.parse() } }
-                                                        .let {
-                                                            it[(Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
-                                                        }
-                                            } else getSequence(id = id, mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
-                                        }
-                                    } else {
-                                        it.findAll().map { it.message.toList().map { it.parse() } }[id.toInt()]
-                                    }
+                        realm.where(Sequence::class.java).equalTo("size", difficulty).let { sequences ->
+                            if (id == null) {
+                                sequences.greaterThan("examCount", 0).let {
+                                    val size = it.count().toInt()
+                                    if (size > sequences.count() * 0.8) {
+                                        it.findAll().toList()
+                                                .sortedBy { it.correctCount.toDouble() / it.examCount }
+                                                .take(25)
+                                                .map { (it.id to it.message.toList().map { it.parse() }) }
+                                                .let {
+                                                    val index = (Math.random() * 15).toInt()
+                                                    (if (index > it.size - 1) {
+                                                        var sequenceId: Long
+                                                        do {
+                                                            sequenceId = (Math.random() * size).toLong()
+                                                        } while (it.map { it.first }.contains(sequenceId))
+                                                        sequences.findAll().filterNotNull()[sequenceId.toInt()].let { it.id to it.message.toList().map { it.parse() } }
+                                                    } else it[index]).apply { mainActivity.sequenceId = this.first }.second
+                                                }
+                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
                                 }
-
+                            } else {
+                                sequences.findAll().filterNotNull()[id.toInt()].let { it.message.toList().map { it.parse() } }
+                            }
+                        }
                     }
 
                     else -> listOf()

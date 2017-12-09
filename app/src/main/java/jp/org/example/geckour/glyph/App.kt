@@ -39,6 +39,10 @@ class App: Application() {
         Realm.init(this)
         injectInitialDBData()
 
+        if (BuildConfig.DEBUG) {
+            injectDummyDBData()
+        }
+
         coda = ResourcesCompat.getFont(this, R.font.coda_regular)
     }
 
@@ -64,5 +68,32 @@ class App: Application() {
                         }
                     }
                 }.build().apply { Realm.setDefaultConfiguration(this) }
+    }
+
+    private fun injectDummyDBData() {
+        /*Realm.getDefaultInstance().let { realm ->
+            realm.where(Shaper::class.java)
+                    .findAll()
+                    .toList()
+                    .apply {
+                        realm.executeTransaction {
+                            this.forEach {
+                                it.examCount = it.id + 1
+                                it.correctCount = 1L
+                            }
+                        }
+                    }
+            realm.where(Sequence::class.java)
+                    .findAll()
+                    .toList()
+                    .apply {
+                        realm.executeTransaction {
+                            this.forEach {
+                                it.examCount = it.id + 1
+                                it.correctCount = 1L
+                            }
+                        }
+                    }
+        }*/
     }
 }
