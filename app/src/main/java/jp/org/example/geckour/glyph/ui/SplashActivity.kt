@@ -1,28 +1,21 @@
-package jp.org.example.geckour.glyph.activity
+package jp.org.example.geckour.glyph.ui
 
 import android.app.Activity
 import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.preference.PreferenceManager
-
-import com.google.android.gms.analytics.HitBuilders
-import com.google.android.gms.analytics.Tracker
-import jp.org.example.geckour.glyph.App
-import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.R
-import jp.org.example.geckour.glyph.activity.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.databinding.ActivitySplashBinding
+import jp.org.example.geckour.glyph.ui.MainActivity.Companion.hacks
+import jp.org.example.geckour.glyph.util.Key
+import jp.org.example.geckour.glyph.util.getBooleanValue
 
 class SplashActivity : Activity() {
 
-    companion object {
-        private val tag: String = SplashActivity::class.java.simpleName
-    }
-
     private lateinit var binding: ActivitySplashBinding
-    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
+    private val sharedPreferences: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,17 +28,8 @@ class SplashActivity : Activity() {
             }
         }
 
-        if (sp.contains(PrefActivity.Key.SHOW_COUNT.name) && sp.getBoolean(PrefActivity.Key.SHOW_COUNT.name, false)) {
-            sp.edit()?.putInt("viewCount", 1)?.apply()
-        }
-
-        listOf(
-                binding.buttonHack,
-                binding.buttonOpt,
-                binding.buttonDict,
-                binding.buttonWeak
-        ).forEach {
-            it.typeface = coda
+        if (sharedPreferences.getBooleanValue(Key.SHOW_COUNT)) {
+            sharedPreferences.edit()?.putInt("viewCount", 1)?.apply()
         }
 
         binding.buttonHack.setOnClickListener { onClickHack() }
@@ -53,10 +37,6 @@ class SplashActivity : Activity() {
         binding.buttonStats.setOnClickListener { onClickStatistics() }
         binding.buttonDict.setOnClickListener { onClickDictionary() }
         binding.buttonOpt.setOnClickListener { onClickSetting() }
-
-        val t: Tracker? = (application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onResume() {
@@ -65,7 +45,7 @@ class SplashActivity : Activity() {
     }
 
     private fun onClickHack() =
-        startActivity(MainActivity.createIntent(this, MainActivity.Mode.NORMAL))
+            startActivity(MainActivity.createIntent(this, MainActivity.Mode.NORMAL))
 
     private fun onClickWeakness() =
             startActivity(MainActivity.createIntent(this, MainActivity.Mode.WEAKNESS))
@@ -77,5 +57,5 @@ class SplashActivity : Activity() {
             startActivity(DictActivity.createIntent(this))
 
     private fun onClickSetting() =
-        startActivity(PrefActivity.createIntent(this))
+            startActivity(PrefActivity.createIntent(this))
 }

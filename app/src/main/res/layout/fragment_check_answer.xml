@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <variable
-            name="bonus_hack_value"
-            type="Integer" />
+
+        <import type="android.view.View" />
+
+        <import type="jp.org.example.geckour.glyph.util.ExtensionUtilKt" />
 
         <variable
-            name="bonus_speed_value"
-            type="Integer" />
+            name="result"
+            type="jp.org.example.geckour.glyph.ui.model.Result" />
 
         <variable
-            name="count_hack_value"
-            type="Integer" />
+            name="allowableTime"
+            type="Long" />
     </data>
 
     <android.support.constraint.ConstraintLayout
@@ -23,52 +24,100 @@
         android:background="@color/background">
 
         <ImageView
-            android:id="@+id/shaper1"
+            android:id="@+id/shaper0"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginBottom="4dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@+id/shaper2"
+            android:tint="@{result.details.size() > 0 &amp;&amp; result.details.get(0).correct ? @color/tintResultCorrect : @color/tintResultFault}"
+            android:visibility="@{result.details.size() > 0 ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toTopOf="@+id/shaper1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_chainStyle="packed"
-            tools:srcCompat="@drawable/glyph_hex_normal"
-            tools:tint="@android:color/holo_red_dark"
-            tools:visibility="visible"/>
+            app:srcBitmap="@{result.details.size() > 0 ? result.details.get(0).bitmap : null}"
+            tools:src="@drawable/glyph_hex_normal"
+            tools:tint="@color/tintResultFault"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper1_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:text="@{result.details.size() > 0 ? result.details.get(0).name : null}"
             android:textSize="36sp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/shaper1"
-            app:layout_constraintStart_toEndOf="@+id/shaper1"
-            app:layout_constraintTop_toTopOf="@+id/shaper1"
+            android:visibility="@{result.details.size() > 0 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
+            app:layout_constraintBottom_toBottomOf="@+id/shaper0"
+            app:layout_constraintStart_toEndOf="@+id/shaper0"
+            app:layout_constraintTop_toTopOf="@+id/shaper0"
             tools:text="LIVE"
-            tools:textColor="@android:color/holo_red_dark"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
-            tools:visibility="visible"/>
+            tools:textColor="@color/tintResultFault"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper1_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
+            android:text="@{result.details.size() > 0 ? (ExtensionUtilKt.toTimeStringPair(result.details.get(0).spentTime).first + ExtensionUtilKt.toTimeStringPair(result.details.get(0).spentTime).second) : null}"
             android:textColor="@android:color/white"
             android:textSize="24sp"
-            android:visibility="gone"
-            app:fontFamily="@font/coda_regular"
+            android:visibility="@{result.details.size() > 0 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
+            app:layout_constraintBottom_toBottomOf="@+id/shaper0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/shaper0"
+            tools:text="1:68"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/shaper1"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:tint="@{result.details.size() > 1 &amp;&amp; result.details.get(1).correct ? @color/tintResultCorrect : @color/tintResultFault}"
+            android:visibility="@{result.details.size() > 1 ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toTopOf="@+id/shaper2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/shaper0"
+            app:layout_constraintVertical_chainStyle="packed"
+            app:srcBitmap="@{result.details.size() > 1 ? result.details.get(1).bitmap : null}"
+            tools:srcCompat="@drawable/glyph_hex_normal"
+            tools:tint="@color/tintResultFault"
+            tools:visibility="visible" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@{result.details.size() > 1 ? result.details.get(1).name : null}"
+            android:textSize="36sp"
+            android:visibility="@{result.details.size() > 1 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
+            app:layout_constraintBottom_toBottomOf="@+id/shaper1"
+            app:layout_constraintStart_toEndOf="@+id/shaper1"
+            app:layout_constraintTop_toTopOf="@+id/shaper1"
+            tools:text="INSIDE"
+            tools:textColor="@color/tintResultFault"
+            tools:visibility="visible" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@{result.details.size() > 1 ? (ExtensionUtilKt.toTimeStringPair(result.details.get(1).spentTime).first + ExtensionUtilKt.toTimeStringPair(result.details.get(1).spentTime).second) : null}"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:visibility="@{result.details.size() > 1 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="@+id/shaper1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/shaper1"
-            tools:fontFamily="@font/coda_regular"
-            tools:text="1:68"
-            tools:visibility="visible"/>
+            tools:text="1:0"
+            tools:visibility="visible" />
 
         <ImageView
             android:id="@+id/shaper2"
@@ -77,46 +126,46 @@
             android:layout_marginBottom="4dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
-            android:visibility="gone"
+            android:tint="@{result.details.size() > 2 &amp;&amp; result.details.get(2).correct ? @color/tintResultCorrect : @color/tintResultFault}"
+            android:visibility="@{result.details.size() > 2 ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toTopOf="@+id/shaper3"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/shaper1"
             app:layout_constraintVertical_chainStyle="packed"
+            app:srcBitmap="@{result.details.size() > 2 ? result.details.get(2).bitmap : null}"
             tools:srcCompat="@drawable/glyph_hex_normal"
-            tools:tint="@android:color/holo_red_dark"
-            tools:visibility="visible"/>
+            tools:tint="@color/tintResultCorrect"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper2_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:text="@{result.details.size() > 2 ? result.details.get(2).name : null}"
             android:textSize="36sp"
-            android:visibility="gone"
+            android:visibility="@{result.details.size() > 2 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="@+id/shaper2"
             app:layout_constraintStart_toEndOf="@+id/shaper2"
             app:layout_constraintTop_toTopOf="@+id/shaper2"
-            tools:text="INSIDE"
-            tools:textColor="@android:color/holo_red_dark"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
-            tools:visibility="visible"/>
+            tools:text="XM"
+            tools:textColor="@color/tintResultCorrect"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper2_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
+            android:text="@{result.details.size() > 2 ? (ExtensionUtilKt.toTimeStringPair(result.details.get(2).spentTime).first + ExtensionUtilKt.toTimeStringPair(result.details.get(2).spentTime).second) : null}"
             android:textColor="@android:color/white"
             android:textSize="24sp"
-            android:visibility="gone"
-            app:fontFamily="@font/coda_regular"
+            android:visibility="@{result.details.size() > 2 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="@+id/shaper2"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/shaper2"
-            tools:fontFamily="@font/coda_regular"
-            tools:text="1:0"
-            tools:visibility="visible"/>
+            tools:text="2:88"
+            tools:visibility="visible" />
 
         <ImageView
             android:id="@+id/shaper3"
@@ -125,212 +174,151 @@
             android:layout_marginBottom="4dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
-            android:visibility="gone"
+            android:tint="@{result.details.size() > 3 &amp;&amp; result.details.get(3).correct ? @color/tintResultCorrect : @color/tintResultFault}"
+            android:visibility="@{result.details.size() > 3 ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toTopOf="@+id/shaper4"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/shaper2"
             app:layout_constraintVertical_chainStyle="packed"
+            app:srcBitmap="@{result.details.size() > 3 ? result.details.get(3).bitmap : null}"
             tools:srcCompat="@drawable/glyph_hex_normal"
-            tools:tint="@android:color/holo_green_light"
-            tools:visibility="visible"/>
+            tools:tint="@color/tintResultCorrect"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper3_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:text="@{result.details.size() > 3 ? result.details.get(3).name : null}"
             android:textSize="36sp"
-            android:visibility="gone"
+            android:visibility="@{result.details.size() > 3 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="@+id/shaper3"
             app:layout_constraintStart_toEndOf="@+id/shaper3"
             app:layout_constraintTop_toTopOf="@+id/shaper3"
-            tools:text="XM"
-            tools:textColor="@android:color/holo_green_light"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
-            tools:visibility="visible"/>
+            tools:text="LOSE"
+            tools:textColor="@color/tintResultCorrect"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper3_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
+            android:text="@{result.details.size() > 3 ? (ExtensionUtilKt.toTimeStringPair(result.details.get(3).spentTime).first + ExtensionUtilKt.toTimeStringPair(result.details.get(3).spentTime).second) : null}"
             android:textColor="@android:color/white"
             android:textSize="24sp"
-            android:visibility="gone"
-            app:fontFamily="@font/coda_regular"
+            android:visibility="@{result.details.size() > 3 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="@+id/shaper3"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/shaper3"
-            tools:fontFamily="@font/coda_regular"
-            tools:text="2:88"
-            tools:visibility="visible"/>
+            tools:text="5:10"
+            tools:visibility="visible" />
 
         <ImageView
             android:id="@+id/shaper4"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginBottom="4dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@+id/shaper5"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/shaper3"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:srcCompat="@drawable/glyph_hex_normal"
-            tools:tint="@android:color/holo_green_light"
-            tools:visibility="visible"/>
-
-        <TextView
-            android:id="@+id/shaper4_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textSize="36sp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/shaper4"
-            app:layout_constraintStart_toEndOf="@+id/shaper4"
-            app:layout_constraintTop_toTopOf="@+id/shaper4"
-            tools:text="LOSE"
-            tools:textColor="@android:color/holo_green_light"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
-            tools:visibility="visible"/>
-
-        <TextView
-            android:id="@+id/shaper4_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:textColor="@android:color/white"
-            android:textSize="24sp"
-            android:visibility="gone"
-            app:fontFamily="@font/coda_regular"
-            app:layout_constraintBottom_toBottomOf="@+id/shaper4"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/shaper4"
-            tools:fontFamily="@font/coda_regular"
-            tools:text="5:10"
-            tools:visibility="visible"/>
-
-        <ImageView
-            android:id="@+id/shaper5"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
             android:layout_marginBottom="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
-            android:visibility="gone"
+            android:tint="@{result.details.size() > 4 &amp;&amp; result.details.get(4).correct ? @color/tintResultCorrect : @color/tintResultFault}"
+            android:visibility="@{result.details.size() > 4 ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toTopOf="@+id/guideline"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/shaper4"
+            app:layout_constraintTop_toBottomOf="@+id/shaper3"
             app:layout_constraintVertical_chainStyle="packed"
+            app:srcBitmap="@{result.details.size() > 4 ? result.details.get(4).bitmap : null}"
             tools:srcCompat="@drawable/glyph_hex_normal"
-            tools:tint="@android:color/holo_red_dark"
-            tools:visibility="visible"/>
+            tools:tint="@color/tintResultFault"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper5_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:text="@{result.details.size() > 4 ? result.details.get(4).name : null}"
             android:textSize="36sp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/shaper5"
-            app:layout_constraintStart_toEndOf="@+id/shaper5"
-            app:layout_constraintTop_toTopOf="@+id/shaper5"
+            android:visibility="@{result.details.size() > 4 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
+            app:layout_constraintBottom_toBottomOf="@+id/shaper4"
+            app:layout_constraintStart_toEndOf="@+id/shaper4"
+            app:layout_constraintTop_toTopOf="@+id/shaper4"
             tools:text="SELF"
-            tools:textColor="@android:color/holo_red_dark"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
-            tools:visibility="visible"/>
+            tools:textColor="@color/tintResultFault"
+            tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/shaper5_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
+            android:text="@{result.details.size() > 4 ? (ExtensionUtilKt.toTimeStringPair(result.details.get(4).spentTime).first + ExtensionUtilKt.toTimeStringPair(result.details.get(4).spentTime).second) : null}"
             android:textColor="@android:color/white"
             android:textSize="24sp"
-            android:visibility="gone"
-            app:fontFamily="@font/coda_regular"
-            app:layout_constraintBottom_toBottomOf="@+id/shaper5"
+            android:visibility="@{result.details.size() > 4 ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
+            app:layout_constraintBottom_toBottomOf="@+id/shaper4"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/shaper5"
-            tools:fontFamily="@font/coda_regular"
+            app:layout_constraintTop_toTopOf="@+id/shaper4"
             tools:text="1:55"
-            tools:visibility="visible"/>
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/bonus_hack_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:layout_marginTop="4dp"
-            android:text="@{@string/bonus_hack}"
+            android:layout_marginTop="12dp"
+            android:text="@string/bonus_hack"
             android:textColor="@color/button_text"
             android:textSize="20sp"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toTopOf="@+id/bonus_hack"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/guideline"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:fontFamily="@font/coda_regular"/>
+            app:layout_constraintVertical_chainStyle="spread_inside" />
 
         <TextView
             android:id="@+id/bonus_hack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:layout_marginTop="4dp"
+            android:text="@{@string/bonus_value(result.calcHackBonus())}"
             android:textColor="@android:color/white"
             android:textSize="44sp"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toTopOf="@+id/bonus_speed_label"
             app:layout_constraintEnd_toEndOf="@+id/bonus_hack_label"
             app:layout_constraintStart_toStartOf="@+id/bonus_hack_label"
             app:layout_constraintTop_toBottomOf="@+id/bonus_hack_label"
-            app:layout_constraintVertical_chainStyle="packed"
-            android:text="@{@string/bonus_value(bonus_hack_value)}"
-            tools:fontFamily="@font/coda_regular"
-            tools:text="79%"/>
+            tools:text="79%" />
 
         <TextView
             android:id="@+id/bonus_speed_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:layout_marginTop="4dp"
-            android:text="@{@string/bonus_speed}"
+            android:text="@string/bonus_speed"
             android:textColor="@color/button_text"
             android:textSize="20sp"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toTopOf="@+id/bonus_speed"
             app:layout_constraintEnd_toEndOf="@+id/bonus_hack_label"
             app:layout_constraintStart_toStartOf="@+id/bonus_hack_label"
-            app:layout_constraintTop_toBottomOf="@+id/bonus_hack"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:fontFamily="@font/coda_regular"/>
+            app:layout_constraintTop_toBottomOf="@+id/bonus_hack" />
 
         <TextView
             android:id="@+id/bonus_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginBottom="32dp"
+            android:text="@{@string/bonus_value(result.calcSpeedBonus(allowableTime))}"
             android:textColor="@android:color/white"
             android:textSize="44sp"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@+id/bonus_hack_label"
             app:layout_constraintStart_toStartOf="@+id/bonus_hack_label"
             app:layout_constraintTop_toBottomOf="@+id/bonus_speed_label"
-            app:layout_constraintVertical_chainStyle="packed"
-            android:text="@{@string/bonus_value(bonus_speed_value)}"
-            tools:fontFamily="@font/coda_regular"
-            tools:text="32%"/>
+            tools:text="32%" />
 
         <TextView
             android:id="@+id/count_hack"
@@ -338,20 +326,18 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:layout_marginEnd="8dp"
+            android:text="@{@string/count_hack(result.count)}"
             android:textColor="@color/button_text"
             android:textSize="16sp"
             android:visibility="gone"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toTopOf="@+id/button_right"
             app:layout_constraintEnd_toEndOf="parent"
-            android:text="@{@string/count_hack(count_hack_value)}"
-            tools:fontFamily="@font/coda_regular"
             tools:text="HACK:1"
-            tools:visibility="visible"/>
+            tools:visibility="visible" />
 
         <Button
             android:id="@+id/button_right"
-            tools:text="RIGHT"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
@@ -361,14 +347,13 @@
             android:paddingRight="@dimen/button_padding"
             android:textColor="@color/button_text"
             android:textSize="20sp"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="RIGHT" />
 
         <Button
             android:id="@+id/button_left"
-            tools:text="LEFT"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
@@ -378,17 +363,17 @@
             android:paddingRight="@dimen/button_padding"
             android:textColor="@color/button_text"
             android:textSize="20sp"
-            app:fontFamily="@font/coda_regular"
-            tools:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="LEFT" />
 
         <android.support.constraint.Guideline
             android:id="@+id/guideline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            app:layout_constraintGuide_percent="0.55"/>
+            app:layout_constraintGuide_percent="0.55" />
 
     </android.support.constraint.ConstraintLayout>
 </layout>

@@ -1,19 +1,13 @@
-package jp.org.example.geckour.glyph.activity
+package jp.org.example.geckour.glyph.ui
 
 import android.app.Activity
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-
-import com.google.android.gms.analytics.HitBuilders
-import com.google.android.gms.analytics.Tracker
-import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
-import jp.org.example.geckour.glyph.fragment.CheckAnswerFragment
-import jp.org.example.geckour.glyph.fragment.MainFragment
-import jp.org.example.geckour.glyph.fragment.model.Result
+import jp.org.example.geckour.glyph.ui.model.Result
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,9 +24,9 @@ class MainActivity : AppCompatActivity() {
                     putExtra(ARGS_MODE, mode)
                 }
 
-        private val ARGS_MODE = "mode"
+        private const val ARGS_MODE = "mode"
 
-        var hacks: Int = 0
+        var hacks: Long = 0
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -58,10 +52,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             mode = savedInstanceState.getSerializable(ARGS_MODE) as Mode
         }
-
-        val t: Tracker? = (application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
@@ -74,8 +64,8 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 
-    internal fun transitionForCheckAnswer(results: List<Result>, allowableTime: Long) {
-        val fragment = CheckAnswerFragment.newInstance(results, allowableTime)
+    internal fun transitionForCheckAnswer(result: Result, allowableTime: Long) {
+        val fragment = CheckAnswerFragment.newInstance(result, allowableTime)
         supportFragmentManager.beginTransaction()
                 .replace(R.id.container, fragment, CheckAnswerFragment.tag)
                 .addToBackStack(CheckAnswerFragment.tag)
@@ -86,5 +76,5 @@ class MainActivity : AppCompatActivity() {
 
     internal fun onRetry() = supportFragmentManager.popBackStack()
 
-    internal fun onNext() = startActivity(MainActivity.createIntent(this, mode))
+    internal fun onNext() = startActivity(createIntent(this, mode))
 }

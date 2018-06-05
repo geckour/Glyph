@@ -1,23 +1,20 @@
-package jp.org.example.geckour.glyph.fragment
+package jp.org.example.geckour.glyph.ui
 
 import android.app.Dialog
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
 import android.widget.ArrayAdapter
-import com.google.android.gms.analytics.HitBuilders
-import com.google.android.gms.analytics.Tracker
-import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.R
-import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.DialogPickListBinding
+import jp.org.example.geckour.glyph.util.HintType
 
 class ModePickDialogFragment : DialogFragment() {
 
     companion object {
         val tag: String = ModePickDialogFragment::class.java.simpleName
 
-        private val ARGS_CURRENT = "current"
+        private const val ARGS_CURRENT = "current"
 
         fun newInstance(type: Int): ModePickDialogFragment =
                 ModePickDialogFragment().apply {
@@ -35,33 +32,30 @@ class ModePickDialogFragment : DialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        current = arguments.getInt(ARGS_CURRENT, 0)
+        current = arguments?.getInt(ARGS_CURRENT, 0) ?: 0
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogPickListBinding.inflate(activity.layoutInflater)
+        val fragmentActivity = activity ?: throw IllegalStateException()
+
+        binding = DialogPickListBinding.inflate(fragmentActivity.layoutInflater, null, false)
 
         binding.apply {
             title = "Game mode"
             message = "Define the mode how to show sequence"
             spinner.apply {
-                adapter = ArrayAdapter<String>(activity, android.R.layout.simple_spinner_dropdown_item, PrefActivity.HintType.values().map { it.displayName })
+                adapter = ArrayAdapter<String>(activity,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        HintType.values().map { it.displayName })
+
                 setSelection(current)
             }
         }
 
-        return AlertDialog.Builder(activity, R.style.AppThemeDark_Dialog)
+        return AlertDialog.Builder(fragmentActivity, R.style.AppThemeDark_Dialog)
                 .setView(binding.root)
                 .setPositiveButton("OK") { _, _ -> onConfirm(binding.spinner.selectedItemPosition) }
                 .setNegativeButton("CANCEL") { dialog, _ -> dialog.cancel() }.create()
 
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        val t: Tracker? = (activity.application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 }

@@ -1,8 +1,9 @@
-package jp.org.example.geckour.glyph.view.model
+package jp.org.example.geckour.glyph.ui.view
 
 import android.graphics.*
 
-class Particle(val x: Float, val y: Float, private val grainImg: Bitmap, val canvasWidth: Int, private val phase: Phase?) {
+class Particle(val x: Float, val y: Float,
+               private val grainImg: Bitmap, val canvasWidth: Int, private val phase: Phase?) {
 
     enum class Phase {
         NOT_CONVERGING,
@@ -10,7 +11,7 @@ class Particle(val x: Float, val y: Float, private val grainImg: Bitmap, val can
     }
 
     companion object {
-        private val PI2 = Math.PI * 2
+        private const val PI2 = Math.PI * 2
     }
 
     var drawn: Boolean = false
@@ -29,7 +30,9 @@ class Particle(val x: Float, val y: Float, private val grainImg: Bitmap, val can
     private val o = 0.15
     private val grainR = grainImg.width ushr 1
 
-    private fun phase(): Phase = if (elapsedTime > moveUntil) Phase.CONVERGING else Phase.NOT_CONVERGING
+    private fun phase(): Phase =
+            if (elapsedTime > moveUntil) Phase.CONVERGING
+            else Phase.NOT_CONVERGING
 
     fun move(canvas: Canvas, paint: Paint) {
         elapsedTime = (System.currentTimeMillis() - initTime)
@@ -43,7 +46,8 @@ class Particle(val x: Float, val y: Float, private val grainImg: Bitmap, val can
                 }
             }
             Phase.CONVERGING -> { //収束後
-                if (grains.size > 3) grains.filter { !it.isOrigin }.apply { grains.removeAll(this) }
+                if (grains.size > 3)
+                    grains.filter { !it.isOrigin }.apply { grains.removeAll(this) }
 
                 grains.forEach {
                     val param = Math.cos(it.paramAngle)
@@ -68,7 +72,7 @@ class Particle(val x: Float, val y: Float, private val grainImg: Bitmap, val can
 
         init {
             val margin = Math.random() * canvasWidth * 0.02
-            
+
             val blurR = canvasWidth * 0.1 * (Math.random() * 0.7 + 0.3) + margin
             val blurA = PI2 * Math.random()
 

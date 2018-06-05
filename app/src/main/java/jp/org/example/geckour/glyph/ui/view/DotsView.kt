@@ -1,21 +1,25 @@
-package jp.org.example.geckour.glyph.view
+package jp.org.example.geckour.glyph.ui.view
 
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
-import jp.org.example.geckour.glyph.*
-import jp.org.example.geckour.glyph.App.Companion.version
-import jp.org.example.geckour.glyph.util.*
+import jp.org.example.geckour.glyph.R
+import jp.org.example.geckour.glyph.util.clearAll
 import kotlinx.coroutines.experimental.Job
-import kotlin.collections.ArrayList
 
-class DotsView: View {
+class DotsView : View {
 
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int): super(context, attrs, defStyleAttr, defStyleRes)
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int): super(context, attrs, defStyleAttr)
-    constructor(context: Context, attrs: AttributeSet): super(context, attrs)
-    constructor(context: Context): super(context)
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
+            : super(context, attrs, defStyleAttr, defStyleRes)
+
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int)
+            : super(context, attrs, defStyleAttr)
+
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+
+    constructor(context: Context) : super(context)
+
 
     private val jobList: ArrayList<Job> = ArrayList()
 
@@ -61,8 +65,10 @@ class DotsView: View {
             if (i == 0) pointF.set(offsetWidth, offsetHeight * 1.2f)
             else {
                 pointF.set(
-                        Math.cos(uAngle * (c - 0.5)).toFloat() * (if (i < 5) radius else radius * 2f) + offsetWidth,
-                        Math.sin(uAngle * (c - 0.5)).toFloat() * (if (i < 5) radius else radius * 2f) + offsetHeight * 1.2f
+                        Math.cos(uAngle * (c - 0.5)).toFloat()
+                                * (if (i < 5) radius else radius * 2f) + offsetWidth,
+                        Math.sin(uAngle * (c - 0.5)).toFloat()
+                                * (if (i < 5) radius else radius * 2f) + offsetHeight * 1.2f
                 )
             }
         }
@@ -75,15 +81,19 @@ class DotsView: View {
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
-        jobList.clearJobs()
+        jobList.clearAll()
     }
 
     override fun onDraw(canvas: Canvas) {
         isThrough.forEachIndexed { i, b ->
             if (b) {
-                canvas.drawBitmap(dotBitmapTrue, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint)
+                canvas.drawBitmap(dotBitmapTrue,
+                        dots[i].x - dotDiam / 2,
+                        dots[i].y - dotDiam / 2, paint)
             } else {
-                canvas.drawBitmap(dotBitmapFalse, dots[i].x - dotDiam / 2, dots[i].y - dotDiam / 2, paint)
+                canvas.drawBitmap(dotBitmapFalse,
+                        dots[i].x - dotDiam / 2,
+                        dots[i].y - dotDiam / 2, paint)
             }
         }
     }
@@ -111,7 +121,8 @@ class DotsView: View {
 
     fun getDots(): Array<PointF> = dots
 
-    fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float, onCollision: (List<Int>) -> Unit = {}): List<Int> {
+    fun getCollision(fromX: Float, fromY: Float, toX: Float, toY: Float,
+                     onCollision: (List<Int>) -> Unit = {}): List<Int> {
         val collisionDots: ArrayList<Int> = ArrayList()
         val tol = dotDiam
         for (i in 0..10) {

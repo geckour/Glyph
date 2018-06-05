@@ -1,10 +1,10 @@
-package jp.org.example.geckour.glyph.fragment.adapter
+package jp.org.example.geckour.glyph.ui.adapter
 
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
-import jp.org.example.geckour.glyph.fragment.StatsSequenceFragment
-import jp.org.example.geckour.glyph.fragment.StatsShaperFragment
+import jp.org.example.geckour.glyph.ui.StatsSequenceFragment
+import jp.org.example.geckour.glyph.ui.StatsShaperFragment
 
 class StatsFragmentPagerAdapter(fragmentManager: FragmentManager): FragmentPagerAdapter(fragmentManager) {
 

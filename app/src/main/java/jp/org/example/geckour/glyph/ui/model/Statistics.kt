@@ -1,4 +1,6 @@
-package jp.org.example.geckour.glyph.fragment.model
+package jp.org.example.geckour.glyph.ui.model
+
+import android.graphics.Bitmap
 
 data class Statistics(
         val sequenceData: Data,
@@ -8,6 +10,7 @@ data class Statistics(
             val id: Long,
             val name: String,
             val correctCount: Long,
-            val totalCount: Long
+            val totalCount: Long,
+            var bitmap: Bitmap?
     )
 }

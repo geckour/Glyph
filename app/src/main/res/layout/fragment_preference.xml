@@ -3,7 +3,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
-        <import type="jp.org.example.geckour.glyph.activity.PrefActivity.HintType" />
+        <import type="jp.org.example.geckour.glyph.ui.PrefActivity" />
     </data>
 
     <LinearLayout

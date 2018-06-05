@@ -19,4 +19,12 @@
     <string name="summary_pref_game_mode">Mode how to show sequence: %1$s</string>
     <string name="summary_pref_minimum_level">Minimum portal level to choose sequence: %1$d</string>
     <string name="summary_pref_maximum_level">Maximum portal level to choose sequence: %1$d</string>
+
+    <string name="button_hack">HACK</string>
+    <string name="button_stats">STATS</string>
+    <string name="button_weakness">WEAKNESS</string>
+    <string name="button_opt">OPT</string>
+    <string name="button_dictionary">DICTIONARY</string>
+
+    <string name="message_opening_command_channel">COMMAND CHANNEL OPEN…</string>
 </resources>

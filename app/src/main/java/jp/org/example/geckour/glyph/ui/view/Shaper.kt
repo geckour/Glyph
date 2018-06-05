@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph.view.model
+package jp.org.example.geckour.glyph.ui.view
 
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize

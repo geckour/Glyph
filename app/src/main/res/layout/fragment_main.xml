@@ -15,7 +15,7 @@
             android:layout_height="match_parent"
             />
 
-        <jp.org.example.geckour.glyph.view.DotsView
+        <jp.org.example.geckour.glyph.ui.view.DotsView
             android:id="@+id/dotsView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -38,7 +38,7 @@
             tools:fontFamily="@font/coda_regular"
             tools:text="NO KEY"/>
 
-        <jp.org.example.geckour.glyph.view.AnimateView
+        <jp.org.example.geckour.glyph.ui.view.AnimateView
             android:id="@+id/animateView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>

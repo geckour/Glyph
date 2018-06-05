@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph.fragment
+package jp.org.example.geckour.glyph.ui
 
 import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
@@ -10,44 +10,37 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import com.google.android.gms.analytics.HitBuilders
-import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
-import jp.org.example.geckour.glyph.App
-import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.R
-import jp.org.example.geckour.glyph.activity.MainActivity
-import jp.org.example.geckour.glyph.activity.PrefActivity
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
 import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.db.model.Sequence
-import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
-import jp.org.example.geckour.glyph.fragment.model.Result
+import jp.org.example.geckour.glyph.ui.MainActivity.Companion.hacks
+import jp.org.example.geckour.glyph.ui.model.Result
+import jp.org.example.geckour.glyph.ui.model.ResultDetail
 import jp.org.example.geckour.glyph.util.*
-import jp.org.example.geckour.glyph.view.AnimateView
-import jp.org.example.geckour.glyph.view.model.Shaper
-import kotlinx.coroutines.experimental.CancellationException
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.delay
+import jp.org.example.geckour.glyph.ui.view.AnimateView
+import jp.org.example.geckour.glyph.ui.view.Shaper
+import kotlinx.coroutines.experimental.*
 import timber.log.Timber
+import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
-class MainFragment: Fragment() {
+class MainFragment : Fragment() {
 
     companion object {
         val tag: String = MainFragment::class.java.simpleName
 
         fun newInstance(): MainFragment = MainFragment()
 
-        private val STATE_ARGS_LEVEL = "level"
-        private val STATE_ARGS_QUESTIONS = "questions"
+        private const val STATE_ARGS_LEVEL = "level"
+        private const val STATE_ARGS_QUESTIONS = "questions"
     }
 
     private val mainActivity: MainActivity by lazy { activity as MainActivity }
 
     private lateinit var binding: FragmentMainBinding
     private lateinit var realm: Realm
-    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
+    private val sharedPreferences: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
 
     private var min = 0
     private var max = 8
@@ -100,34 +93,38 @@ class MainFragment: Fragment() {
         realm = Realm.getDefaultInstance()
     }
 
-    override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false)
+    override fun onCreateView(inflater: LayoutInflater,
+                              container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+        binding = DataBindingUtil.inflate(inflater,
+                R.layout.fragment_main, container, false)
 
         return binding.root
     }
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.animateView.resetInitTime()
-
-        binding.animateView.setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
-        showDialog("COMMAND CHANNEL OPEN…")
+        binding.animateView.apply {
+            resetInitTime()
+            setGrainAlphaModeIntoWaitCommand(onTimeUpForCommand)
+        }
+        showDialog(getString(R.string.message_opening_command_channel))
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        min = if (sp.contains(PrefActivity.Key.LEVEL_MIN.name)) sp.getInt(PrefActivity.Key.LEVEL_MIN.name, 0) else 0
+        min = sharedPreferences.getIntValue(Key.LEVEL_MIN, 0)
         Timber.d("min: $min")
 
-        max = if (sp.contains(PrefActivity.Key.LEVEL_MAX.name)) sp.getInt(PrefActivity.Key.LEVEL_MAX.name, 8) else 8
+        max = sharedPreferences.getIntValue(Key.LEVEL_MAX, 8)
         Timber.d("max: $max")
 
-        gameMode = if (sp.contains(PrefActivity.Key.GAME_MODE.name)) sp.getInt(PrefActivity.Key.GAME_MODE.name, 0) else 0
+        gameMode = sharedPreferences.getIntValue(Key.GAME_MODE, 0)
         Timber.d("gameMode: $gameMode")
 
-        if (sp.contains(PrefActivity.Key.VIBRATE.name)) doVibrate = sp.getBoolean(PrefActivity.Key.VIBRATE.name, true)
+        doVibrate = sharedPreferences.getBooleanValue(Key.VIBRATE)
         Timber.d("doVibrate: $doVibrate")
 
         if (savedInstanceState == null) {
@@ -137,6 +134,7 @@ class MainFragment: Fragment() {
             }
         } else {
             level = savedInstanceState.getInt(STATE_ARGS_LEVEL)
+
             questions.apply {
                 clear()
                 addAll(savedInstanceState.getParcelableArrayList(STATE_ARGS_QUESTIONS))
@@ -144,7 +142,7 @@ class MainFragment: Fragment() {
         }
 
         binding.animateView.setOnTouchListener { _, event ->
-            when (binding.animateView.getInputState()) {
+            return@setOnTouchListener when (binding.animateView.getInputState()) {
                 AnimateView.InputState.DISABLED -> false
 
                 AnimateView.InputState.ENABLED -> {
@@ -152,32 +150,42 @@ class MainFragment: Fragment() {
                         MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                             fromX = event.x
                             fromY = event.y
+
                             binding.animateView.clearParticle()
                             throughDots.clear()
                             binding.dotsView.setDotsState { false }
                             binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, level.getDifficulty()))
                             binding.animateView.addParticle(event.x, event.y)
+
                             true
                         }
 
                         MotionEvent.ACTION_MOVE -> {
-                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
-                            }
+                            val collision = binding.dotsView
+                                    .getCollision(fromX, fromY, event.x, event.y) {
+                                        if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
+                                            activity?.vibrate()
+                                    }
+
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                             binding.animateView.addParticle(event.x, event.y)
+
                             fromX = event.x
                             fromY = event.y
+
                             true
                         }
 
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
                             addCurrentSpentTime()
 
-                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
-                            }
+                            val collision = binding.dotsView
+                                    .getCollision(fromX, fromY, event.x, event.y) {
+                                        if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
+                                            activity?.vibrate()
+                                    }
+
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                             paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
@@ -199,6 +207,7 @@ class MainFragment: Fragment() {
 
                             fromX = -1f
                             fromY = -1f
+
                             true
                         }
                         else -> true
@@ -212,32 +221,43 @@ class MainFragment: Fragment() {
                                 clearFlash()
                                 flashJob = async { showFlash(0.78f) }
                             }
+
                             fromX = event.x
                             fromY = event.y
+
                             binding.animateView.clearParticle()
                             throughDots.clear()
                             binding.dotsView.setDotsState { false }
                             hideDialog()
                             binding.animateView.addParticle(event.x, event.y)
+
                             true
                         }
 
                         MotionEvent.ACTION_MOVE -> {
-                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
-                            }
+                            val collision = binding.dotsView
+                                    .getCollision(fromX, fromY, event.x, event.y) {
+                                        if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
+                                            activity?.vibrate()
+                                    }
+
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
                             binding.animateView.addParticle(event.x, event.y)
+
                             fromX = event.x
                             fromY = event.y
+
                             true
                         }
 
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                            val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) vibrate()
-                            }
+                            val collision = binding.dotsView
+                                    .getCollision(fromX, fromY, event.x, event.y) {
+                                        if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
+                                            activity?.vibrate()
+                                    }
+
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
 
@@ -256,6 +276,7 @@ class MainFragment: Fragment() {
 
                             fromX = -1f
                             fromY = -1f
+
                             true
                         }
 
@@ -267,10 +288,6 @@ class MainFragment: Fragment() {
 
         hideLeftButton()
         setRightButton("NEXT") { mainActivity.onNext() }
-
-        val t: Tracker? = (activity.application as App).getDefaultTracker()
-        t?.setScreenName(tag)
-        t?.send(HitBuilders.ScreenViewBuilder().build())
     }
 
     private fun getTouchStatus(): Int =
@@ -293,23 +310,26 @@ class MainFragment: Fragment() {
         dialogJob?.clear()
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState?.apply {
+        outState.apply {
             putInt(STATE_ARGS_LEVEL, level)
             putParcelableArrayList(STATE_ARGS_QUESTIONS, ArrayList(questions))
         }
     }
 
-    private fun getAllowableTime(level: Int): Long =
+    private fun getAllowableTime(level: Int = this.level): Long =
             when (level) {
                 in 0..3 -> 20000L
                 in 4..8 -> 20000L - 1000L * (level - 3)
                 else -> 0L
             }
 
-    private fun setFlashColorWithAlpha(maxAlpha: Float, elapsedTime: Long, final: Boolean, onFinish: () -> Unit = {}) {
+    private fun setFlashColorWithAlpha(maxAlpha: Float,
+                                       elapsedTime: Long,
+                                       final: Boolean,
+                                       onFinish: () -> Unit = {}) {
         val colorFlash: Int = 0xfff0a328.toInt()
         val pre = 10L
         val main = 670L
@@ -321,16 +341,21 @@ class MainFragment: Fragment() {
                 setBackgroundColor(if (final) Color.WHITE else colorFlash)
                 alpha =
                         if (final) {
-                            if (elapsedTime < finalTime) 1f
+                            if (elapsedTime < finalTime)
+                                1f
                             else {
                                 onFinish()
                                 0f
                             }
                         } else {
                             when (elapsedTime) {
-                                in 0..pre -> maxAlpha * elapsedTime / pre
+                                in 0..pre -> {
+                                    maxAlpha * elapsedTime / pre
+                                }
 
-                                in pre..whole -> maxAlpha * (1 - (elapsedTime - pre).toFloat() / main)
+                                in pre..whole -> {
+                                    maxAlpha * (1 - (elapsedTime - pre).toFloat() / main)
+                                }
 
                                 else -> {
                                     onFinish()
@@ -354,21 +379,24 @@ class MainFragment: Fragment() {
         while (!finish) {
             try {
                 val elapsedTime = System.currentTimeMillis() - referenceTime
-                uiLaunch { setFlashColorWithAlpha(maxAlpha, elapsedTime, final) { finish = true } }
+                ui { setFlashColorWithAlpha(maxAlpha, elapsedTime, final) { finish = true } }
                 delay(10L)
-            } catch (e: CancellationException) { finish = true } catch (e: Exception) { Timber.e(e) }
+            } catch (e: CancellationException) {
+                finish = true
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 
     private fun showFlashForNoticeInputStart() {
-        async {
-            if (binding.animateView.command != DBInitialData.Shaper.COMPLEX) flashJob = async { showFlash(0.59f) }
-            flashJob?.await()
-            flashJob = async {showFlash(0.78f) }
-            flashJob?.await()
-            flashJob = async { showFlash(1f, true) }
-            flashJob?.await()
-            uiLaunch { clearFlash() }
+        launch {
+            if (binding.animateView.command != DBInitialData.Shaper.COMPLEX) {
+                async { showFlash(0.59f) }.await()
+            }
+            async { showFlash(0.78f) }.await()
+            async { showFlash(1f, true) }.await()
+            ui { clearFlash() }
             async { binding.animateView.setGrainAlphaModeIntoInput(Pair(0, level.getDifficulty())) }
         }
     }
@@ -378,7 +406,6 @@ class MainFragment: Fragment() {
             text = buttonText
             setOnClickListener { predicate(it) }
             visibility = View.VISIBLE
-            typeface = coda
         }
     }
 
@@ -394,7 +421,6 @@ class MainFragment: Fragment() {
             text = buttonText
             setOnClickListener { predicate(it) }
             visibility = View.VISIBLE
-            typeface = coda
         }
     }
 
@@ -405,7 +431,8 @@ class MainFragment: Fragment() {
         }
     }
 
-    private fun showSequence(questions: List<Shaper> = this.questions, onComplete: () -> Unit = {}) {
+    private fun showSequence(questions: List<Shaper> = this.questions,
+                             onComplete: () -> Unit = {}) {
         if (questions.isNotEmpty()) {
             val difficulty = level.getDifficulty()
             binding.animateView
@@ -430,21 +457,28 @@ class MainFragment: Fragment() {
     }
 
     private fun showShaper(shaper: Shaper) =
-        binding.animateView.apply {
-            if (gameMode != 2) setShaperName(listOf(shaper.name))
-            if (gameMode != 1) {
-                showPaths(
-                        shaper.dots.convertDotsListToPaths().getNormalizedPaths().mapToPointPathsFromDotPaths(binding.dotsView.getDots())
-                ).apply { Timber.d("showing shaper id: ${shaper.id}, name: ${shaper.name}, dots: ${shaper.dots}") }
+            binding.animateView.apply {
+                if (gameMode != 2) setShaperName(listOf(shaper.name))
+                if (gameMode != 1) {
+                    showPaths(
+                            shaper.dots.convertDotsListToPaths()
+                                    .getNormalizedPaths()
+                                    .mapToPointPathsFromDotPaths(binding.dotsView.getDots())
+                    ).apply { Timber.d("showing shaper id: ${shaper.id}, name: ${shaper.name}, dots: ${shaper.dots}") }
+                }
             }
-        }
 
-    private fun getSequence(id: Long? = null, mode: MainActivity.Mode? = null, level: Int? = null): List<Shaper> {
+    private fun getSequence(id: Long? = null,
+                            mode: MainActivity.Mode? = null,
+                            level: Int? = null): List<Shaper> {
+
         fun getLevel(): Int = ((max - min + 1) * Math.random() + min).toInt()
 
-        this.level = level ?: mainActivity.level ?: getLevel().apply { Timber.d("level: $this") }
-        val difficulty = this.level.getDifficulty().apply { Timber.d("difficulty: $this") }
+        this.level = level
+                ?: mainActivity.level
+                ?: getLevel().apply { Timber.d("level: $this") }
         mainActivity.level = this.level
+        val difficulty = this.level.getDifficulty().apply { Timber.d("difficulty: $this") }
 
         return when (mode ?: mainActivity.getMode()) {
             MainActivity.Mode.NORMAL -> {
@@ -456,7 +490,12 @@ class MainFragment: Fragment() {
                                     .toList()
                                     .map { it.parse() }
                                     .let {
-                                        listOf(it[id?.toInt() ?: (Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }])
+                                        listOf(it[
+                                                id?.toInt()
+                                                        ?: (Math.random() * it.size).toInt().apply {
+                                                            mainActivity.sequenceId = this.toLong()
+                                                        }
+                                        ])
                                     }
                         }
                     }
@@ -468,7 +507,11 @@ class MainFragment: Fragment() {
                                 .toList()
                                 .map { it.message.toList().map { it.parse() } }
                                 .let {
-                                    it[id?.toInt() ?: (Math.random() * it.size).toInt().apply { mainActivity.sequenceId = this.toLong() }]
+                                    it[id?.toInt()
+                                            ?: (Math.random() * it.size).toInt().apply {
+                                                mainActivity.sequenceId = this.toLong()
+                                            }
+                                    ]
                                 }
                     }
 
@@ -479,59 +522,70 @@ class MainFragment: Fragment() {
             MainActivity.Mode.WEAKNESS -> {
                 when (difficulty) {
                     1 -> {
-                        realm.where(DBShaper::class.java).let { shapers ->
-                            if (id == null) {
-                                shapers.greaterThan("examCount", 0).let {
-                                    val size = it.count().toInt()
-                                    if (size > shapers.count() * 0.8) {
-                                        it.findAll().toList()
-                                                .sortedBy { it.correctCount.toDouble() / it.examCount }
-                                                .take(25)
-                                                .map { it.parse() }
-                                                .let {
-                                                    val index = (Math.random() * 15).toInt()
-                                                    val shaper =
-                                                            (if (index > it.lastIndex) {
-                                                                var shaperId: Long
-                                                                do {
-                                                                    shaperId = (Math.random() * size).toLong()
-                                                                } while (it.map { it.id }.contains(shaperId))
-                                                                shapers.findAll().filterNotNull()[shaperId.toInt()].parse()
-                                                            } else it[index]).apply { mainActivity.sequenceId = this.id }
-                                                    listOf(shaper)
-                                                }
-                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
-                                }
-                            } else {
-                                listOf(shapers.findAll().map { it.parse() }[id.toInt()])
+                        val shapers = realm.where(DBShaper::class.java)
+
+                        if (id == null) {
+                            shapers.greaterThan("examCount", 0).let {
+                                val size = it.count().toInt()
+                                return@let if (size > shapers.count() * 0.8) {
+                                    it.findAll().toList()
+                                            .sortedBy { it.correctCount.toDouble() / it.examCount }
+                                            .take(25)
+                                            .map { it.parse() }
+                                            .let {
+                                                val index = (Math.random() * 15).toInt()
+                                                val shaper =
+                                                        (if (index > it.lastIndex) {
+                                                            var shaperId: Long
+                                                            do {
+                                                                shaperId = (Math.random() * size).toLong()
+                                                            } while (it.map { it.id }.contains(shaperId))
+                                                            shapers.findAll().filterNotNull()[shaperId.toInt()].parse()
+                                                        } else it[index]).apply { mainActivity.sequenceId = this.id }
+
+                                                listOf(shaper)
+                                            }
+                                } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
                             }
+                        } else {
+                            listOf(shapers.findAll().map { it.parse() }[id.toInt()])
                         }
                     }
 
                     in 2..5 -> {
-                        realm.where(Sequence::class.java).equalTo("size", difficulty).let { sequences ->
-                            if (id == null) {
-                                sequences.greaterThan("examCount", 0).let {
-                                    val size = it.count().toInt()
-                                    if (size > sequences.count() * 0.8) {
-                                        it.findAll().toList()
-                                                .sortedBy { it.correctCount.toDouble() / it.examCount }
-                                                .take(25)
-                                                .map { (it.id to it.message.toList().map { it.parse() }) }
-                                                .let {
-                                                    val index = (Math.random() * 15).toInt()
-                                                    (if (index > it.size - 1) {
-                                                        var sequenceId: Long
-                                                        do {
-                                                            sequenceId = (Math.random() * size).toLong()
-                                                        } while (it.map { it.first }.contains(sequenceId))
-                                                        sequences.findAll().filterNotNull()[sequenceId.toInt()].let { it.id to it.message.toList().map { it.parse() } }
-                                                    } else it[index]).apply { mainActivity.sequenceId = this.first }.second
-                                                }
-                                    } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
-                                }
-                            } else {
-                                sequences.findAll().filterNotNull()[id.toInt()].let { it.message.toList().map { it.parse() } }
+                        val sequences = realm.where(Sequence::class.java)
+                                .equalTo("size", difficulty)
+
+                        if (id == null) {
+                            sequences.greaterThan("examCount", 0).let {
+                                val size = it.count().toInt()
+                                return@let if (size > sequences.count() * 0.8) {
+                                    it.findAll().toList()
+                                            .sortedBy { it.correctCount.toDouble() / it.examCount }
+                                            .take(25)
+                                            .map { (it.id to it.message.toList().map { it.parse() }) }
+                                            .let {
+                                                val index = (Math.random() * 15).toInt()
+                                                (if (index > it.size - 1) {
+                                                    var sequenceId: Long
+                                                    do {
+                                                        sequenceId = (Math.random() * size).toLong()
+                                                    } while (it.map { it.first }.contains(sequenceId))
+                                                    sequences.findAll()
+                                                            .filterNotNull()[sequenceId.toInt()]
+                                                            .let {
+                                                                it.id to it.message.toList().map { it.parse() }
+                                                            }
+                                                } else it[index]).apply {
+                                                    mainActivity.sequenceId = this.first
+                                                }.second
+                                            }
+                                } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                            }
+                        } else {
+                            sequences.findAll()
+                                    .filterNotNull()[id.toInt()].let {
+                                it.message.toList().map { it.parse() }
                             }
                         }
                     }
@@ -542,16 +596,26 @@ class MainFragment: Fragment() {
         }
     }
 
-    private fun addCurrentSpentTime() = spentTimes.add(System.currentTimeMillis() - binding.animateView.getInputStartTime() - spentTimes.sum())
+    private fun addCurrentSpentTime() {
+        spentTimes.add(
+                System.currentTimeMillis()
+                        - binding.animateView.getInputStartTime()
+                        - spentTimes.sum()
+        )
+    }
 
-    private fun checkAnswer() =
-            mainActivity.transitionForCheckAnswer(
-                    questions.mapIndexed { i, q ->
-                        if (i < paths.size) Result(q.id, q.match(paths[i]), spentTimes[i])
-                        else Result(q.id, false, 0L)
-                    },
-                    getAllowableTime(level)
-            )
+    private fun checkAnswer() {
+        mainActivity.transitionForCheckAnswer(
+                Result(
+                        questions.mapIndexed { i, q ->
+                            if (i < paths.size) ResultDetail(q.id, null, q.match(paths[i]), spentTimes[i], null)
+                            else ResultDetail(q.id, null, false, 0L, null)
+                        },
+                        hacks
+                ),
+                getAllowableTime()
+        )
+    }
 
     private fun showDialog(command: DBInitialData.Shaper) {
         val message =
@@ -574,7 +638,7 @@ class MainFragment: Fragment() {
                 text = message
                 visibility = View.VISIBLE
 
-                uiLaunch {
+                ui {
                     delay(1000)
                     if ((tag as? Long) == id) hideDialog()
                 }.apply { dialogJob = this }

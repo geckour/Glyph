@@ -1,12 +1,7 @@
 package jp.org.example.geckour.glyph
 
 import android.app.Application
-import android.graphics.Typeface
-import android.os.Build
-import android.support.v4.content.res.ResourcesCompat
 import com.facebook.stetho.Stetho
-import com.google.android.gms.analytics.GoogleAnalytics
-import com.google.android.gms.analytics.Tracker
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.RealmList
@@ -14,19 +9,15 @@ import jp.org.example.geckour.glyph.db.DBInitialData.sequences
 import jp.org.example.geckour.glyph.db.DBInitialData.shapers
 import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
-import timber.log.Timber.DebugTree
 import timber.log.Timber
+import timber.log.Timber.DebugTree
 
 
-class App: Application() {
+class App : Application() {
 
     companion object {
-        val version = Build.VERSION.SDK_INT
         var scale: Float = -1f
-        var coda: Typeface? = null
     }
-
-    private var tracker: Tracker? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -40,15 +31,9 @@ class App: Application() {
         injectInitialDBData()
 
         if (BuildConfig.DEBUG) {
-            injectDummyDBData()
+            //injectDummyDBData()
         }
-
-        coda = ResourcesCompat.getFont(this, R.font.coda_regular)
     }
-
-    @Synchronized
-    internal fun getDefaultTracker(): Tracker? =
-            tracker ?: GoogleAnalytics.getInstance(this).newTracker(R.xml.global_tracker)
 
     private fun injectInitialDBData() {
         RealmConfiguration.Builder()
@@ -64,14 +49,19 @@ class App: Application() {
                     sequences.forEachIndexed { i, sequence ->
                         realm.createObject(Sequence::class.java, i).apply {
                             size = sequence.size
-                            message = sequence.mapTo(RealmList()) { realm.where(Shaper::class.java).equalTo("name", it.displayName).findFirstAsync() }
+                            message =
+                                    sequence.mapTo(RealmList()) {
+                                        realm.where(Shaper::class.java)
+                                                .equalTo("name", it.displayName)
+                                                .findFirstAsync()
+                                    }
                         }
                     }
                 }.build().apply { Realm.setDefaultConfiguration(this) }
     }
 
     private fun injectDummyDBData() {
-        /*Realm.getDefaultInstance().let { realm ->
+        Realm.getDefaultInstance().let { realm ->
             realm.where(Shaper::class.java)
                     .findAll()
                     .toList()
@@ -94,6 +84,6 @@ class App: Application() {
                             }
                         }
                     }
-        }*/
+        }
     }
 }

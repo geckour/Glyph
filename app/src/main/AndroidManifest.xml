@@ -16,7 +16,7 @@
         android:name=".App" >
 
         <activity
-            android:name=".activity.SplashActivity"
+            android:name=".ui.SplashActivity"
             android:label="@string/app_name"
             android:theme="@style/AppThemeDark.NoActionBar">
             <intent-filter>
@@ -26,23 +26,23 @@
         </activity>
 
         <activity
-            android:name=".activity.MainActivity"
+            android:name=".ui.MainActivity"
             android:label="@string/label_main"
             android:theme="@style/AppThemeDark.NoActionBar"
             android:noHistory="true" />
 
         <activity
-            android:name=".activity.PrefActivity"
+            android:name=".ui.PrefActivity"
             android:label="@string/label_opt" />
 
         <activity
-            android:name=".activity.DictActivity"
+            android:name=".ui.DictActivity"
             android:label="@string/label_dict"
             android:theme="@style/AppThemeDark.NoActionBar"
             android:noHistory="true" />
 
         <activity
-            android:name=".activity.StatsActivity"
+            android:name=".ui.StatsActivity"
             android:label="@string/label_stats" />
     </application>
 

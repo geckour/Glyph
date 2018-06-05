@@ -2,17 +2,16 @@ package jp.org.example.geckour.glyph.util
 
 import android.content.Context
 import android.graphics.*
+import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.support.v4.app.Fragment
-import android.support.v7.app.AppCompatActivity
 import jp.org.example.geckour.glyph.App
-import jp.org.example.geckour.glyph.App.Companion.version
-import jp.org.example.geckour.glyph.view.model.Shaper
+import jp.org.example.geckour.glyph.ui.view.Shaper
 import kotlinx.coroutines.experimental.*
-import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 import kotlinx.coroutines.experimental.android.UI
+import timber.log.Timber
 import kotlin.coroutines.experimental.CoroutineContext
+import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
 
 private const val VIBRATE_LENGTH: Long = 1L
@@ -20,20 +19,35 @@ private const val VIBRATE_LENGTH: Long = 1L
 fun <T> async(context: CoroutineContext = CommonPool, block: suspend CoroutineScope.() -> T) =
         kotlinx.coroutines.experimental.async(context, block = block)
 
-fun ArrayList<Job>.insertUILaunch(onError: Throwable.() -> Unit = { printStackTrace() }, block: suspend CoroutineScope.() -> Unit) =
-        uiLaunch(onError, block).apply { this@insertUILaunch.add(this@apply) }
+fun <T> ui(onError: Throwable.() -> Unit = { printStackTrace() },
+           block: suspend CoroutineScope.() -> T) =
+        launch(UI) {
+            try {
+                block()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
 
-fun <T> uiLaunch(onError: Throwable.() -> Unit = { printStackTrace() }, block: suspend CoroutineScope.() -> T) =
-        launch(UI) { try { block() } catch (e: Exception) { onError(e) } }
+fun ArrayList<Job>.clearAll() {
+    forEach {
+        try {
+            if (it.isActive) it.cancel()
+        } catch (e: CancellationException) {
+            Timber.e(e)
+        }
+    }
 
-fun ArrayList<Job>.clearJobs() {
-    forEach { try { if (it.isActive) it.cancel() } catch (e: CancellationException) {} }
     clear()
 }
 
-fun Job.clear() { try { if (isActive) cancel() } catch (e: CancellationException) {} }
-
-fun Job.kick() { if (!this.isActive) this.start() }
+fun Job.clear() {
+    try {
+        if (isActive) cancel()
+    } catch (e: CancellationException) {
+        Timber.e(e)
+    }
+}
 
 inline fun <T> Iterable<T>.takeWhileIndexed(predicate: (Int, T) -> Boolean): List<T> {
     val list = ArrayList<T>()
@@ -49,17 +63,25 @@ fun <T, R> Pair<T, R>.inverse(): Pair<R, T> = Pair(this.second, this.first)
 
 fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(dots: Array<PointF>): List<Pair<PointF, PointF>> =
         this.mapNotNull { dotPath ->
-            if (dotPath.first in 0..dots.lastIndex && dotPath.second in 0..dots.lastIndex)
-                Pair(PointF(dots[dotPath.first].x, dots[dotPath.first].y), PointF(dots[dotPath.second].x, dots[dotPath.second].y))
-            else null
+            return@mapNotNull if (dotPath.first in 0..dots.lastIndex
+                    && dotPath.second in 0..dots.lastIndex) {
+                Pair(
+                        PointF(dots[dotPath.first].x, dots[dotPath.first].y),
+                        PointF(dots[dotPath.second].x, dots[dotPath.second].y)
+                )
+            } else null
         }
 
 fun List<Int>.convertDotsListToPaths(): List<Pair<Int, Int>> =
         when {
             this.isEmpty() -> listOf()
+
             this.size < 2 -> listOf(Pair(this[0], this[0]))
+
             else -> {
-                val droppedList = this.takeWhileIndexed { i, index -> i < 1 || this[i - 1] != index }
+                val droppedList =
+                        this.takeWhileIndexed { i, index -> i < 1 || this[i - 1] != index }
+
                 when {
                     droppedList.isEmpty() -> listOf()
                     droppedList.size < 2 -> listOf(Pair(droppedList[0], droppedList[0]))
@@ -73,41 +95,49 @@ fun List<Pair<Int, Int>>.getNormalizedPaths(initialIndex: Int = 0): List<Pair<In
         if (this.size > 1 && initialIndex < this.lastIndex) {
             ArrayList(this.subList(0, initialIndex + 1)).apply {
                 addAll(
-                        this@getNormalizedPaths.subList(initialIndex + 1, this@getNormalizedPaths.size)
-                                .filter { it != this@getNormalizedPaths[initialIndex] && it != this@getNormalizedPaths[initialIndex].inverse() }
+                        this@getNormalizedPaths.subList(
+                                initialIndex + 1,
+                                this@getNormalizedPaths.size
+                        ).filter {
+                            it != this@getNormalizedPaths[initialIndex]
+                                    && it != this@getNormalizedPaths[initialIndex].inverse()
+                        }
                 )
             }.getNormalizedPaths(initialIndex + 1)
         } else this
 
-fun DBShaper.match(path: List<Pair<Int, Int>>): Boolean {
-    val glyphPath = this.dots.convertDotsListToPaths()
-    return if (path.size == glyphPath.size) {
-        glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
-    } else false
+fun DBShaper.match(path: List<Pair<Int, Int>>): Boolean =
+        this.dots.toList().match(path)
+
+fun DBShaper.parse(): Shaper =
+        Shaper(this.id, this.name, this.dots.toList(), this.correctCount, this.examCount)
+
+fun Shaper.match(path: List<Pair<Int, Int>>): Boolean =
+        this.dots.match(path)
+
+private fun List<Int>.match(path: List<Pair<Int, Int>>): Boolean {
+    val glyphPath = this.convertDotsListToPaths()
+
+    return path.size == glyphPath.size
+            && glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
 }
 
-fun DBShaper.parse(): Shaper = Shaper(this.id, this.name, this.dots.toList(), this.correctCount, this.examCount)
+fun Context.vibrate() {
+    when (Build.VERSION.SDK_INT) {
+        in 0..22 -> {
+            (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+                    .vibrate(VIBRATE_LENGTH)
+        }
 
-fun Shaper.match(path: List<Pair<Int, Int>>): Boolean {
-    val glyphPath = this.dots.convertDotsListToPaths()
-    return if (path.size == glyphPath.size) {
-        glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
-    } else false
-}
+        in 23..25 -> {
+            this.getSystemService(Vibrator::class.java)
+                    .vibrate(VIBRATE_LENGTH)
+        }
 
-fun AppCompatActivity.vibrate() {
-    when (version) {
-        in 0..22 -> (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(VIBRATE_LENGTH)
-        in 23..25 -> this.getSystemService(Vibrator::class.java).vibrate(VIBRATE_LENGTH)
-        else -> this.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(VIBRATE_LENGTH, 255))
-    }
-}
-
-fun Fragment.vibrate() {
-    when (version) {
-        in 0..22 -> (activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(VIBRATE_LENGTH)
-        in 23..25 -> activity.getSystemService(Vibrator::class.java).vibrate(VIBRATE_LENGTH)
-        else -> activity.getSystemService(Vibrator::class.java).vibrate(VibrationEffect.createOneShot(VIBRATE_LENGTH, 255))
+        else -> {
+            this.getSystemService(Vibrator::class.java)
+                    .vibrate(VibrationEffect.createOneShot(VIBRATE_LENGTH, 255))
+        }
     }
 }
 
@@ -142,24 +172,32 @@ fun Bitmap.getMutableImageWithShaper(shaper: Shaper, scale: Float = App.scale): 
         }
     }
 
-    Canvas(copy).drawPath(
-            shaper.dots
-                    .map { dotsPoint[it] }
-                    .let {
-                        Path().apply {
-                            it.forEachIndexed { i, pointF ->
-                                if (i < 1) moveTo((pointF.x * 0.4f + 0.5f) * copy.width, (pointF.y * 0.4f + 0.5f) * copy.height)
-                                else lineTo((pointF.x * 0.4f + 0.5f) * copy.width, (pointF.y * 0.4f + 0.5f) * copy.height)
-                            }
-                            if (shaper.dots.first() == shaper.dots.last()) close()
-                        }
-                    }, paint
-    )
+    val path = Path().apply {
+        shaper.dots
+                .map { dotsPoint[it] }
+                .forEachIndexed { i, pointF ->
+                    if (i == 0) {
+                        moveTo(
+                                (pointF.x * 0.4f + 0.5f) * copy.width,
+                                (pointF.y * 0.4f + 0.5f) * copy.height)
+                    } else {
+                        lineTo(
+                                (pointF.x * 0.4f + 0.5f) * copy.width,
+                                (pointF.y * 0.4f + 0.5f) * copy.height)
+                    }
+                }
+
+        if (shaper.dots.first() == shaper.dots.last())
+            close()
+    }
+
+    Canvas(copy).drawPath(path, paint)
 
     return copy
 }
 
-fun Long.toTimeStringPair(): Pair<String, String> = Pair((this / 1000).toString(), (this % 1000).format(2).take(2))
+fun Long.toTimeStringPair(): Pair<String, String> =
+        Pair((this / 1000).toString(), (this % 1000).format(2).take(2))
 
 fun Int.getDifficulty(): Int =
         when (this) {

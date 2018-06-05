@@ -1,10 +1,10 @@
-package jp.org.example.geckour.glyph.view
+package jp.org.example.geckour.glyph.ui.view
 
 import android.content.Context
 import android.graphics.*
+import android.support.v4.content.res.ResourcesCompat
 import android.util.AttributeSet
 import android.view.View
-import jp.org.example.geckour.glyph.App.Companion.coda
 import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
@@ -12,19 +12,23 @@ import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.util.async
 import jp.org.example.geckour.glyph.util.clear
 import jp.org.example.geckour.glyph.util.toTimeStringPair
-import jp.org.example.geckour.glyph.util.uiLaunch
-import jp.org.example.geckour.glyph.view.model.Particle
+import jp.org.example.geckour.glyph.util.ui
 import kotlinx.coroutines.experimental.CancellationException
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import timber.log.Timber
 
-class AnimateView: View {
+class AnimateView : View {
 
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int): super(context, attrs, defStyleAttr, defStyleRes)
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int): super(context, attrs, defStyleAttr)
-    constructor(context: Context, attrs: AttributeSet): super(context, attrs)
-    constructor(context: Context): super(context)
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
+            : super(context, attrs, defStyleAttr, defStyleRes)
+
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int)
+            : super(context, attrs, defStyleAttr)
+
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+
+    constructor(context: Context) : super(context)
 
     enum class State {
         DEFAULT,
@@ -53,9 +57,14 @@ class AnimateView: View {
         }
     }
 
+    private val coda: Typeface? = ResourcesCompat.getFont(context, R.font.coda)
+
     private var state = State.DEFAULT
     var command: DBInitialData.Shaper? = null
-        set(value) { if (value == DBInitialData.Shaper.COMPLEX || value == DBInitialData.Shaper.SIMPLE) field = value }
+        set(value) {
+            if (value == DBInitialData.Shaper.COMPLEX || value == DBInitialData.Shaper.SIMPLE)
+                field = value
+        }
     private var showName = true
     private val shaperName: ArrayList<String> = ArrayList()
     private val locus: ArrayList<Particle> = ArrayList()
@@ -97,14 +106,18 @@ class AnimateView: View {
 
     private val job: Job = async {
         ready = async { initResources() }.await()
-        uiLaunch { onResourcesReady() }
+        ui { onResourcesReady() }
 
         var cancelled = false
         while (!cancelled) {
             try {
                 if (height > 0) postInvalidate()
                 delay(10)
-            } catch (e: CancellationException) { cancelled = true } catch (e: Exception) { Timber.e(e) }
+            } catch (e: CancellationException) {
+                cancelled = true
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
         }
     }
 
@@ -112,7 +125,7 @@ class AnimateView: View {
         super.onDraw(canvas)
 
         now = System.currentTimeMillis()
-        
+
         if (ready) canvas?.let {
             when (state) {
                 State.WAIT_COMMAND -> {
@@ -145,7 +158,9 @@ class AnimateView: View {
                     }
                 }
 
-                State.PREPARE_INPUT -> { drawRemain(it, 0L) }
+                State.PREPARE_INPUT -> {
+                    drawRemain(it, 0L)
+                }
 
                 State.INPUT -> {
                     if (inputStartTime > -1L) {
@@ -181,7 +196,7 @@ class AnimateView: View {
 
                 State.PREPARE_ANSWER -> {
                     when {
-                        elapsedTime  < 500L -> {
+                        elapsedTime < 500L -> {
                             drawRemain(it, spentTime)
                             drawQuestionProgress(it)
                             drawParticle(it)
@@ -205,7 +220,8 @@ class AnimateView: View {
                     drawParticle(it)
                 }
 
-                else -> {}
+                else -> {
+                }
             }
 
             if (BuildConfig.DEBUG) drawDebugMessage(it)
@@ -219,7 +235,9 @@ class AnimateView: View {
         job.clear()
     }
 
-    fun setOnResourcesReady(onResourcesReady: suspend () -> Unit) { this.onResourcesReady = onResourcesReady }
+    fun setOnResourcesReady(onResourcesReady: suspend () -> Unit) {
+        this.onResourcesReady = onResourcesReady
+    }
 
     private fun initResources(): Boolean {
         val grainDiam = (35.0 * scale).toInt()
@@ -305,7 +323,7 @@ class AnimateView: View {
             canvas.apply {
                 drawText(timeStringPair.first, rect.left.toFloat(), rect.exactCenterY(), paint.apply { textAlign = Paint.Align.RIGHT })
                 drawText(":", rect.exactCenterX(), rect.exactCenterY(), paint.apply { textAlign = Paint.Align.CENTER })
-                drawText(timeStringPair.second, rect.right.toFloat(), rect.exactCenterY(),paint.apply { textAlign = Paint.Align.LEFT })
+                drawText(timeStringPair.second, rect.right.toFloat(), rect.exactCenterY(), paint.apply { textAlign = Paint.Align.LEFT })
             }
         }
 
@@ -356,7 +374,8 @@ class AnimateView: View {
                     }
                 }
 
-                else -> {}
+                else -> {
+                }
             }
 
             paint.colorFilter = null
@@ -426,7 +445,7 @@ class AnimateView: View {
                         val keep = 500L
                         val fade = 500L
 
-                        when  {
+                        when {
                             elapsedTime < keep -> 255
                             keep < elapsedTime && elapsedTime < keep + fade -> {
                                 onFadeStart()

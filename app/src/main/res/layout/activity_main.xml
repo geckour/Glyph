@@ -5,7 +5,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activity.MainActivity"
+        tools:context=".ui.MainActivity"
         android:background="@color/background"
         android:clickable="false"
         android:id="@+id/container" />

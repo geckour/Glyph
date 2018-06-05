@@ -11,4 +11,7 @@
     <color name="background">@android:color/black</color>
     <color name="button_text">#9cf6f6</color>
     <color name="dialog_text">#f0a328</color>
+
+    <color name="tintResultCorrect">#02ffc5</color>
+    <color name="tintResultFault">#ff0000</color>
 </resources>
