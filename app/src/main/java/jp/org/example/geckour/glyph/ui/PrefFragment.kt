@@ -314,7 +314,7 @@ class PrefFragment : Fragment() {
                                     activity?.packageName, key, type, null)?.let {
                                 if (it.containsKey("RESPONSE_CODE")
                                         && it.getInt("RESPONSE_CODE") == 0)
-                                    it.getParcelable("BUY_INTENT")
+                                    it.getParcelable("BUY_INTENT") as PendingIntent
                                 else null
                             } ?: return@ui
 
