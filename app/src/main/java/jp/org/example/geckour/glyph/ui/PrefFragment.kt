@@ -10,11 +10,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.android.vending.billing.IInAppBillingService
-import com.squareup.moshi.Moshi
+import jp.org.example.geckour.glyph.App.Companion.moshi
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.FragmentPreferenceBinding
 import jp.org.example.geckour.glyph.ui.model.SkuDetail
-import jp.org.example.geckour.glyph.util.*
+import jp.org.example.geckour.glyph.util.HintType
+import jp.org.example.geckour.glyph.util.Key
+import jp.org.example.geckour.glyph.util.getBooleanValue
+import jp.org.example.geckour.glyph.util.ui
 
 class PrefFragment : Fragment() {
 
@@ -294,8 +297,7 @@ class PrefFragment : Fragment() {
                         }).let {
                             if (it.getInt("RESPONSE_CODE") == 0) {
                                 it.getStringArrayList("DETAILS_LIST").map {
-                                    Moshi.Builder().build()
-                                            .adapter(SkuDetail::class.java)
+                                    moshi.adapter(SkuDetail::class.java)
                                             .fromJson(it)
                                 }
                             } else listOf()

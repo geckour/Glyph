@@ -9,8 +9,8 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.squareup.moshi.Moshi
 import io.realm.Realm
+import jp.org.example.geckour.glyph.App.Companion.moshi
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.FragmentCheckAnswerBinding
 import jp.org.example.geckour.glyph.db.model.Sequence
@@ -28,7 +28,6 @@ class CheckAnswerFragment : Fragment() {
 
         fun newInstance(result: Result, allowableTime: Long): CheckAnswerFragment =
                 CheckAnswerFragment().apply {
-                    val moshi = Moshi.Builder().build()
                     arguments = Bundle().apply {
                         putString(ARGS_RESULT, moshi.adapter(Result::class.java).toJson(result))
                         putLong(ARGS_ALLOWABLE_TIME, allowableTime)
@@ -61,7 +60,7 @@ class CheckAnswerFragment : Fragment() {
         binding = FragmentCheckAnswerBinding.inflate(inflater, container, false)
 
         binding.result = arguments?.getString(ARGS_RESULT)?.let {
-            Moshi.Builder().build().adapter(Result::class.java).fromJson(it)
+            moshi.adapter(Result::class.java).fromJson(it)
         }
         binding.allowableTime = arguments?.getLong(ARGS_ALLOWABLE_TIME)
 
@@ -137,7 +136,10 @@ class CheckAnswerFragment : Fragment() {
                     .findFirst()
                     ?.parse()
 
-            shaper?.let { detail.bitmap = shaperImg.getMutableImageWithShaper(it) }
+            shaper?.let {
+                detail.name = it.name
+                detail.bitmap = shaperImg.getMutableImageWithShaper(it)
+            }
         }
 
         binding.countHack.visibility =

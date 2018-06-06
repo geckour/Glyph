@@ -2,6 +2,8 @@ package jp.org.example.geckour.glyph
 
 import android.app.Application
 import com.facebook.stetho.Stetho
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.RealmList
@@ -9,6 +11,7 @@ import jp.org.example.geckour.glyph.db.DBInitialData.sequences
 import jp.org.example.geckour.glyph.db.DBInitialData.shapers
 import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.db.model.Shaper
+import jp.org.example.geckour.glyph.ui.adapter.MoshiAdapter
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 
@@ -17,6 +20,7 @@ class App : Application() {
 
     companion object {
         var scale: Float = -1f
+        val moshi = Moshi.Builder().add(MoshiAdapter()).add(KotlinJsonAdapterFactory()).build()
     }
 
     override fun onCreate() {

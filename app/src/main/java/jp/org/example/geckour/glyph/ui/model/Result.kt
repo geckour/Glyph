@@ -31,7 +31,7 @@ data class Result(
 
 data class ResultDetail(
         val id: Long,
-        val name: String?,
+        var name: String?,
         val correct: Boolean,
         val spentTime: Long,
         var bitmap: Bitmap?
