@@ -402,6 +402,7 @@ class AnimateView : View {
 
     fun showPaths(paths: List<Pair<PointF, PointF>>) {
         clearParticle()
+        if (paths.isEmpty()) return
 
         paths.forEach { path ->
             val lenX = (path.second.x - path.first.x).toDouble()
