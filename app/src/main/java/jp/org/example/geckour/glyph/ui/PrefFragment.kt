@@ -10,11 +10,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.android.vending.billing.IInAppBillingService
+import com.squareup.moshi.Moshi
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.FragmentPreferenceBinding
-import jp.org.example.geckour.glyph.util.HintType
-import jp.org.example.geckour.glyph.util.Key
-import jp.org.example.geckour.glyph.util.getBooleanValue
+import jp.org.example.geckour.glyph.ui.model.SkuDetail
+import jp.org.example.geckour.glyph.util.*
 
 class PrefFragment : Fragment() {
 
@@ -281,19 +281,45 @@ class PrefFragment : Fragment() {
         }
     }
 
-    private fun onClickDonate(): Boolean {
-        val key = "donate"
-        val buyIntentArgs: Bundle? =
-                billingService?.getBuyIntent(3,
-                        activity?.packageName, key, "inapp", null)
+    private fun onClickDonate() {
+        billingService?.let {
+            ui {
+                val type = "inapp"
+                val key = "donate"
+                val sku =
+                        it.getSkuDetails(3, activity?.packageName, type, Bundle().apply {
+                            putStringArrayList(
+                                    "ITEM_ID_LIST",
+                                    ArrayList(listOf(key)))
+                        }).let {
+                            if (it.getInt("RESPONSE_CODE") == 0) {
+                                it.getStringArrayList("DETAILS_LIST").map {
+                                    Moshi.Builder().build()
+                                            .adapter(SkuDetail::class.java)
+                                            .fromJson(it)
+                                }
+                            } else listOf()
+                        }.firstOrNull() ?: return@ui
 
-        if (buyIntentArgs?.getInt("RESPONSE_CODE") == 0) {
-            val pendingIntent: PendingIntent = buyIntentArgs.getParcelable("BUY_INTENT")
+                val purchasedSkus =
+                        it.getPurchases(3,
+                                activity?.packageName, type, null
+                        ).getStringArrayList("INAPP_PURCHASE_ITEM_LIST")
 
-            activity?.startIntentSender(pendingIntent.intentSender,
-                    Intent(), 0, 0, 0)
+                if (purchasedSkus.contains(sku.productId).not()) {
+                    val pendingIntent: PendingIntent =
+                            it.getBuyIntent(3,
+                                    activity?.packageName, key, type, null)?.let {
+                                if (it.containsKey("RESPONSE_CODE")
+                                        && it.getInt("RESPONSE_CODE") == 0)
+                                    it.getParcelable("BUY_INTENT")
+                                else null
+                            } ?: return@ui
+
+                    activity?.startIntentSender(pendingIntent.intentSender,
+                            Intent(), 0, 0, 0)
+                }
+            }
         }
-
-        return true
     }
 }
