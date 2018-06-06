@@ -15,3 +15,4 @@ google-services.json
 /app/release/output.json
 *.iml
 gradlew
+*.jks

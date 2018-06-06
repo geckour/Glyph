@@ -142,8 +142,8 @@ class MainFragment : Fragment() {
         }
 
         binding.animateView.setOnTouchListener { _, event ->
-            return@setOnTouchListener when (binding.animateView.getInputState()) {
-                AnimateView.InputState.DISABLED -> false
+            when (binding.animateView.getInputState()) {
+                AnimateView.InputState.DISABLED -> return@setOnTouchListener false
 
                 AnimateView.InputState.ENABLED -> {
                     when (event.action) {
@@ -156,8 +156,6 @@ class MainFragment : Fragment() {
                             binding.dotsView.setDotsState { false }
                             binding.animateView.setGrainAlphaModeIntoInput(Pair(paths.size + 1, level.getDifficulty()))
                             binding.animateView.addParticle(event.x, event.y)
-
-                            true
                         }
 
                         MotionEvent.ACTION_MOVE -> {
@@ -173,8 +171,6 @@ class MainFragment : Fragment() {
 
                             fromX = event.x
                             fromY = event.y
-
-                            true
                         }
 
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
@@ -207,10 +203,7 @@ class MainFragment : Fragment() {
 
                             fromX = -1f
                             fromY = -1f
-
-                            true
                         }
-                        else -> true
                     }
                 }
 
@@ -230,8 +223,6 @@ class MainFragment : Fragment() {
                             binding.dotsView.setDotsState { false }
                             hideDialog()
                             binding.animateView.addParticle(event.x, event.y)
-
-                            true
                         }
 
                         MotionEvent.ACTION_MOVE -> {
@@ -247,8 +238,6 @@ class MainFragment : Fragment() {
 
                             fromX = event.x
                             fromY = event.y
-
-                            true
                         }
 
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
@@ -276,14 +265,12 @@ class MainFragment : Fragment() {
 
                             fromX = -1f
                             fromY = -1f
-
-                            true
                         }
-
-                        else -> true
                     }
                 }
             }
+
+            return@setOnTouchListener true
         }
 
         hideLeftButton()
