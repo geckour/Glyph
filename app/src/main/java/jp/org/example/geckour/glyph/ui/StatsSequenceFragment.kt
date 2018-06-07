@@ -9,7 +9,7 @@ import io.realm.Realm
 import io.realm.Sort
 import jp.org.example.geckour.glyph.databinding.FragmentStatisticsBinding
 import jp.org.example.geckour.glyph.db.model.Sequence
-import jp.org.example.geckour.glyph.ui.adapter.StatsFragmentRecyclerAdapter
+import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.ui.model.Statistics
 import jp.org.example.geckour.glyph.util.parse
 
@@ -38,7 +38,8 @@ class StatsSequenceFragment : Fragment() {
         binding.recyclerView.adapter = adapter
 
         realm.where(Sequence::class.java)
-                .findAllSorted("id", Sort.ASCENDING)
+                .findAll()
+                .sort("id", Sort.ASCENDING)
                 .toList()
                 .map { sequence ->
                     sequence.message.map { it.parse() }.let {

@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
+import jp.org.example.geckour.glyph.util.setCrashlytics
 
 class DictActivity : AppCompatActivity() {
 
@@ -19,6 +20,8 @@ class DictActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setCrashlytics()
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 

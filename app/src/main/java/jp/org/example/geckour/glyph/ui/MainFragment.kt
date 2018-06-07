@@ -115,13 +115,13 @@ class MainFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        min = sharedPreferences.getIntValue(Key.LEVEL_MIN, 0)
+        min = sharedPreferences.getIntValue(Key.LEVEL_MIN)
         Timber.d("min: $min")
 
-        max = sharedPreferences.getIntValue(Key.LEVEL_MAX, 8)
+        max = sharedPreferences.getIntValue(Key.LEVEL_MAX)
         Timber.d("max: $max")
 
-        gameMode = sharedPreferences.getIntValue(Key.GAME_MODE, 0)
+        gameMode = sharedPreferences.getIntValue(Key.GAME_MODE)
         Timber.d("gameMode: $gameMode")
 
         doVibrate = sharedPreferences.getBooleanValue(Key.VIBRATE)

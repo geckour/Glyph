@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import io.realm.Realm
 import jp.org.example.geckour.glyph.databinding.FragmentStatisticsBinding
 import jp.org.example.geckour.glyph.db.model.Shaper
-import jp.org.example.geckour.glyph.ui.adapter.StatsFragmentRecyclerAdapter
+import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.ui.model.Statistics
 import jp.org.example.geckour.glyph.util.parse
 

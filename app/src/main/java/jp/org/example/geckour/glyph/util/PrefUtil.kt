@@ -2,13 +2,13 @@ package jp.org.example.geckour.glyph.util
 
 import android.content.SharedPreferences
 
-enum class Key {
-    GAME_MODE,
-    VIBRATE,
-    SHOW_COUNT,
-    LEVEL_MIN,
-    LEVEL_MAX,
-    DONATE
+enum class Key(val defaultValue: Any) {
+    GAME_MODE(0),
+    VIBRATE(true),
+    SHOW_COUNT(false),
+    LEVEL_MIN(0),
+    LEVEL_MAX(8),
+    DONATE(false)
 }
 
 enum class HintType(val displayName: String) {
@@ -18,10 +18,10 @@ enum class HintType(val displayName: String) {
 }
 
 fun SharedPreferences.getBooleanValue(key: Key): Boolean =
-        contains(key.name)
-                && getBoolean(key.name, false)
+        if (contains(key.name)) getBoolean(key.name, key.defaultValue as Boolean)
+        else key.defaultValue as Boolean
 
-fun SharedPreferences.getIntValue(key: Key, defaultValue: Int = -1): Int =
+fun SharedPreferences.getIntValue(key: Key): Int =
         if (contains(key.name))
-            getInt(key.name, defaultValue)
-        else defaultValue
+            getInt(key.name, key.defaultValue as Int)
+        else key.defaultValue as Int

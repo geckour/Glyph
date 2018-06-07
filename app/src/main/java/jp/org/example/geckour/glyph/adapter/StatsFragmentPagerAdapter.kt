@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph.ui.adapter
+package jp.org.example.geckour.glyph.adapter
 
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager

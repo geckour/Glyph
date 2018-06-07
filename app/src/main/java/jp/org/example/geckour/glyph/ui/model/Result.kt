@@ -1,7 +1,9 @@
 package jp.org.example.geckour.glyph.ui.model
 
 import android.graphics.Bitmap
+import se.ansman.kotshi.JsonSerializable
 
+@JsonSerializable
 data class Result(
         val details: List<ResultDetail>,
         val count: Long
@@ -29,6 +31,7 @@ data class Result(
             } else 0
 }
 
+@JsonSerializable
 data class ResultDetail(
         val id: Long,
         var name: String?,

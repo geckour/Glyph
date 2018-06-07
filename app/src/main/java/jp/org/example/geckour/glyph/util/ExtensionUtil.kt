@@ -1,10 +1,13 @@
 package jp.org.example.geckour.glyph.util
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.*
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.ui.view.Shaper
 import kotlinx.coroutines.experimental.*
@@ -210,3 +213,7 @@ fun Int.getDifficulty(): Int =
         }
 
 fun Number.format(disit: Int): String = String.format("%0${disit}d", this)
+
+fun Activity.setCrashlytics() {
+    Fabric.with(this, Crashlytics())
+}

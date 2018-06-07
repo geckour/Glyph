@@ -14,10 +14,8 @@ import jp.org.example.geckour.glyph.App.Companion.moshi
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.FragmentPreferenceBinding
 import jp.org.example.geckour.glyph.ui.model.SkuDetail
-import jp.org.example.geckour.glyph.util.HintType
-import jp.org.example.geckour.glyph.util.Key
-import jp.org.example.geckour.glyph.util.getBooleanValue
-import jp.org.example.geckour.glyph.util.ui
+import jp.org.example.geckour.glyph.util.*
+import timber.log.Timber
 
 class PrefFragment : Fragment() {
 
@@ -61,21 +59,7 @@ class PrefFragment : Fragment() {
         activity?.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
 
         binding.elementMode.apply {
-            val default = 0
-            var fault = false
-            val type =
-                    if (sharedPreferences.contains(Key.GAME_MODE.name)) {
-                        try {
-                            sharedPreferences.getInt(Key.GAME_MODE.name, default)
-                        } catch (e: Exception) {
-                            fault = true
-                            default
-                        }
-                    } else {
-                        fault = true
-                        default
-                    }
-            if (fault) sharedPreferences.edit().putInt(Key.GAME_MODE.name, default).apply()
+            val type = sharedPreferences.getIntValue(Key.GAME_MODE)
 
             value = type.toString()
             root.setOnClickListener { showModePicker() }
@@ -107,21 +91,7 @@ class PrefFragment : Fragment() {
         }
 
         binding.elementLevelMin.apply {
-            val default = 0
-            var fault = false
-            val min =
-                    if (sharedPreferences.contains(Key.LEVEL_MIN.name)) {
-                        try {
-                            sharedPreferences.getInt(Key.LEVEL_MIN.name, default)
-                        } catch (e: Exception) {
-                            fault = true
-                            default
-                        }
-                    } else {
-                        fault = true
-                        default
-                    }
-            if (fault) sharedPreferences.edit().putInt(Key.LEVEL_MIN.name, default).apply()
+            val min = sharedPreferences.getIntValue(Key.LEVEL_MIN)
 
             value = min.toString()
             summary = getString(R.string.summary_pref_minimum_level, min)
@@ -129,21 +99,7 @@ class PrefFragment : Fragment() {
         }
 
         binding.elementLevelMax.apply {
-            val default = 8
-            var fault = false
-            val max =
-                    if (sharedPreferences.contains(Key.LEVEL_MAX.name)) {
-                        try {
-                            sharedPreferences.getInt(Key.LEVEL_MAX.name, default)
-                        } catch (e: Exception) {
-                            fault = true
-                            default
-                        }
-                    } else {
-                        fault = true
-                        default
-                    }
-            if (fault) sharedPreferences.edit().putInt(Key.LEVEL_MAX.name, default).apply()
+            val max = sharedPreferences.getIntValue(Key.LEVEL_MAX)
 
             value = max.toString()
             summary = getString(R.string.summary_pref_minimum_level, max)
@@ -297,6 +253,7 @@ class PrefFragment : Fragment() {
                         }).let {
                             if (it.getInt("RESPONSE_CODE") == 0) {
                                 it.getStringArrayList("DETAILS_LIST").map {
+                                    Timber.d(it)
                                     moshi.adapter(SkuDetail::class.java)
                                             .fromJson(it)
                                 }

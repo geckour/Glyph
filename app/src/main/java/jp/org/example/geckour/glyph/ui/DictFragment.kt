@@ -25,7 +25,7 @@ class DictFragment : Fragment() {
 
     private lateinit var binding: FragmentMainBinding
     private lateinit var realm: Realm
-    private val sp: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
+    private val sharedPreferences: SharedPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(activity) }
 
     private val throughDots: ArrayList<Int> = ArrayList()
 
@@ -63,7 +63,7 @@ class DictFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        doVibrate = sp.contains(Key.VIBRATE.name) && sp.getBoolean(Key.VIBRATE.name, false)
+        doVibrate = sharedPreferences.getBooleanValue(Key.VIBRATE)
         Timber.d("doVibrate: $doVibrate")
 
         binding.animateView.setOnTouchListener { _, event ->

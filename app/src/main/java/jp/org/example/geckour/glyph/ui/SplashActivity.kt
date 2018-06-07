@@ -11,6 +11,7 @@ import jp.org.example.geckour.glyph.databinding.ActivitySplashBinding
 import jp.org.example.geckour.glyph.ui.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.util.Key
 import jp.org.example.geckour.glyph.util.getBooleanValue
+import jp.org.example.geckour.glyph.util.setCrashlytics
 
 class SplashActivity : Activity() {
 
@@ -19,6 +20,8 @@ class SplashActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setCrashlytics()
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_splash)
 

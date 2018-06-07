@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph.ui.adapter
+package jp.org.example.geckour.glyph.adapter
 
 import android.databinding.BindingAdapter
 import android.graphics.Bitmap

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import jp.org.example.geckour.glyph.util.setCrashlytics
 
 class PrefActivity : AppCompatActivity() {
 
@@ -14,6 +15,8 @@ class PrefActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setCrashlytics()
 
         if (savedInstanceState == null)
             supportFragmentManager.beginTransaction()

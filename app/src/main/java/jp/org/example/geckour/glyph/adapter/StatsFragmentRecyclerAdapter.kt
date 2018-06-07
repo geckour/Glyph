@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph.ui.adapter
+package jp.org.example.geckour.glyph.adapter
 
 import android.graphics.Bitmap
 import android.support.v7.widget.RecyclerView

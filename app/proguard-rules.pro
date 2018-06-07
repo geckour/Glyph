@@ -24,12 +24,4 @@
 
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 
--keepclassmembers class ** {
-    @com.squareup.moshi.FromJson *;
-    @com.squareup.moshi.ToJson *;
-}
-
--keep public class kotlin.reflect.jvm.internal.impl.builtins.* { public *; }
--keep class jp.org.example.geckour.glyph.ui.adapter.MoshiAdapter
--keep class jp.org.example.geckour.glyph.model.** { *; }
 -dontwarn jp.org.example.geckour.glyph.ui.**
