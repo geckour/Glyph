@@ -2,10 +2,10 @@
 <resources>
     <string name="app_name">Glyph</string>
 
-    <string name="label_main">Hack</string>
-    <string name="label_dict">Dictionary</string>
-    <string name="label_opt">Options</string>
-    <string name="label_stats">Statistics</string>
+    <string name="label_main">HACK</string>
+    <string name="label_dict">DICTIONARY</string>
+    <string name="label_opt">OPTIONS</string>
+    <string name="label_stats">STATISTICS</string>
 
     <string name="label_stats_percentage">Correctly answered rate:</string>
     <string name="value_stats_percentage">%1$.2f%%</string>

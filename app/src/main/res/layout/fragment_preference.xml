@@ -1,50 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <data>
-        <import type="jp.org.example.geckour.glyph.ui.PrefActivity" />
-    </data>
-
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@color/colorPrimaryDark">
+        android:layout_height="wrap_content">
 
-        <include android:id="@+id/category_general"
-                 layout="@layout/pref_category"
-                 app:title='@{"GENERAL"}' />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:orientation="vertical">
 
-        <include android:id="@+id/element_mode"
-                 layout="@layout/pref_element"
-                 app:title='@{"GAME MODE"}' />
+            <include
+                android:id="@+id/category_general"
+                layout="@layout/pref_category"
+                app:title='@{"GENERAL"}' />
 
-        <include android:id="@+id/element_vibration"
-                 layout="@layout/pref_element"
-                 app:title='@{"VIBRATION"}'
-                 app:summary='@{"Vibrate when your locus pass through the point"}' />
+            <include
+                android:id="@+id/element_mode"
+                layout="@layout/pref_element"
+                app:title='@{"GAME MODE"}' />
 
-        <include android:id="@+id/element_count_hack"
-                 layout="@layout/pref_element"
-                 app:title='@{"COUNT HACKS"}'
-                 app:summary='@{"Count the number of hack and show it with result"}' />
+            <include
+                android:id="@+id/element_vibration"
+                layout="@layout/pref_element"
+                app:summary='@{"Vibrate when your locus pass through the point"}'
+                app:title='@{"VIBRATION"}' />
 
-        <include android:id="@+id/element_level_min"
-                 layout="@layout/pref_element"
-                 app:title='@{"MINIMUM PORTAL LEVEL"}' />
+            <include
+                android:id="@+id/element_count_hack"
+                layout="@layout/pref_element"
+                app:summary='@{"Count the number of hack and show it with result"}'
+                app:title='@{"COUNT HACKS"}' />
 
-        <include android:id="@+id/element_level_max"
-                 layout="@layout/pref_element"
-                 app:title='@{"MAXIMUM PORTAL LEVEL"}' />
+            <include
+                android:id="@+id/element_level_min"
+                layout="@layout/pref_element"
+                app:title='@{"MINIMUM PORTAL LEVEL"}' />
 
-        <include android:id="@+id/category_others"
-                 layout="@layout/pref_category"
-                 app:title='@{"OTHERS"}' />
+            <include
+                android:id="@+id/element_level_max"
+                layout="@layout/pref_element"
+                app:title='@{"MAXIMUM PORTAL LEVEL"}' />
 
-        <include android:id="@+id/element_donate"
-                 layout="@layout/pref_element"
-                 app:title='@{"DONATE"}'
-                 app:summary='@{"Donate to author for his better Ingress life"}' />
-    </LinearLayout>
+            <include
+                android:id="@+id/category_others"
+                layout="@layout/pref_category"
+                app:title='@{"OTHERS"}' />
+
+            <include
+                android:id="@+id/element_donate"
+                layout="@layout/pref_element"
+                app:summary='@{"Donate to author for his better Ingress life"}'
+                app:title='@{"DONATE"}' />
+        </LinearLayout>
+    </ScrollView>
 </layout>

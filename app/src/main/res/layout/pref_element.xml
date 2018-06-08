@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+
         <import type="android.view.View" />
 
         <variable
@@ -26,67 +27,72 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="?android:attr/listPreferredItemHeightSmall"
-        android:paddingStart="?android:attr/listPreferredItemPaddingLeft"
-        android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
         android:background="?android:attr/selectableItemBackground"
         android:clipToPadding="false"
-        android:focusable="true">
+        android:focusable="true"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
+        android:paddingStart="?android:attr/listPreferredItemPaddingLeft"
+        android:paddingTop="16dp">
 
-        <TextView
+        <android.support.v7.widget.AppCompatTextView
             android:id="@+id/element_title"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
             android:ellipsize="marquee"
             android:singleLine="true"
-            android:textAppearance="@style/Preference_TextAppearanceMaterialSubhead"
+            android:text="@{title}"
+            android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="@color/textPrimary"
-            app:layout_constraintEnd_toEndOf="@android:id/widget_frame"
-            app:layout_constraintHorizontal_bias="0.0"
+            app:fontFamily="@font/coda"
+            app:layout_constraintEnd_toEndOf="@id/element_widget"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:text="@{title}"
-            tools:text="Title"/>
+            tools:text="Title" />
 
-        <TextView
+        <android.support.v7.widget.AppCompatTextView
             android:id="@+id/element_summary"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:layout_marginStart="8dp"
             android:maxLines="10"
+            android:text="@{summary}"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textColor="@color/textSecondary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@android:id/widget_frame"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
+            android:visibility="@{(showSummary == null || showSummary) ? View.VISIBLE : View.GONE}"
+            app:fontFamily="@font/coda"
+            app:layout_constraintEnd_toEndOf="@id/element_title"
+            app:layout_constraintStart_toStartOf="@id/element_title"
             app:layout_constraintTop_toBottomOf="@+id/element_title"
-            app:text="@{summary}"
-            tools:text="Summary"
-            app:visibility="@{(showSummary == null || showSummary) ? View.VISIBLE : View.GONE}"/>
+            tools:text="Summary" />
 
         <!-- Preference should place its actual preference widget here. -->
         <include
             android:id="@+id/element_widget"
             layout="@layout/pref_widget"
             android:layout_width="wrap_content"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:gravity="end|center_vertical"
-            android:paddingStart="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.constraint.Barrier
+            android:id="@+id/barrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="element_summary,element_widget" />
 
         <View
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="0.5dp"
+            android:layout_marginTop="16dp"
             android:background="@color/divider"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/barrier" />
     </android.support.constraint.ConstraintLayout>
 </layout>

@@ -12,7 +12,7 @@
         android:paddingRight="@dimen/splash_horizontal_margin"
         android:paddingTop="@dimen/splash_vertical_margin">
 
-        <Button
+        <android.support.v7.widget.AppCompatButton
             android:id="@+id/button_hack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -22,12 +22,12 @@
             android:paddingRight="@dimen/button_padding"
             android:text="@string/button_hack"
             android:textColor="@color/button_text"
-            android:textSize="20sp"
+            android:textSize="@dimen/button_text"
             app:fontFamily="@font/coda"
             app:layout_constraintBottom_toTopOf="@+id/guideline_half_vertical"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <Button
+        <android.support.v7.widget.AppCompatButton
             android:id="@+id/button_stats"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -36,13 +36,13 @@
             android:paddingRight="@dimen/button_padding"
             android:text="@string/button_stats"
             android:textColor="@color/button_text"
-            android:textSize="20sp"
+            android:textSize="@dimen/button_text"
             app:fontFamily="@font/coda"
             app:layout_constraintBottom_toTopOf="@+id/guideline_half_vertical"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/guideline_half_vertical" />
 
-        <Button
+        <android.support.v7.widget.AppCompatButton
             android:id="@+id/button_weak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -52,12 +52,12 @@
             android:paddingRight="@dimen/button_padding"
             android:text="@string/button_weakness"
             android:textColor="@color/button_text"
-            android:textSize="20sp"
+            android:textSize="@dimen/button_text"
             app:fontFamily="@font/coda"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/guideline_half_vertical" />
 
-        <Button
+        <android.support.v7.widget.AppCompatButton
             android:id="@+id/button_opt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -66,12 +66,12 @@
             android:paddingRight="@dimen/button_padding"
             android:text="@string/button_opt"
             android:textColor="@color/button_text"
-            android:textSize="20sp"
+            android:textSize="@dimen/button_text"
             app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 
-        <Button
+        <android.support.v7.widget.AppCompatButton
             android:id="@+id/button_dict"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -80,7 +80,7 @@
             android:paddingRight="@dimen/button_padding"
             android:text="@string/button_dictionary"
             android:textColor="@color/button_text"
-            android:textSize="20sp"
+            android:textSize="@dimen/button_text"
             app:fontFamily="@font/coda"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />

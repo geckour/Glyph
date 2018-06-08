@@ -55,7 +55,7 @@ class StatsFragmentRecyclerAdapter(private val bitmap: Bitmap) : RecyclerView.Ad
 
                 StatsType.SEQUENCE -> {
                     sequenceBinding?.let { binding ->
-                        binding.rootIndividual.tag = false
+                        binding.individualRoot.tag = false
                         binding.data = data
 
                         realm.where(Sequence::class.java)
@@ -77,7 +77,7 @@ class StatsFragmentRecyclerAdapter(private val bitmap: Bitmap) : RecyclerView.Ad
 
         private fun injectIndividualData() {
             sequenceBinding?.apply {
-                rootIndividual.also {
+                individualRoot.also {
                     it.tag = !(it.tag as? Boolean ?: false)
                     if (it.tag as Boolean) {
                         data?.individualData?.apply {

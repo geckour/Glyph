@@ -20,10 +20,12 @@ class App : Application() {
 
     companion object {
         var scale: Float = -1f
-        val moshi: Moshi = Moshi.Builder()
-                .add(Bitmap::class.java, MoshiBitmapAdapter())
-                .add(AppJsonAdapterFactory.INSTANCE)
-                .build()
+        val moshi: Moshi by lazy {
+            Moshi.Builder()
+                    .add(Bitmap::class.java, MoshiBitmapAdapter())
+                    .add(AppJsonAdapterFactory.INSTANCE)
+                    .build()
+        }
     }
 
     override fun onCreate() {

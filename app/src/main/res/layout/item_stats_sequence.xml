@@ -20,7 +20,7 @@
         android:paddingRight="8dp"
         android:paddingTop="8dp">
 
-        <TextView
+        <android.support.v7.widget.AppCompatTextView
             android:id="@+id/sequence_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -28,11 +28,10 @@
             android:text="@{data.sequenceData.name}"
             android:textColor="@color/textPrimary"
             android:textSize="16sp"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:fontFamily="@font/coda_regular"
             tools:text="SEQUENCE" />
 
         <ImageView
@@ -105,11 +104,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:text="@string/label_stats_percentage"
             android:textColor="@color/textSecondary"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="@+id/sequence_name"
             app:layout_constraintTop_toBottomOf="@+id/sequence_img_0"
-            app:text="@{@string/label_stats_percentage}"
             tools:text="Correctly answered rate:" />
 
         <TextView
@@ -164,7 +163,7 @@
             tools:text="23" />
 
         <LinearLayout
-            android:id="@+id/root_individual"
+            android:id="@+id/individual_root"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -181,7 +180,7 @@
             android:background="@color/divider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/root_individual" />
+            app:layout_constraintTop_toBottomOf="@id/individual_root" />
 
         <android.support.constraint.Guideline
             android:id="@+id/guideline"

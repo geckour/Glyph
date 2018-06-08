@@ -212,7 +212,7 @@ fun Int.getDifficulty(): Int =
             else -> 0
         }
 
-fun Number.format(disit: Int): String = String.format("%0${disit}d", this)
+fun Number.format(digit: Int): String = String.format("%0${digit}d", this)
 
 fun Activity.setCrashlytics() {
     Fabric.with(this, Crashlytics())

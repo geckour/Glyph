@@ -17,6 +17,10 @@
 #}
 -dontwarn kotlin.**
 
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+
 -keep class com.facebook.stetho.** { *; }
 -dontwarn com.facebook.stetho.**
 

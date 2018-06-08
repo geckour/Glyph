@@ -22,13 +22,13 @@
             android:id="@+id/shaper_img"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            app:srcBitmap="@{data.bitmap}"
             android:tint="@color/textSecondary"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            app:srcBitmap="@{data.bitmap}"
             tools:src="@drawable/glyph_hex_normal" />
 
-        <TextView
+        <android.support.v7.widget.AppCompatTextView
             android:id="@+id/shaper_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -36,10 +36,9 @@
             android:text="@{data.name}"
             android:textColor="@color/textPrimary"
             android:textSize="16sp"
-            app:fontFamily="@font/coda_regular"
+            app:fontFamily="@font/coda"
             app:layout_constraintStart_toEndOf="@+id/shaper_img"
             app:layout_constraintTop_toTopOf="@+id/shaper_img"
-            tools:fontFamily="@font/coda_regular"
             tools:text="SHAPER" />
 
         <TextView
