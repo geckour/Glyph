@@ -20,6 +20,11 @@ import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
 private const val VIBRATE_LENGTH: Long = 1L
 
+private val vibrationEffect =
+        if (Build.VERSION.SDK_INT >= 26)
+            VibrationEffect.createOneShot(VIBRATE_LENGTH, 255)
+        else null
+
 fun <T> async(context: CoroutineContext = CommonPool, block: suspend CoroutineScope.() -> T) =
         kotlinx.coroutines.experimental.async(context, block = block)
 
@@ -140,7 +145,7 @@ fun Context.vibrate() {
 
         else -> {
             this.getSystemService(Vibrator::class.java)
-                    .vibrate(VibrationEffect.createOneShot(VIBRATE_LENGTH, 255))
+                    .vibrate(vibrationEffect)
         }
     }
 }
