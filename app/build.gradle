@@ -22,8 +22,8 @@ android {
         applicationId "jp.org.example.geckour.glyph"
         minSdkVersion 21
         targetSdkVersion 27
-        versionCode 39
-        versionName "2.2.2"
+        versionCode 40
+        versionName "2.2.3"
 
         dataBinding.enabled = true
     }
@@ -58,13 +58,13 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:appcompat-v7:$android_support_version"
+    implementation "com.android.support:support-v4:$android_support_version"
+    implementation "com.android.support:design:$android_support_version"
+    implementation "com.android.support:recyclerview-v7:$android_support_version"
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
     implementation "com.android.support:preference-v7:$android_support_version"
     implementation "com.android.support:preference-v14:$android_support_version"
     implementation "com.android.support:cardview-v7:$android_support_version"
-    implementation "com.android.support:recyclerview-v7:$android_support_version"
-    implementation "com.android.support:support-v4:$android_support_version"
-    implementation "com.android.support:design:$android_support_version"
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
 
     // Firebase
     implementation "com.google.firebase:firebase-core:$firebase_version"
