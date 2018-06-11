@@ -6,9 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.realm.Realm
+import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.databinding.FragmentStatisticsBinding
 import jp.org.example.geckour.glyph.db.model.Shaper
-import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.ui.model.Statistics
 import jp.org.example.geckour.glyph.util.parse
 
@@ -36,14 +36,19 @@ class StatsShaperFragment : Fragment() {
         adapter = StatsFragmentRecyclerAdapter((activity as StatsActivity).bitmap)
         binding.recyclerView.adapter = adapter
 
-        realm.where(Shaper::class.java).findAll().toList()
+        realm.where(Shaper::class.java)
+                .findAll()
+                .toList()
                 .map {
                     it.parse().let {
                         Statistics(
-                                Statistics.Data(it.id, it.name, it.correctCount, it.examCount, null),
+                                Statistics.Data(it.id,
+                                        it.name, it.correctCount, it.examCount, null),
                                 listOf())
                     }
-                }.let { adapter.addItems(it) }
+                }
+                .sortedBy { it.sequenceData.name }
+                .apply { adapter.addItems(this) }
     }
 
     override fun onDestroy() {

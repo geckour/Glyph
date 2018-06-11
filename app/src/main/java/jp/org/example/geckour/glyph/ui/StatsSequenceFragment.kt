@@ -6,10 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.realm.Realm
-import io.realm.Sort
+import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.databinding.FragmentStatisticsBinding
 import jp.org.example.geckour.glyph.db.model.Sequence
-import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.ui.model.Statistics
 import jp.org.example.geckour.glyph.util.parse
 
@@ -37,32 +36,34 @@ class StatsSequenceFragment : Fragment() {
         adapter = StatsFragmentRecyclerAdapter((activity as StatsActivity).bitmap)
         binding.recyclerView.adapter = adapter
 
-        realm.where(Sequence::class.java)
+        val splitList: List<List<Statistics>> = List(4) {
+            getSequenceStatistics(it + 2).sortedBy { it.sequenceData.name }
+        }
+
+        adapter.addItems(splitList.reversed().flatten())
+    }
+
+    private fun getSequenceStatistics(difficulty: Int): List<Statistics> {
+        if ((difficulty in 2..5).not()) return emptyList()
+
+        return realm.where(Sequence::class.java)
+                .equalTo("size", difficulty)
                 .findAll()
-                .sort("id", Sort.ASCENDING)
                 .toList()
                 .map { sequence ->
                     sequence.message.map { it.parse() }.let {
                         Statistics(
-                                Statistics.Data(
-                                        sequence.id,
-                                        it.foldIndexed("") { i, name, shaper ->
-                                            return@foldIndexed if (i == 0) {
-                                                shaper.name
-                                            } else {
-                                                "$name  ${shaper.name}"
-                                            }
-                                        },
-                                        sequence.correctCount,
-                                        sequence.examCount,
-                                        null
-                                ),
+                                Statistics.Data(sequence.id,
+                                        it.joinToString("  ") { it.name },
+                                        sequence.correctCount, sequence.examCount, null),
                                 it.map {
-                                    Statistics.Data(it.id, it.name, it.correctCount, it.examCount, null)
+                                    Statistics.Data(it.id,
+                                            it.name,
+                                            it.correctCount, it.examCount, null)
                                 }
                         )
                     }
-                }.let { adapter.addItems(it) }
+                }
     }
 
     override fun onDestroy() {

@@ -18,11 +18,12 @@ import jp.org.example.geckour.glyph.db.model.Sequence
 import jp.org.example.geckour.glyph.ui.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.ui.model.Result
 import jp.org.example.geckour.glyph.ui.model.ResultDetail
-import jp.org.example.geckour.glyph.util.*
 import jp.org.example.geckour.glyph.ui.view.AnimateView
 import jp.org.example.geckour.glyph.ui.view.Shaper
+import jp.org.example.geckour.glyph.util.*
 import kotlinx.coroutines.experimental.*
 import timber.log.Timber
+import java.util.*
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
 class MainFragment : Fragment() {
@@ -32,8 +33,8 @@ class MainFragment : Fragment() {
 
         fun newInstance(): MainFragment = MainFragment()
 
-        private const val STATE_ARGS_LEVEL = "level"
-        private const val STATE_ARGS_QUESTIONS = "questions"
+        private const val STATE_ARGS_LEVEL = "state_args_level"
+        private const val STATE_ARGS_QUESTIONS = "state_args_questions"
     }
 
     private val mainActivity: MainActivity by lazy { activity as MainActivity }
@@ -116,16 +117,12 @@ class MainFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
 
         min = sharedPreferences.getIntValue(Key.LEVEL_MIN)
-        Timber.d("min: $min")
 
         max = sharedPreferences.getIntValue(Key.LEVEL_MAX)
-        Timber.d("max: $max")
 
         gameMode = sharedPreferences.getIntValue(Key.GAME_MODE)
-        Timber.d("gameMode: $gameMode")
 
         doVibrate = sharedPreferences.getBooleanValue(Key.VIBRATE)
-        Timber.d("doVibrate: $doVibrate")
 
         if (savedInstanceState == null) {
             questions.apply {
@@ -451,7 +448,7 @@ class MainFragment : Fragment() {
                             shaper.dots.convertDotsListToPaths()
                                     .getNormalizedPaths()
                                     .mapToPointPathsFromDotPaths(binding.dotsView.getDots())
-                    ).apply { Timber.d("showing shaper id: ${shaper.id}, name: ${shaper.name}, dots: ${shaper.dots}") }
+                    )
                 }
             }
 
@@ -463,28 +460,26 @@ class MainFragment : Fragment() {
 
         this.level = level
                 ?: mainActivity.level
-                ?: getLevel().apply { Timber.d("level: $this") }
+                ?: getLevel()
+
         mainActivity.level = this.level
-        val difficulty = this.level.getDifficulty().apply { Timber.d("difficulty: $this") }
+
+        val difficulty = this.level.getDifficulty()
 
         return when (mode ?: mainActivity.getMode()) {
             MainActivity.Mode.NORMAL -> {
                 when (difficulty) {
                     1 -> {
-                        realm.where(DBShaper::class.java).count().let {
-                            realm.where(DBShaper::class.java)
-                                    .findAll()
-                                    .toList()
-                                    .map { it.parse() }
-                                    .let {
-                                        listOf(it[
-                                                id?.toInt()
-                                                        ?: (Math.random() * it.size).toInt().apply {
-                                                            mainActivity.sequenceId = this.toLong()
-                                                        }
-                                        ])
-                                    }
-                        }
+                        realm.where(DBShaper::class.java)
+                                .findAll()
+                                .toList()
+                                .map { it.parse() }
+                                .let { shaperList ->
+                                    val shaper = shaperList.random()
+                                    mainActivity.sequenceId = shaper.id
+
+                                    return@let listOf(shaper)
+                                }
                     }
 
                     in 2..5 -> {
@@ -492,13 +487,11 @@ class MainFragment : Fragment() {
                                 .equalTo("size", difficulty)
                                 .findAll()
                                 .toList()
-                                .map { it.message.toList().map { it.parse() } }
-                                .let {
-                                    it[id?.toInt()
-                                            ?: (Math.random() * it.size).toInt().apply {
-                                                mainActivity.sequenceId = this.toLong()
-                                            }
-                                    ]
+                                .let { sequenceList ->
+                                    sequenceList.random().let {
+                                        mainActivity.sequenceId = it.id
+                                        it.message.map { it.parse() }
+                                    }
                                 }
                     }
 
@@ -509,68 +502,67 @@ class MainFragment : Fragment() {
             MainActivity.Mode.WEAKNESS -> {
                 when (difficulty) {
                     1 -> {
-                        val shapers = realm.where(DBShaper::class.java)
+                        val whole = realm.where(DBShaper::class.java)
 
                         if (id == null) {
-                            shapers.greaterThan("examCount", 0).let {
-                                val size = it.count().toInt()
-                                return@let if (size > shapers.count() * 0.8) {
-                                    it.findAll().toList()
+                            whole.greaterThan("examCount", 0).let {
+                                val shaperList = it.findAll().toList()
+                                val count = shaperList
+                                        .count { it.correctCount.toDouble() / it.examCount < 0.25 }
+
+                                return@let if (count > whole.count() * 0.2) {
+                                    shaperList
                                             .sortedBy { it.correctCount.toDouble() / it.examCount }
                                             .take(25)
                                             .map { it.parse() }
                                             .let {
-                                                val index = (Math.random() * 15).toInt()
-                                                val shaper =
-                                                        (if (index > it.lastIndex) {
-                                                            var shaperId: Long
-                                                            do {
-                                                                shaperId = (Math.random() * size).toLong()
-                                                            } while (it.map { it.id }.contains(shaperId))
-                                                            shapers.findAll().filterNotNull()[shaperId.toInt()].parse()
-                                                        } else it[index]).apply { mainActivity.sequenceId = this.id }
+                                                val shaper = it.random()
+                                                mainActivity.sequenceId = shaper.id
 
                                                 listOf(shaper)
                                             }
-                                } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                } else {
+                                    getSequence(
+                                            mode = MainActivity.Mode.NORMAL,
+                                            level = this@MainFragment.level)
+                                }
                             }
                         } else {
-                            listOf(shapers.findAll().map { it.parse() }[id.toInt()])
+                            listOf(whole.findAll().map { it.parse() }[id.toInt()])
                         }
                     }
 
                     in 2..5 -> {
-                        val sequences = realm.where(Sequence::class.java)
+                        val whole = realm.where(Sequence::class.java)
                                 .equalTo("size", difficulty)
 
                         if (id == null) {
-                            sequences.greaterThan("examCount", 0).let {
-                                val size = it.count().toInt()
-                                return@let if (size > sequences.count() * 0.8) {
-                                    it.findAll().toList()
+                            whole.greaterThan("examCount", 0).let {
+                                val sequenceList = it.findAll().toList()
+                                val count = sequenceList
+                                        .count { it.correctCount.toDouble() / it.examCount < 0.25 }
+
+                                return@let if (count > whole.count() * 0.2) {
+                                    sequenceList
                                             .sortedBy { it.correctCount.toDouble() / it.examCount }
                                             .take(25)
-                                            .map { (it.id to it.message.toList().map { it.parse() }) }
-                                            .let {
-                                                val index = (Math.random() * 15).toInt()
-                                                (if (index > it.size - 1) {
-                                                    var sequenceId: Long
-                                                    do {
-                                                        sequenceId = (Math.random() * size).toLong()
-                                                    } while (it.map { it.first }.contains(sequenceId))
-                                                    sequences.findAll()
-                                                            .filterNotNull()[sequenceId.toInt()]
-                                                            .let {
-                                                                it.id to it.message.toList().map { it.parse() }
-                                                            }
-                                                } else it[index]).apply {
-                                                    mainActivity.sequenceId = this.first
-                                                }.second
+                                            .map {
+                                                (it.id
+                                                        to it.message.toList().map { it.parse() })
+                                            }.let list@{ pairList ->
+                                                val sequence = pairList.random()
+                                                mainActivity.sequenceId = sequence.first
+
+                                                return@list sequence.second
                                             }
-                                } else getSequence(mode = MainActivity.Mode.NORMAL, level = this@MainFragment.level)
+                                } else {
+                                    getSequence(
+                                            mode = MainActivity.Mode.NORMAL,
+                                            level = this@MainFragment.level)
+                                }
                             }
                         } else {
-                            sequences.findAll()
+                            whole.findAll()
                                     .filterNotNull()[id.toInt()].let {
                                 it.message.toList().map { it.parse() }
                             }

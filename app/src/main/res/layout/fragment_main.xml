@@ -41,6 +41,10 @@
             android:textSize="@dimen/dialog_text"
             android:visibility="gone"
             app:fontFamily="@font/coda"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="NO KEY" />
 
         <jp.org.example.geckour.glyph.ui.view.AnimateView

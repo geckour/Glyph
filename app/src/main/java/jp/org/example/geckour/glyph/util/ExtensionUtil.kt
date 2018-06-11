@@ -13,6 +13,7 @@ import jp.org.example.geckour.glyph.ui.view.Shaper
 import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.android.UI
 import timber.log.Timber
+import java.util.*
 import kotlin.coroutines.experimental.CoroutineContext
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
@@ -217,3 +218,7 @@ fun Number.format(digit: Int): String = String.format("%0${digit}d", this)
 fun Activity.setCrashlytics() {
     Fabric.with(this, Crashlytics())
 }
+
+fun <T> List<T>.random(): T =
+        if (isEmpty()) throw IllegalStateException()
+        else get(Random().nextInt(size))

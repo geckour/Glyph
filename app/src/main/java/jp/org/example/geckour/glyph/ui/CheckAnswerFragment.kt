@@ -47,6 +47,8 @@ class CheckAnswerFragment : Fragment() {
         BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal)
     }
 
+    private var result: Result? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -59,9 +61,10 @@ class CheckAnswerFragment : Fragment() {
                               savedInstanceState: Bundle?): View? {
         binding = FragmentCheckAnswerBinding.inflate(inflater, container, false)
 
-        binding.result = arguments?.getString(ARGS_RESULT)?.let {
+        result = arguments?.getString(ARGS_RESULT)?.let {
             moshi.adapter(Result::class.java).fromJson(it)
         }
+        binding.result = result
         binding.allowableTime = arguments?.getLong(ARGS_ALLOWABLE_TIME)
 
         return binding.root
@@ -86,41 +89,45 @@ class CheckAnswerFragment : Fragment() {
 
     private fun recordScore() {
         mainActivity.level?.getDifficulty()?.also { difficulty ->
-            if (difficulty == 1) {
-                val shaper = realm.where(Shaper::class.java)
-                        .equalTo("id", mainActivity.sequenceId)
-                        .findFirst()
+            when (difficulty) {
+                1 -> {
+                    val shaper = realm.where(Shaper::class.java)
+                            .equalTo("id", mainActivity.sequenceId)
+                            .findFirst()
 
-                shaper?.also { s ->
-                    realm.executeTransaction {
-                        s.examCount++
+                    shaper?.also { s ->
+                        realm.executeTransaction {
+                            s.examCount++
 
-                        if (binding.result?.details?.first()?.correct == true)
-                            s.correctCount++
+                            if (result?.details?.first()?.correct == true)
+                                s.correctCount++
+                        }
                     }
                 }
-            } else {
-                val sequence = realm.where(Sequence::class.java)
-                        .equalTo("id", mainActivity.sequenceId)
-                        .findFirst()
 
-                sequence?.also { seq ->
-                    realm.executeTransaction {
-                        seq.examCount++
+                else -> {
+                    val sequence = realm.where(Sequence::class.java)
+                            .equalTo("id", mainActivity.sequenceId)
+                            .findFirst()
 
-                        if (binding.result?.details?.count { it.correct } ?: -1 == binding.result?.details?.size)
-                            seq.correctCount++
-                    }
+                    sequence?.also { seq ->
+                        realm.executeTransaction {
+                            seq.examCount++
 
-                    binding.result?.details?.forEach { detail ->
-                        val shaper = realm.where(Shaper::class.java)
-                                .equalTo("id", detail.id)
-                                .findFirst()
+                            if (result?.details?.count { it.correct } ?: -1 == result?.details?.size)
+                                seq.correctCount++
+                        }
 
-                        shaper?.let { s ->
-                            realm.executeTransaction {
-                                s.examCount++
-                                if (detail.correct) s.correctCount++
+                        result?.details?.forEach { detail ->
+                            val shaper = realm.where(Shaper::class.java)
+                                    .equalTo("id", detail.id)
+                                    .findFirst()
+
+                            shaper?.let { s ->
+                                realm.executeTransaction {
+                                    s.examCount++
+                                    if (detail.correct) s.correctCount++
+                                }
                             }
                         }
                     }
@@ -130,7 +137,7 @@ class CheckAnswerFragment : Fragment() {
     }
 
     private fun injectResults() {
-        binding.result?.details?.forEach { detail ->
+        result?.details?.forEach { detail ->
             val shaper = realm.where(Shaper::class.java)
                     .equalTo("id", detail.id)
                     .findFirst()
