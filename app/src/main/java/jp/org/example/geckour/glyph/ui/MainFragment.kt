@@ -466,45 +466,64 @@ class MainFragment : Fragment() {
 
         val difficulty = this.level.getDifficulty()
 
-        return when (mode ?: mainActivity.getMode()) {
-            MainActivity.Mode.NORMAL -> {
-                when (difficulty) {
-                    1 -> {
-                        realm.where(DBShaper::class.java)
-                                .findAll()
-                                .toList()
-                                .map { it.parse() }
-                                .let { shaperList ->
-                                    val shaper = shaperList.random()
-                                    mainActivity.sequenceId = shaper.id
-
-                                    return@let listOf(shaper)
-                                }
-                    }
-
-                    in 2..5 -> {
-                        realm.where(Sequence::class.java)
-                                .equalTo("size", difficulty)
-                                .findAll()
-                                .toList()
-                                .let { sequenceList ->
-                                    sequenceList.random().let {
-                                        mainActivity.sequenceId = it.id
-                                        it.message.map { it.parse() }
-                                    }
-                                }
-                    }
-
-                    else -> listOf()
+        return if (id != null) {
+            when (difficulty) {
+                1 -> {
+                    listOf(realm.where(DBShaper::class.java)
+                            .findAll()
+                            .first { it.id == id }
+                            .parse())
                 }
+
+                in 2..5 -> {
+                    realm.where(Sequence::class.java)
+                            .equalTo("size", difficulty)
+                            .findAll()
+                            .firstOrNull { it.id == id }?.let {
+                                it.message.toList().map { it.parse() }
+                            } ?: emptyList()
+                }
+
+                else -> emptyList()
             }
+        } else {
+            when (mode ?: mainActivity.getMode()) {
+                MainActivity.Mode.NORMAL -> {
+                    when (difficulty) {
+                        1 -> {
+                            realm.where(DBShaper::class.java)
+                                    .findAll()
+                                    .toList()
+                                    .map { it.parse() }
+                                    .let { shaperList ->
+                                        val shaper = shaperList.random()
+                                        mainActivity.sequenceId = shaper.id
 
-            MainActivity.Mode.WEAKNESS -> {
-                when (difficulty) {
-                    1 -> {
-                        val whole = realm.where(DBShaper::class.java)
+                                        return@let listOf(shaper)
+                                    }
+                        }
 
-                        if (id == null) {
+                        in 2..5 -> {
+                            realm.where(Sequence::class.java)
+                                    .equalTo("size", difficulty)
+                                    .findAll()
+                                    .toList()
+                                    .let { sequenceList ->
+                                        val sequence = sequenceList.random()
+                                        mainActivity.sequenceId = sequence.id
+                                        return@let sequence.message.map { it.parse() }
+                                    }
+                        }
+
+                        else -> listOf()
+                    }
+                }
+
+                MainActivity.Mode.WEAKNESS -> {
+                    when (difficulty) {
+                        1 -> {
+                            val whole = realm.where(DBShaper::class.java)
+
                             whole.greaterThan("examCount", 0).let {
                                 val shaperList = it.findAll().toList()
                                 val count = shaperList
@@ -527,16 +546,12 @@ class MainFragment : Fragment() {
                                             level = this@MainFragment.level)
                                 }
                             }
-                        } else {
-                            listOf(whole.findAll().map { it.parse() }[id.toInt()])
                         }
-                    }
 
-                    in 2..5 -> {
-                        val whole = realm.where(Sequence::class.java)
-                                .equalTo("size", difficulty)
+                        in 2..5 -> {
+                            val whole = realm.where(Sequence::class.java)
+                                    .equalTo("size", difficulty)
 
-                        if (id == null) {
                             whole.greaterThan("examCount", 0).let {
                                 val sequenceList = it.findAll().toList()
                                 val count = sequenceList
@@ -561,15 +576,10 @@ class MainFragment : Fragment() {
                                             level = this@MainFragment.level)
                                 }
                             }
-                        } else {
-                            whole.findAll()
-                                    .filterNotNull()[id.toInt()].let {
-                                it.message.toList().map { it.parse() }
-                            }
                         }
-                    }
 
-                    else -> listOf()
+                        else -> emptyList()
+                    }
                 }
             }
         }
