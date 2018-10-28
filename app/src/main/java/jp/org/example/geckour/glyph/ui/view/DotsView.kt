@@ -9,7 +9,11 @@ import jp.org.example.geckour.glyph.util.clearAll
 import kotlinx.coroutines.experimental.Job
 
 class DotsView : View {
-
+    
+    companion object {
+        val DOTS_SIZE = 11
+    }
+    
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
             : super(context, attrs, defStyleAttr, defStyleRes)
 
@@ -38,8 +42,8 @@ class DotsView : View {
             Bitmap.createScaledBitmap(it, dotDiam, dotDiam, false)
         }
     }
-    private val dots = Array(11) { PointF() }
-    private val isThrough = Array(11) { false }
+    private val dots = Array(DOTS_SIZE) { PointF() }
+    private val isThrough = Array(DOTS_SIZE) { false }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
@@ -99,7 +103,7 @@ class DotsView : View {
     }
 
     fun setDotState(index: Int, b: Boolean) {
-        if (index in 0..10) isThrough[index] = b
+        if (index in 0 until DOTS_SIZE) isThrough[index] = b
         invalidate()
     }
 
@@ -112,7 +116,7 @@ class DotsView : View {
 
     fun setDotsState(indices: List<Pair<Int, Boolean>>) {
         indices.forEach {
-            if (it.first in 0..10) {
+            if (it.first in 0 until DOTS_SIZE) {
                 isThrough[it.first] = it.second
             }
         }
@@ -125,7 +129,7 @@ class DotsView : View {
                      onCollision: (List<Int>) -> Unit = {}): List<Int> {
         val collisionDots: ArrayList<Int> = ArrayList()
         val tol = dotDiam
-        for (i in 0..10) {
+        for (i in 0 until DOTS_SIZE) {
             if (fromX == toX && fromY == toY) {
                 //円の方程式にて当たり判定
                 val diffX = fromX - dots[i].x
