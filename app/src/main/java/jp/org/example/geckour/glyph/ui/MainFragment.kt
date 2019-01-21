@@ -1,11 +1,10 @@
 package jp.org.example.geckour.glyph.ui
 
 import android.content.SharedPreferences
-import android.databinding.DataBindingUtil
+import androidx.databinding.DataBindingUtil
 import android.graphics.Color
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -21,12 +20,12 @@ import jp.org.example.geckour.glyph.ui.model.ResultDetail
 import jp.org.example.geckour.glyph.ui.view.AnimateView
 import jp.org.example.geckour.glyph.ui.view.Shaper
 import jp.org.example.geckour.glyph.util.*
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import timber.log.Timber
 import java.util.*
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
-class MainFragment : Fragment() {
+class MainFragment : ScopedFragment() {
 
     companion object {
         val tag: String = MainFragment::class.java.simpleName
@@ -132,9 +131,11 @@ class MainFragment : Fragment() {
         } else {
             level = savedInstanceState.getInt(STATE_ARGS_LEVEL)
 
-            questions.apply {
+            questions.run {
                 clear()
-                addAll(savedInstanceState.getParcelableArrayList(STATE_ARGS_QUESTIONS))
+                savedInstanceState.getParcelableArrayList<Shaper>(STATE_ARGS_QUESTIONS)?.run {
+                    addAll(this)
+                }
             }
         }
 

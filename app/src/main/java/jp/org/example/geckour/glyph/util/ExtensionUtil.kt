@@ -10,11 +10,9 @@ import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import jp.org.example.geckour.glyph.App
 import jp.org.example.geckour.glyph.ui.view.Shaper
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.*
 import timber.log.Timber
 import java.util.*
-import kotlin.coroutines.experimental.CoroutineContext
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
 
@@ -25,12 +23,9 @@ private val vibrationEffect =
             VibrationEffect.createOneShot(VIBRATE_LENGTH, 255)
         else null
 
-fun <T> async(context: CoroutineContext = CommonPool, block: suspend CoroutineScope.() -> T) =
-        kotlinx.coroutines.experimental.async(context, block = block)
-
-fun <T> ui(onError: Throwable.() -> Unit = { printStackTrace() },
+fun <T> CoroutineScope.ui(onError: Throwable.() -> Unit = { printStackTrace() },
            block: suspend CoroutineScope.() -> T) =
-        launch(UI) {
+        launch(Dispatchers.Main) {
             try {
                 block()
             } catch (e: Exception) {

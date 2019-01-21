@@ -5,11 +5,14 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import jp.org.example.geckour.glyph.R
-import jp.org.example.geckour.glyph.util.clearAll
-import kotlinx.coroutines.experimental.Job
+import jp.org.example.geckour.glyph.util.clear
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlin.coroutines.CoroutineContext
 
-class DotsView : View {
-    
+class DotsView : View, CoroutineScope {
+
     companion object {
         val DOTS_SIZE = 11
     }
@@ -24,8 +27,9 @@ class DotsView : View {
 
     constructor(context: Context) : super(context)
 
-
-    private val jobList: ArrayList<Job> = ArrayList()
+    private val job: Job = Job()
+    override val coroutineContext: CoroutineContext
+        get() = job + Dispatchers.Main
 
     private val paint = Paint()
     private var offsetWidth = 0f
@@ -84,8 +88,7 @@ class DotsView : View {
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-
-        jobList.clearAll()
+        job.clear()
     }
 
     override fun onDraw(canvas: Canvas) {

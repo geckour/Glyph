@@ -1,10 +1,10 @@
 package jp.org.example.geckour.glyph.ui
 
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import io.realm.Realm
 import jp.org.example.geckour.glyph.adapter.StatsFragmentRecyclerAdapter
 import jp.org.example.geckour.glyph.databinding.FragmentStatisticsBinding

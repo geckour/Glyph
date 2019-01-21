@@ -10,7 +10,7 @@
             type="jp.org.example.geckour.glyph.ui.model.Statistics.Data" />
     </data>
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground"
@@ -28,7 +28,7 @@
             app:srcBitmap="@{data.bitmap}"
             tools:src="@drawable/glyph_hex_normal" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/shaper_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -112,5 +112,5 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/label_percentage" />
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

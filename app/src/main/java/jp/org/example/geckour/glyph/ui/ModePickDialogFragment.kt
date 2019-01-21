@@ -2,9 +2,9 @@ package jp.org.example.geckour.glyph.ui
 
 import android.app.Dialog
 import android.os.Bundle
-import android.support.v4.app.DialogFragment
-import android.support.v7.app.AlertDialog
 import android.widget.ArrayAdapter
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.DialogPickListBinding
 import jp.org.example.geckour.glyph.util.HintType

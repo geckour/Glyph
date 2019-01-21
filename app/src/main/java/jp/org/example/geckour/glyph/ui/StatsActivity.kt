@@ -2,11 +2,11 @@ package jp.org.example.geckour.glyph.ui
 
 import android.app.Activity
 import android.content.Intent
-import android.databinding.DataBindingUtil
+import androidx.databinding.DataBindingUtil
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivityStatisticsBinding
 import jp.org.example.geckour.glyph.adapter.StatsFragmentPagerAdapter

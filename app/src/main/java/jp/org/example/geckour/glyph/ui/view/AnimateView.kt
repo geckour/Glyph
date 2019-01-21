@@ -2,23 +2,21 @@ package jp.org.example.geckour.glyph.ui.view
 
 import android.content.Context
 import android.graphics.*
-import android.support.v4.content.res.ResourcesCompat
+import androidx.core.content.res.ResourcesCompat
 import android.util.AttributeSet
 import android.view.View
 import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.db.DBInitialData
-import jp.org.example.geckour.glyph.util.async
 import jp.org.example.geckour.glyph.util.clear
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 import jp.org.example.geckour.glyph.util.ui
-import kotlinx.coroutines.experimental.CancellationException
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.*
 import timber.log.Timber
+import kotlin.coroutines.CoroutineContext
 
-class AnimateView : View {
+class AnimateView : View, CoroutineScope {
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
             : super(context, attrs, defStyleAttr, defStyleRes)
@@ -56,6 +54,10 @@ class AnimateView : View {
             else -> 1300L
         }
     }
+
+    private val job: Job = Job()
+    override val coroutineContext: CoroutineContext
+        get() = job + Dispatchers.Main
 
     private val coda: Typeface? = ResourcesCompat.getFont(context, R.font.coda)
 
@@ -104,25 +106,25 @@ class AnimateView : View {
 
     private var onResourcesReady: suspend () -> Unit = {}
 
-    private val job: Job = async {
-        ready = async { initResources() }.await()
-        ui { onResourcesReady() }
-
-        var cancelled = false
-        while (!cancelled) {
-            try {
-                if (height > 0) postInvalidate()
-                delay(10)
-            } catch (e: CancellationException) {
-                cancelled = true
-            } catch (e: Exception) {
-                Timber.e(e)
-            }
-        }
-    }
-
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
+
+        launch {
+            ready = async { initResources() }.await()
+            ui { onResourcesReady() }
+
+            var cancelled = false
+            while (!cancelled) {
+                try {
+                    if (height > 0) postInvalidate()
+                    delay(10)
+                } catch (e: CancellationException) {
+                    cancelled = true
+                } catch (e: Exception) {
+                    Timber.e(e)
+                }
+            }
+        }
 
         now = System.currentTimeMillis()
 

@@ -2,7 +2,7 @@ package jp.org.example.geckour.glyph.ui
 
 import android.app.Activity
 import android.content.SharedPreferences
-import android.databinding.DataBindingUtil
+import androidx.databinding.DataBindingUtil
 import android.os.Bundle
 import android.preference.PreferenceManager
 import jp.org.example.geckour.glyph.App.Companion.scale

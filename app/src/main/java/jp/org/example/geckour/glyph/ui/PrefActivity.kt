@@ -3,7 +3,7 @@ package jp.org.example.geckour.glyph.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import jp.org.example.geckour.glyph.util.setCrashlytics
 
 class PrefActivity : AppCompatActivity() {

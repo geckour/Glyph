@@ -4,11 +4,10 @@ import android.app.PendingIntent
 import android.content.*
 import android.os.Bundle
 import android.os.IBinder
-import android.support.v4.app.Fragment
-import android.support.v7.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.preference.PreferenceManager
 import com.android.vending.billing.IInAppBillingService
 import jp.org.example.geckour.glyph.App.Companion.moshi
 import jp.org.example.geckour.glyph.R
@@ -17,7 +16,7 @@ import jp.org.example.geckour.glyph.ui.model.SkuDetail
 import jp.org.example.geckour.glyph.util.*
 import timber.log.Timber
 
-class PrefFragment : Fragment() {
+class PrefFragment : ScopedFragment() {
 
     companion object {
         val tag: String = PrefFragment::class.java.simpleName
@@ -126,7 +125,7 @@ class PrefFragment : Fragment() {
                 }
         ).apply {
             onConfirm = { onModeChanged(it) }
-        }.show(activity?.supportFragmentManager, ModePickDialogFragment.tag)
+        }.show(activity?.supportFragmentManager ?: return, ModePickDialogFragment.tag)
     }
 
     private fun onModeChanged(type: Int) {
@@ -157,7 +156,7 @@ class PrefFragment : Fragment() {
                     LevelPickDialogFragment.LevelType.MAX -> onMaxLevelChanged(it)
                 }
             }
-        }.show(activity?.supportFragmentManager, LevelPickDialogFragment.tag)
+        }.show(activity?.supportFragmentManager ?: return, LevelPickDialogFragment.tag)
     }
 
 
@@ -265,7 +264,7 @@ class PrefFragment : Fragment() {
                                 activity?.packageName, type, null
                         ).getStringArrayList("INAPP_PURCHASE_ITEM_LIST")
 
-                if (purchasedSkus.contains(sku.productId).not()) {
+                if (purchasedSkus?.contains(sku.productId)?.not() != false) {
                     val pendingIntent: PendingIntent =
                             it.getBuyIntent(3,
                                     activity?.packageName, key, type, null)?.let {

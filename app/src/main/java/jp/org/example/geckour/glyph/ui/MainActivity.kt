@@ -2,9 +2,9 @@ package jp.org.example.geckour.glyph.ui
 
 import android.app.Activity
 import android.content.Intent
-import android.databinding.DataBindingUtil
+import androidx.databinding.DataBindingUtil
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.databinding.ActivityMainBinding
 import jp.org.example.geckour.glyph.ui.model.Result
@@ -57,10 +57,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState?.putSerializable(ARGS_MODE, mode)
+        outState.putSerializable(ARGS_MODE, mode)
     }
 
     override fun onBackPressed() {

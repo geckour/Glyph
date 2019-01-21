@@ -18,7 +18,7 @@
             type="Long" />
     </data>
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/background">
@@ -41,7 +41,7 @@
             tools:tint="@color/tintResultFault"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -57,7 +57,7 @@
             tools:textColor="@color/tintResultFault"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -90,7 +90,7 @@
             tools:tint="@color/tintResultFault"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -106,7 +106,7 @@
             tools:textColor="@color/tintResultFault"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -139,7 +139,7 @@
             tools:tint="@color/tintResultCorrect"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -155,7 +155,7 @@
             tools:textColor="@color/tintResultCorrect"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -188,7 +188,7 @@
             tools:tint="@color/tintResultCorrect"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -204,7 +204,7 @@
             tools:textColor="@color/tintResultCorrect"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -237,7 +237,7 @@
             tools:tint="@color/tintResultFault"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -253,7 +253,7 @@
             tools:textColor="@color/tintResultFault"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -268,7 +268,7 @@
             tools:text="1:55"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/bonus_hack_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -280,7 +280,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/guideline" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/bonus_hack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -293,7 +293,7 @@
             app:layout_constraintTop_toBottomOf="@+id/bonus_hack_label"
             tools:text="79%" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/bonus_speed_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -306,7 +306,7 @@
             app:layout_constraintStart_toStartOf="@+id/bonus_hack_label"
             app:layout_constraintTop_toBottomOf="@+id/bonus_hack" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/bonus_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -319,7 +319,7 @@
             app:layout_constraintTop_toBottomOf="@+id/bonus_speed_label"
             tools:text="32%" />
 
-        <android.support.v7.widget.AppCompatTextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/count_hack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -335,7 +335,7 @@
             tools:text="HACK:1"
             tools:visibility="visible" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/button_right"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -351,7 +351,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="RIGHT" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/button_left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -367,12 +367,12 @@
             app:layout_constraintStart_toStartOf="parent"
             tools:text="LEFT" />
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             app:layout_constraintGuide_percent="0.55" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

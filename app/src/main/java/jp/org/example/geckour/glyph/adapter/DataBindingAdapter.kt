@@ -1,6 +1,6 @@
 package jp.org.example.geckour.glyph.adapter
 
-import android.databinding.BindingAdapter
+import androidx.databinding.BindingAdapter
 import android.graphics.Bitmap
 import android.widget.ImageView
 
