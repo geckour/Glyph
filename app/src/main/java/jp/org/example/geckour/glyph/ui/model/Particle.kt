@@ -1,4 +1,4 @@
-package jp.org.example.geckour.glyph.ui.view
+package jp.org.example.geckour.glyph.ui.model
 
 import android.graphics.*
 

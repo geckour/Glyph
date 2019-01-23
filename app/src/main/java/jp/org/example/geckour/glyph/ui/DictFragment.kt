@@ -43,12 +43,7 @@ class DictFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = FragmentMainBinding.inflate(inflater, container, false)
 
-        binding.dotsView.visibility = View.INVISIBLE
-
-        binding.animateView.apply {
-            setOnResourcesReady { binding.dotsView.visibility = View.VISIBLE }
-            setGrainAlphaModeIntoDictionary()
-        }
+        binding.animateView.setGrainAlphaModeIntoDictionary()
 
         return binding.root
     }

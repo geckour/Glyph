@@ -9,6 +9,7 @@ import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
 import jp.org.example.geckour.glyph.db.DBInitialData
+import jp.org.example.geckour.glyph.ui.model.Particle
 import jp.org.example.geckour.glyph.util.clear
 import jp.org.example.geckour.glyph.util.toTimeStringPair
 import jp.org.example.geckour.glyph.util.ui
@@ -16,7 +17,7 @@ import kotlinx.coroutines.*
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
-class AnimateView : View, CoroutineScope {
+class AnimateView : View {
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
             : super(context, attrs, defStyleAttr, defStyleRes)
@@ -56,8 +57,6 @@ class AnimateView : View, CoroutineScope {
     }
 
     private val job: Job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = job + Dispatchers.Main
 
     private val coda: Typeface? = ResourcesCompat.getFont(context, R.font.coda)
 
@@ -97,27 +96,35 @@ class AnimateView : View, CoroutineScope {
     private val hexMargin: Float = hexWidth * (Math.cos(Math.PI / 6) - 1f).toFloat() * 0.5f
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
-    private lateinit var grainImg: Bitmap
-    private lateinit var strongHexImg: Bitmap
-    private lateinit var normalHexImg: Bitmap
-    private lateinit var weakHexImg: Bitmap
+    private val grainImg: Bitmap by lazy {
+        val grainDiam = (35.0 * scale).toInt()
+        BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
+            Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
+        }
+    }
+    private val strongHexImg: Bitmap by lazy {
+        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
+            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+        }
+    }
+    private val normalHexImg: Bitmap by lazy {
+        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal).let {
+            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+        }
+    }
+    private val weakHexImg: Bitmap by lazy {
+        BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_weak).let {
+            Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
+        }
+    }
 
-    private var ready: Boolean = false
-
-    private var onResourcesReady: suspend () -> Unit = {}
-
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
-
-        launch {
-            ready = async { initResources() }.await()
-            ui { onResourcesReady() }
-
+    init {
+        GlobalScope.launch(job + Dispatchers.IO) {
             var cancelled = false
             while (!cancelled) {
                 try {
                     if (height > 0) postInvalidate()
-                    delay(10)
+                    delay(15)
                 } catch (e: CancellationException) {
                     cancelled = true
                 } catch (e: Exception) {
@@ -125,10 +132,14 @@ class AnimateView : View, CoroutineScope {
                 }
             }
         }
+    }
+
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas)
 
         now = System.currentTimeMillis()
 
-        if (ready) canvas?.let {
+        canvas?.let {
             when (state) {
                 State.WAIT_COMMAND -> {
                     if (elapsedTime > commandWaitTime) onTimeUpForCommand()
@@ -235,33 +246,6 @@ class AnimateView : View, CoroutineScope {
 
         recycleResources()
         job.clear()
-    }
-
-    fun setOnResourcesReady(onResourcesReady: suspend () -> Unit) {
-        this.onResourcesReady = onResourcesReady
-    }
-
-    private fun initResources(): Boolean {
-        val grainDiam = (35.0 * scale).toInt()
-        grainImg =
-                BitmapFactory.decodeResource(resources, R.drawable.particle, BitmapFactory.Options().apply { inMutable = true }).let {
-                    Bitmap.createScaledBitmap(it, grainDiam, grainDiam, false)
-                }
-
-        strongHexImg =
-                BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_strong).let {
-                    Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
-                }
-        normalHexImg =
-                BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_normal).let {
-                    Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
-                }
-        weakHexImg =
-                BitmapFactory.decodeResource(resources, R.drawable.glyph_hex_weak).let {
-                    Bitmap.createScaledBitmap(it, hexWidth, hexWidth, false)
-                }
-
-        return true
     }
 
     private fun recycleResources() {
@@ -578,5 +562,6 @@ class AnimateView : View, CoroutineScope {
                 textAlign = Paint.Align.LEFT
             })
 
+    // to avoid redundant lint warning
     override fun performClick(): Boolean = super.performClick()
 }

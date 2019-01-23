@@ -18,7 +18,7 @@ import jp.org.example.geckour.glyph.ui.MainActivity.Companion.hacks
 import jp.org.example.geckour.glyph.ui.model.Result
 import jp.org.example.geckour.glyph.ui.model.ResultDetail
 import jp.org.example.geckour.glyph.ui.view.AnimateView
-import jp.org.example.geckour.glyph.ui.view.Shaper
+import jp.org.example.geckour.glyph.ui.model.Shaper
 import jp.org.example.geckour.glyph.util.*
 import kotlinx.coroutines.*
 import timber.log.Timber

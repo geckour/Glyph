@@ -9,7 +9,7 @@ import android.os.Vibrator
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import jp.org.example.geckour.glyph.App
-import jp.org.example.geckour.glyph.ui.view.Shaper
+import jp.org.example.geckour.glyph.ui.model.Shaper
 import kotlinx.coroutines.*
 import timber.log.Timber
 import java.util.*
