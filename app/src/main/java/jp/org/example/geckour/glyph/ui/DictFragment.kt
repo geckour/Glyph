@@ -3,16 +3,16 @@ package jp.org.example.geckour.glyph.ui
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.fragment.app.Fragment
 import io.realm.Realm
 import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.util.*
 import jp.org.example.geckour.glyph.ui.view.AnimateView
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class DictFragment : Fragment() {
@@ -80,7 +80,7 @@ class DictFragment : Fragment() {
 
                         MotionEvent.ACTION_MOVE -> {
                             val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) activity?.vibrate()
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) activity?.vibrate(binding.dotsView)
                             }
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
@@ -92,7 +92,7 @@ class DictFragment : Fragment() {
 
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
                             val collision = binding.dotsView.getCollision(fromX, fromY, event.x, event.y) {
-                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) activity?.vibrate()
+                                if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0)) activity?.vibrate(binding.dotsView)
                             }
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })

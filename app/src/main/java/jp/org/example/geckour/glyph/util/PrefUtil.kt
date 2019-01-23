@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 enum class Key(val defaultValue: Any) {
     GAME_MODE(0),
     VIBRATE(true),
+    HAPTIC_FEEDBACK(false),
     SHOW_COUNT(false),
     LEVEL_MIN(0),
     LEVEL_MAX(8),

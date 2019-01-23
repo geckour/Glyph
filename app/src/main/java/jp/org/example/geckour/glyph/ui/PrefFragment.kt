@@ -73,6 +73,19 @@ class PrefFragment : ScopedFragment() {
 
                 setOnCheckedChangeListener { _, bool ->
                     sharedPreferences.edit().putBoolean(Key.VIBRATE.name, bool).apply()
+                    binding.elementHapticFeedback.elementWidget.widgetSwitch.isEnabled = bool
+                }
+            }
+        }
+
+        binding.elementHapticFeedback.apply {
+            elementWidget?.widgetSwitch?.apply {
+                visibility = View.VISIBLE
+
+                isChecked = sharedPreferences.getBooleanValue(Key.HAPTIC_FEEDBACK)
+
+                setOnCheckedChangeListener { _, bool ->
+                    sharedPreferences.edit().putBoolean(Key.HAPTIC_FEEDBACK.name, bool).apply()
                 }
             }
         }

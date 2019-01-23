@@ -160,7 +160,7 @@ class MainFragment : ScopedFragment() {
                             val collision = binding.dotsView
                                     .getCollision(fromX, fromY, event.x, event.y) {
                                         if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
-                                            activity?.vibrate()
+                                            activity?.vibrate(binding.dotsView)
                                     }
 
                             throughDots.addAll(collision)
@@ -177,7 +177,7 @@ class MainFragment : ScopedFragment() {
                             val collision = binding.dotsView
                                     .getCollision(fromX, fromY, event.x, event.y) {
                                         if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
-                                            activity?.vibrate()
+                                            activity?.vibrate(binding.dotsView)
                                     }
 
                             throughDots.addAll(collision)
@@ -227,7 +227,7 @@ class MainFragment : ScopedFragment() {
                             val collision = binding.dotsView
                                     .getCollision(fromX, fromY, event.x, event.y) {
                                         if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
-                                            activity?.vibrate()
+                                            activity?.vibrate(binding.dotsView)
                                     }
 
                             throughDots.addAll(collision)
@@ -242,7 +242,7 @@ class MainFragment : ScopedFragment() {
                             val collision = binding.dotsView
                                     .getCollision(fromX, fromY, event.x, event.y) {
                                         if (doVibrate && (throughDots.isEmpty() || it.count { it != throughDots.last() } > 0))
-                                            activity?.vibrate()
+                                            activity?.vibrate(binding.dotsView)
                                     }
 
                             throughDots.addAll(collision)

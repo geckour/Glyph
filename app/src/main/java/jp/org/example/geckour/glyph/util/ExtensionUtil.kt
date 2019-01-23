@@ -6,6 +6,9 @@ import android.graphics.*
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.preference.PreferenceManager
+import android.view.HapticFeedbackConstants
+import android.view.View
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import jp.org.example.geckour.glyph.App
@@ -16,7 +19,7 @@ import java.util.*
 import jp.org.example.geckour.glyph.db.model.Shaper as DBShaper
 
 
-private const val VIBRATE_LENGTH: Long = 1L
+private const val VIBRATE_LENGTH: Long = 40L
 
 private val vibrationEffect =
         if (Build.VERSION.SDK_INT >= 26)
@@ -24,7 +27,7 @@ private val vibrationEffect =
         else null
 
 fun <T> CoroutineScope.ui(onError: Throwable.() -> Unit = { printStackTrace() },
-           block: suspend CoroutineScope.() -> T) =
+                          block: suspend CoroutineScope.() -> T) =
         launch(Dispatchers.Main) {
             try {
                 block()
@@ -126,21 +129,28 @@ private fun List<Int>.match(path: List<Pair<Int, Int>>): Boolean {
             && glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
 }
 
-fun Context.vibrate() {
-    when (Build.VERSION.SDK_INT) {
-        in 0..22 -> {
-            (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-                    .vibrate(VIBRATE_LENGTH)
-        }
+fun Context.vibrate(hapticView: View) {
+    if (PreferenceManager.getDefaultSharedPreferences(this)
+                    .getBooleanValue(Key.HAPTIC_FEEDBACK)) {
+        hapticView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY,
+                HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                        or HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING)
+    } else {
+        when (Build.VERSION.SDK_INT) {
+            in 0..22 -> {
+                (this.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+                        .vibrate(VIBRATE_LENGTH)
+            }
 
-        in 23..25 -> {
-            this.getSystemService(Vibrator::class.java)
-                    .vibrate(VIBRATE_LENGTH)
-        }
+            in 23..25 -> {
+                this.getSystemService(Vibrator::class.java)
+                        .vibrate(VIBRATE_LENGTH)
+            }
 
-        else -> {
-            this.getSystemService(Vibrator::class.java)
-                    .vibrate(vibrationEffect)
+            else -> {
+                this.getSystemService(Vibrator::class.java)
+                        .vibrate(vibrationEffect)
+            }
         }
     }
 }

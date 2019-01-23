@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+        xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -15,45 +15,51 @@
             <include
                 android:id="@+id/category_general"
                 layout="@layout/pref_category"
-                app:title='@{"GENERAL"}' />
+                app:title='@{"GENERAL"}'/>
 
             <include
                 android:id="@+id/element_mode"
                 layout="@layout/pref_element"
-                app:title='@{"GAME MODE"}' />
+                app:title='@{"GAME MODE"}'/>
 
             <include
                 android:id="@+id/element_vibration"
                 layout="@layout/pref_element"
                 app:summary='@{"Vibrate when your locus pass through the point"}'
-                app:title='@{"VIBRATION"}' />
+                app:title='@{"VIBRATION"}'/>
+
+            <include
+                android:id="@+id/element_haptic_feedback"
+                layout="@layout/pref_element"
+                app:summary='@{"Use haptic feedback on vibration"}'
+                app:title='@{"HAPTIC FEEDBACK"}'/>
 
             <include
                 android:id="@+id/element_count_hack"
                 layout="@layout/pref_element"
                 app:summary='@{"Count the number of hack and show it with result"}'
-                app:title='@{"COUNT HACKS"}' />
+                app:title='@{"COUNT HACKS"}'/>
 
             <include
                 android:id="@+id/element_level_min"
                 layout="@layout/pref_element"
-                app:title='@{"MINIMUM PORTAL LEVEL"}' />
+                app:title='@{"MINIMUM PORTAL LEVEL"}'/>
 
             <include
                 android:id="@+id/element_level_max"
                 layout="@layout/pref_element"
-                app:title='@{"MAXIMUM PORTAL LEVEL"}' />
+                app:title='@{"MAXIMUM PORTAL LEVEL"}'/>
 
             <include
                 android:id="@+id/category_others"
                 layout="@layout/pref_category"
-                app:title='@{"OTHERS"}' />
+                app:title='@{"OTHERS"}'/>
 
             <include
                 android:id="@+id/element_donate"
                 layout="@layout/pref_element"
                 app:summary='@{"Donate to author for his better Ingress life"}'
-                app:title='@{"DONATE"}' />
+                app:title='@{"DONATE"}'/>
         </LinearLayout>
     </ScrollView>
 </layout>
