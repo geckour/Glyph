@@ -112,6 +112,7 @@ class MainFragment : ScopedFragment() {
         showDialog(getString(R.string.message_opening_command_channel))
     }
 
+    @SuppressWarnings("ClickableViewAccessibility")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
@@ -182,7 +183,7 @@ class MainFragment : ScopedFragment() {
 
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                            paths.add(throughDots.convertDotsListToPaths().getNormalizedPaths())
+                            paths.add(throughDots.mapToPaths().normalized())
 
                             setLeftButton("REDO") {
                                 paths.removeAt(paths.lastIndex)
@@ -195,7 +196,7 @@ class MainFragment : ScopedFragment() {
 
                             binding.animateView.apply {
                                 setGrainAlphaModeIntoFadeout { binding.dotsView.setDotsState { false } }
-                                showPaths(paths.last().mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
+                                showPaths(paths.last().mapToPointPaths(binding.dotsView.getDots()))
                             }
                             if (paths.size >= level.getDifficulty()) binding.animateView.setGrainAlphaModeIntoPrepareAnswer()
 
@@ -248,8 +249,8 @@ class MainFragment : ScopedFragment() {
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
 
-                            val path = throughDots.convertDotsListToPaths().getNormalizedPaths()
-                            binding.animateView.showPaths(path.mapToPointPathsFromDotPaths(binding.dotsView.getDots()))
+                            val path = throughDots.mapToPaths().normalized()
+                            binding.animateView.showPaths(path.mapToPointPaths(binding.dotsView.getDots()))
                             commandMaster.forEach {
                                 if (it.match(path)) {
                                     val command = DBInitialData.Shaper.valueOf(it.name)
@@ -446,9 +447,9 @@ class MainFragment : ScopedFragment() {
                 if (gameMode != 2) setShaperName(listOf(shaper.name))
                 if (gameMode != 1) {
                     showPaths(
-                            shaper.dots.convertDotsListToPaths()
-                                    .getNormalizedPaths()
-                                    .mapToPointPathsFromDotPaths(binding.dotsView.getDots())
+                            shaper.dots.mapToPaths()
+                                    .normalized()
+                                    .mapToPointPaths(binding.dotsView.getDots())
                     )
                 }
             }

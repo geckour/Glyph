@@ -10,9 +10,6 @@ import jp.org.example.geckour.glyph.databinding.FragmentMainBinding
 import jp.org.example.geckour.glyph.db.model.Shaper
 import jp.org.example.geckour.glyph.util.*
 import jp.org.example.geckour.glyph.ui.view.AnimateView
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class DictFragment : Fragment() {
@@ -55,6 +52,7 @@ class DictFragment : Fragment() {
         hideRightButton()
     }
 
+    @SuppressWarnings("ClickableViewAccessibility")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
@@ -96,9 +94,11 @@ class DictFragment : Fragment() {
                             }
                             throughDots.addAll(collision)
                             binding.dotsView.setDotsState(collision.map { Pair(it, true) })
-                            val path = throughDots.convertDotsListToPaths().getNormalizedPaths()
-                            binding.animateView.setShaperName(getShapers(path).map { it.name })
-                            binding.animateView.apply { showPaths(path.mapToPointPathsFromDotPaths(binding.dotsView.getDots())) }
+                            val normalizedPath = throughDots.mapToPaths().normalized()
+                            binding.animateView.apply {
+                                setShaperName(findShapers(normalizedPath).map { it.name })
+                                showPaths(normalizedPath.mapToPointPaths(binding.dotsView.getDots()))
+                            }
                             true
                         }
                         else -> true
@@ -110,26 +110,10 @@ class DictFragment : Fragment() {
         }
     }
 
-    private fun setRightButton(buttonText: String, predicate: (View) -> Unit) {
-        binding.buttonRight.apply {
-            text = buttonText
-            setOnClickListener { predicate(it) }
-            visibility = View.VISIBLE
-        }
-    }
-
     private fun hideRightButton() {
         binding.buttonRight.apply {
             visibility = View.INVISIBLE
             setOnClickListener(null)
-        }
-    }
-
-    private fun setLeftButton(buttonText: String, predicate: (View) -> Unit) {
-        binding.buttonLeft.apply {
-            text = buttonText
-            setOnClickListener { predicate(it) }
-            visibility = View.VISIBLE
         }
     }
 
@@ -140,7 +124,8 @@ class DictFragment : Fragment() {
         }
     }
 
-    private fun getShapers(path: List<Pair<Int, Int>>): List<Shaper> =
-            realm.where(Shaper::class.java).findAll().toList()
-                    .filter { it.match(path) }
+    private fun findShapers(normalizedPath: List<Pair<Int, Int>>): List<Shaper> {
+        return realm.where(Shaper::class.java).findAll().toList()
+                .filter { it.match(normalizedPath) }
+    }
 }

@@ -36,18 +36,6 @@ fun <T> CoroutineScope.ui(onError: Throwable.() -> Unit = { printStackTrace() },
             }
         }
 
-fun ArrayList<Job>.clearAll() {
-    forEach {
-        try {
-            if (it.isActive) it.cancel()
-        } catch (e: CancellationException) {
-            Timber.e(e)
-        }
-    }
-
-    clear()
-}
-
 fun Job.clear() {
     try {
         if (isActive) cancel()
@@ -56,22 +44,11 @@ fun Job.clear() {
     }
 }
 
-inline fun <T> Iterable<T>.takeWhileIndexed(predicate: (Int, T) -> Boolean): List<T> {
-    val list = ArrayList<T>()
-    for ((i, item) in this.withIndex()) {
-        if (!predicate(i, item))
-            continue
-        list.add(item)
-    }
-    return list
-}
-
 fun <T, R> Pair<T, R>.inverse(): Pair<R, T> = Pair(this.second, this.first)
 
-fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(dots: Array<PointF>): List<Pair<PointF, PointF>> =
+fun List<Pair<Int, Int>>.mapToPointPaths(dots: Array<PointF>): List<Pair<PointF, PointF>> =
         this.mapNotNull { dotPath ->
-            return@mapNotNull if (dotPath.first in 0..dots.lastIndex
-                    && dotPath.second in 0..dots.lastIndex) {
+            if (dotPath.first in dots.indices && dotPath.second in dots.indices) {
                 Pair(
                         PointF(dots[dotPath.first].x, dots[dotPath.first].y),
                         PointF(dots[dotPath.second].x, dots[dotPath.second].y)
@@ -79,54 +56,37 @@ fun List<Pair<Int, Int>>.mapToPointPathsFromDotPaths(dots: Array<PointF>): List<
             } else null
         }
 
-fun List<Int>.convertDotsListToPaths(): List<Pair<Int, Int>> =
-        when {
-            this.isEmpty() -> listOf()
-
-            this.size < 2 -> listOf(Pair(this[0], this[0]))
-
-            else -> {
-                val droppedList =
-                        this.takeWhileIndexed { i, index -> i < 1 || this[i - 1] != index }
-
-                when {
-                    droppedList.isEmpty() -> listOf()
-                    droppedList.size < 2 -> listOf(Pair(droppedList[0], droppedList[0]))
-                    else -> (1..droppedList.lastIndex)
-                            .map { Pair(droppedList[it - 1], droppedList[it]) }
-                }
+fun List<Int>.mapToPaths(): List<Pair<Int, Int>> =
+        this.fold(emptyList<Int>()) { acc, i ->
+            if (acc.lastOrNull() == i) acc else acc + i
+        }.let { distinct ->
+            when {
+                distinct.isEmpty() -> emptyList()
+                distinct.size == 1 -> listOf(distinct[0] to distinct[0])
+                else -> (1..distinct.lastIndex)
+                        .map { distinct[it - 1] to distinct[it] }
             }
         }
 
-fun List<Pair<Int, Int>>.getNormalizedPaths(initialIndex: Int = 0): List<Pair<Int, Int>> =
-        if (this.size > 1 && initialIndex < this.lastIndex) {
-            ArrayList(this.subList(0, initialIndex + 1)).apply {
-                addAll(
-                        this@getNormalizedPaths.subList(
-                                initialIndex + 1,
-                                this@getNormalizedPaths.size
-                        ).filter {
-                            it != this@getNormalizedPaths[initialIndex]
-                                    && it != this@getNormalizedPaths[initialIndex].inverse()
-                        }
-                )
-            }.getNormalizedPaths(initialIndex + 1)
-        } else this
+fun List<Pair<Int, Int>>.normalized(): List<Pair<Int, Int>> =
+        this.apply { Timber.d("geckglyph this: $this") }
+                .map { if (it.first > it.second) (it.second to it.first) to true else it to false }
+                .distinctBy { it.first }
+                .map { if (it.second) it.first.second to it.first.first else it.first }
+                .apply { Timber.d("geckglyph normarized: $this") }
 
-fun DBShaper.match(path: List<Pair<Int, Int>>): Boolean =
-        this.dots.toList().match(path)
+fun DBShaper.match(normalizedPath: List<Pair<Int, Int>>): Boolean =
+        this.dots.toList().mapToPaths().normalized().match(normalizedPath)
 
 fun DBShaper.parse(): Shaper =
         Shaper(this.id, this.name, this.dots.toList(), this.correctCount, this.examCount)
 
-fun Shaper.match(path: List<Pair<Int, Int>>): Boolean =
-        this.dots.match(path)
+fun Shaper.match(normalizedPath: List<Pair<Int, Int>>): Boolean =
+        this.dots.mapToPaths().normalized().match(normalizedPath)
 
-private fun List<Int>.match(path: List<Pair<Int, Int>>): Boolean {
-    val glyphPath = this.convertDotsListToPaths()
-
-    return path.size == glyphPath.size
-            && glyphPath.size == glyphPath.count { path.contains(it) || path.contains(it.inverse()) }
+private fun List<Pair<Int, Int>>.match(path: List<Pair<Int, Int>>): Boolean {
+    return path.size == this.size
+            && this.size == this.count { path.contains(it) || path.contains(it.inverse()) }
 }
 
 fun Context.vibrate(hapticView: View) {

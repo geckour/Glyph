@@ -2,9 +2,9 @@ package jp.org.example.geckour.glyph.ui.view
 
 import android.content.Context
 import android.graphics.*
-import androidx.core.content.res.ResourcesCompat
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.res.ResourcesCompat
 import jp.org.example.geckour.glyph.App.Companion.scale
 import jp.org.example.geckour.glyph.BuildConfig
 import jp.org.example.geckour.glyph.R
@@ -12,22 +12,17 @@ import jp.org.example.geckour.glyph.db.DBInitialData
 import jp.org.example.geckour.glyph.ui.model.Particle
 import jp.org.example.geckour.glyph.util.clear
 import jp.org.example.geckour.glyph.util.toTimeStringPair
-import jp.org.example.geckour.glyph.util.ui
 import kotlinx.coroutines.*
 import timber.log.Timber
-import kotlin.coroutines.CoroutineContext
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sqrt
 
-class AnimateView : View {
-
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int)
-            : super(context, attrs, defStyleAttr, defStyleRes)
-
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int)
-            : super(context, attrs, defStyleAttr)
-
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
-
-    constructor(context: Context) : super(context)
+class AnimateView @JvmOverloads constructor(
+        context: Context,
+        attrs: AttributeSet? = null,
+        defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
 
     enum class State {
         DEFAULT,
@@ -78,7 +73,7 @@ class AnimateView : View {
     private var onPrepareAnswer: () -> Unit = {}
     private var onTransitionToCheckAnswer: () -> Unit = {}
     private var grainAlpha = 0
-    private val particleInterval = 20.0 * scale
+    private val particleInterval = 20f * scale
 
     private val commandWaitTime: Long = 2000L
     private val marginTime: Long = 900L
@@ -86,14 +81,14 @@ class AnimateView : View {
     private var now = initTime
     private var allowableTime = -1L
     private var referenceTime = -1L
-    private var elapsedTime = -1L
+    private val elapsedTime
         get() = now - referenceTime
     private var timeInQ = -1L
     private var inputStartTime = -1L
     private var spentTime = -1L
     private var progress: Pair<Int, Int> = Pair(0, 0)
     private val hexWidth: Int = (scale * 110).toInt()
-    private val hexMargin: Float = hexWidth * (Math.cos(Math.PI / 6) - 1f).toFloat() * 0.5f
+    private val hexMargin: Float = hexWidth * (cos(Math.PI / 6) - 1f).toFloat() * 0.5f
     private val hexagons: Array<PointF> by lazy { Array(progress.second) { getHexagonPosition(it) } }
 
     private val grainImg: Bitmap by lazy {
@@ -137,108 +132,108 @@ class AnimateView : View {
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
 
+        canvas ?: return
+
         now = System.currentTimeMillis()
 
-        canvas?.let {
-            when (state) {
-                State.WAIT_COMMAND -> {
-                    if (elapsedTime > commandWaitTime) onTimeUpForCommand()
-                    drawRemain(it, allowableTime)
-                    drawParticle(it)
-                }
+        when (state) {
+            State.WAIT_COMMAND -> {
+                if (elapsedTime > commandWaitTime) onTimeUpForCommand()
+                drawRemain(canvas, allowableTime)
+                drawParticle(canvas)
+            }
 
-                State.QUESTION -> {
-                    if (now - initTime > marginTime) {
-                        timeInQ = (elapsedTime % drawAnswerLength).apply {
-                            onStartNextQ =
-                                    when {
-                                        timeInQ > -1 && this - timeInQ < 0 -> {
-                                            onStartNextQ()
-                                            ({})
-                                        }
-                                        else ->
-                                            _onStartNextQ
+            State.QUESTION -> {
+                if (now - initTime > marginTime) {
+                    timeInQ = (elapsedTime % drawAnswerLength).apply {
+                        onStartNextQ =
+                                when {
+                                    timeInQ > -1 && this - timeInQ < 0 -> {
+                                        onStartNextQ()
+                                        ({})
                                     }
-                        }
-
-                        drawQuestionProgress(it)
-                        drawRemain(it, 0L)
-                        if (showName) drawShaperName(it)
-                        drawParticle(it)
-                    } else {
-                        referenceTime = now
-                        drawQuestionProgress(it, 0)
-                    }
-                }
-
-                State.PREPARE_INPUT -> {
-                    drawRemain(it, 0L)
-                }
-
-                State.INPUT -> {
-                    if (inputStartTime > -1L) {
-                        onStartInput()
-                        onStartInput = {}
-                        if (now - inputStartTime > allowableTime) setGrainAlphaModeIntoPrepareAnswer(true)
-
-                        drawQuestionProgress(it)
-                        drawRemain(it, now - inputStartTime)
-                        drawParticle(it)
-                    }
-                }
-
-                State.FADEOUT -> {
-                    if (now - inputStartTime > allowableTime) setGrainAlphaModeIntoPrepareAnswer(true)
-
-
-                    if (referenceTime > -1L) {
-                        drawQuestionProgress(it)
-                        drawRemain(it, now - inputStartTime)
-                        drawParticle(it)
-
-                        val tol = 500
-                        onFadeStart =
-                                if (elapsedTime < tol) {
-                                    _onFadeStart
-                                } else {
-                                    onFadeStart()
-                                    ({})
+                                    else ->
+                                        _onStartNextQ
                                 }
                     }
-                }
 
-                State.PREPARE_ANSWER -> {
-                    when {
-                        elapsedTime < 500L -> {
-                            drawRemain(it, spentTime)
-                            drawQuestionProgress(it)
-                            drawParticle(it)
-                        }
-
-                        elapsedTime in 500L..1000L -> {
-                            clearParticle()
-                            onPrepareAnswer()
-                            onPrepareAnswer = {}
-                        }
-
-                        else -> {
-                            onTransitionToCheckAnswer()
-                            onTransitionToCheckAnswer = {}
-                        }
-                    }
-                }
-
-                State.DICTIONARY -> {
-                    drawShaperName(it)
-                    drawParticle(it)
-                }
-
-                else -> {
+                    drawQuestionProgress(canvas)
+                    drawRemain(canvas, 0L)
+                    if (showName) drawShaperName(canvas)
+                    drawParticle(canvas)
+                } else {
+                    referenceTime = now
+                    drawQuestionProgress(canvas, 0)
                 }
             }
 
-            if (BuildConfig.DEBUG) drawDebugMessage(it)
+            State.PREPARE_INPUT -> {
+                drawRemain(canvas, 0L)
+            }
+
+            State.INPUT -> {
+                if (inputStartTime > -1L) {
+                    onStartInput()
+                    onStartInput = {}
+                    if (now - inputStartTime > allowableTime) setGrainAlphaModeIntoPrepareAnswer(true)
+
+                    drawQuestionProgress(canvas)
+                    drawRemain(canvas, now - inputStartTime)
+                    drawParticle(canvas)
+                }
+            }
+
+            State.FADEOUT -> {
+                if (now - inputStartTime > allowableTime) setGrainAlphaModeIntoPrepareAnswer(true)
+
+
+                if (referenceTime > -1L) {
+                    drawQuestionProgress(canvas)
+                    drawRemain(canvas, now - inputStartTime)
+                    drawParticle(canvas)
+
+                    val tol = 500
+                    onFadeStart =
+                            if (elapsedTime < tol) {
+                                _onFadeStart
+                            } else {
+                                onFadeStart()
+                                ({})
+                            }
+                }
+            }
+
+            State.PREPARE_ANSWER -> {
+                when {
+                    elapsedTime < 500L -> {
+                        drawRemain(canvas, spentTime)
+                        drawQuestionProgress(canvas)
+                        drawParticle(canvas)
+                    }
+
+                    elapsedTime in 500L..1000L -> {
+                        clearParticle()
+                        onPrepareAnswer()
+                        onPrepareAnswer = {}
+                    }
+
+                    else -> {
+                        onTransitionToCheckAnswer()
+                        onTransitionToCheckAnswer = {}
+                    }
+                }
+            }
+
+            State.DICTIONARY -> {
+                drawShaperName(canvas)
+                drawParticle(canvas)
+            }
+
+            else -> {
+            }
         }
+
+        if (BuildConfig.DEBUG) drawDebugMessage(canvas)
     }
 
     override fun onDetachedFromWindow() {
@@ -353,7 +348,7 @@ class AnimateView : View {
                     paint.colorFilter = PorterDuffColorFilter(Color.rgb(2, 255, 197), PorterDuff.Mode.SRC_ATOP)
                     hexagons.forEachIndexed { i, pointF ->
                         when (i) {
-                            in 0..(n - 1) -> canvas.drawBitmap(normalHexImg, pointF.x, pointF.y, paint)
+                            in 0 until n -> canvas.drawBitmap(normalHexImg, pointF.x, pointF.y, paint)
                             n -> canvas.drawBitmap(strongHexImg, pointF.x, pointF.y, paint)
                             else -> canvas.drawBitmap(weakHexImg, pointF.x, pointF.y, paint)
                         }
@@ -379,7 +374,7 @@ class AnimateView : View {
             canvas.drawText(name, width.toFloat() / 2, baseLine - (fontSize + margin) * (names.lastIndex - i), paint.apply {
                 textAlign = Paint.Align.CENTER
                 color = Color.WHITE
-                style = Paint.Style.STROKE
+                style = Paint.Style.FILL_AND_STROKE
                 textSize = fontSize
                 typeface = coda
             })
@@ -388,22 +383,28 @@ class AnimateView : View {
 
     fun showPaths(paths: List<Pair<PointF, PointF>>) {
         clearParticle()
+
         if (paths.isEmpty()) return
 
-        paths.forEach { path ->
-            val lenX = (path.second.x - path.first.x).toDouble()
-            val lenY = (path.second.y - path.first.y).toDouble()
-            val distance = Math.sqrt((Math.pow(lenX, 2.0) + Math.pow(lenY, 2.0))).toFloat()
-            val dX = particleInterval * lenX / distance
-            val dY = particleInterval * lenY / distance
-
-            synchronized(locus) {
-                (0 until (distance / particleInterval).toInt()).forEach {
-                    addParticle((path.first.x + dX * it).toFloat(), (path.first.y + dY * it).toFloat(), Particle.Phase.CONVERGING)
-                }
-            }
+        synchronized(locus) {
+            paths.forEach { it.putParticles() }
+            addParticle(paths.last().second.x, paths.last().second.y, Particle.Phase.CONVERGING)
         }
-        synchronized(locus) { addParticle(paths.last().second.x, paths.last().second.y, Particle.Phase.CONVERGING) }
+    }
+
+    private fun Pair<PointF, PointF>.putParticles() {
+        val lX = (second.x - first.x)
+        val lY = (second.y - first.y)
+        val distance = sqrt((lX.pow(2f) + lY.pow(2f)))
+        val dX = particleInterval * lX / distance
+        val dY = particleInterval * lY / distance
+        repeat((distance / particleInterval).toInt()) {
+            addParticle(
+                    first.x + dX * it,
+                    first.y + dY * it,
+                    Particle.Phase.CONVERGING
+            )
+        }
     }
 
     private fun getGrainAlpha(mode: State = state): Int =
@@ -534,21 +535,7 @@ class AnimateView : View {
     }
 
     fun addParticle(x: Float, y: Float, phase: Particle.Phase? = null) {
-        locus.lastOrNull { !it.drawn }?.let { last ->
-            val lenX = (x - last.x).toDouble()
-            val lenY = (y - last.y).toDouble()
-            val distance = Math.sqrt(Math.pow(lenX, 2.0) + Math.pow(lenY, 2.0))
-            val dX = particleInterval * lenX / distance
-            val dY = particleInterval * lenY / distance
-
-            synchronized(locus) {
-                (1..(distance / particleInterval).toInt()).forEach {
-                    locus.add(Particle((last.x + dX * it).toFloat(), (last.y + dY * it).toFloat(), grainImg, width, phase).apply { drawn = true })
-                    last.drawn = true
-                }
-                locus.last().drawn = false
-            }
-        } ?: synchronized(locus) { locus.add(Particle(x, y, grainImg, width, phase)) }
+        synchronized(locus) { locus.add(Particle(x, y, grainImg, width, phase)) }
     }
 
     fun clearParticle() = synchronized(locus) { locus.clear() }
@@ -561,7 +548,4 @@ class AnimateView : View {
                 textSize = 40f
                 textAlign = Paint.Align.LEFT
             })
-
-    // to avoid redundant lint warning
-    override fun performClick(): Boolean = super.performClick()
 }
