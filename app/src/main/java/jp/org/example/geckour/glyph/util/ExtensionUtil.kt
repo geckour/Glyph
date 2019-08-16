@@ -119,6 +119,7 @@ fun Bitmap.getMutableImageWithShaper(shaper: Shaper, scale: Float = App.scale): 
     val copy = this.copy(this.config, true)
 
     val paint = Paint().apply {
+        isAntiAlias = true
         color = Color.BLACK
         style = Paint.Style.STROKE
         strokeWidth = 34f * scale
